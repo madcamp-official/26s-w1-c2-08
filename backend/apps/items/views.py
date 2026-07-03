@@ -1,12 +1,86 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db import transaction
+from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Item, ItemReaction
-from .serializers import ItemReactionSerializer, ItemReactionUpsertSerializer, ItemSerializer
+from .serializers import (
+    ItemRankingSerializer,
+    ItemReactionSerializer,
+    ItemReactionUpsertSerializer,
+    ItemSerializer,
+)
+
+
+DEFAULT_RANKING_LIMIT = 20
+MAX_RANKING_LIMIT = 100
+
+
+def _parse_ranking_limit(request):
+    raw_limit = request.query_params.get("limit", DEFAULT_RANKING_LIMIT)
+    try:
+        limit = int(raw_limit)
+    except (TypeError, ValueError):
+        return None, Response(
+            {"detail": "limit은 숫자여야 합니다."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if limit < 1:
+        return None, Response(
+            {"detail": "limit은 1 이상이어야 합니다."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    return min(limit, MAX_RANKING_LIMIT), None
+
+
+def _category_options(include_all=False):
+    options = [{"value": value, "label": label} for value, label in Item.Category.choices]
+    if include_all:
+        return [{"value": "all", "label": "전체"}, *options]
+    return options
+
+
+def _parse_category(request):
+    category = request.query_params.get("category")
+    if not category or category == "all":
+        return None, None
+
+    if category not in Item.Category.values:
+        return None, Response(
+            {
+                "detail": "존재하지 않는 카테고리입니다.",
+                "categories": _category_options(),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    return category, None
+
+
+def _ranked_items_queryset(category=None):
+    queryset = (
+        Item.objects.annotate(
+            ranking_score_value=F("recommend_count") - F("not_recommend_count")
+        )
+        .order_by(
+            "-ranking_score_value",
+            "-recommend_count",
+            "not_recommend_count",
+            "-created_at",
+            "id",
+        )
+    )
+    if category is not None:
+        queryset = queryset.filter(category=category)
+
+    return queryset
 
 
 class ItemListCreateView(generics.ListCreateAPIView):
@@ -32,6 +106,82 @@ class ItemListCreateView(generics.ListCreateAPIView):
 class ItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+
+
+@api_view(["GET"])
+def item_ranking(request):
+    limit, error_response = _parse_ranking_limit(request)
+    if error_response is not None:
+        return error_response
+
+    category, error_response = _parse_category(request)
+    if error_response is not None:
+        return error_response
+
+    queryset = _ranked_items_queryset(category=category)
+    serializer = ItemRankingSerializer(queryset[:limit], many=True, context={"request": request})
+    return Response(
+        {
+            "count": queryset.count(),
+            "limit": limit,
+            "category": category or "all",
+            "results": serializer.data,
+        }
+    )
+
+
+@api_view(["GET"])
+def item_categories(_request):
+    return Response({"results": _category_options(include_all=True)})
+
+
+@api_view(["GET"])
+def item_ranking_detail(request, item_id):
+    item = get_object_or_404(_ranked_items_queryset(), id=item_id)
+    serializer = ItemRankingSerializer(item, context={"request": request})
+    return Response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def item_reaction_toggle(request, item_id):
+    requested_reaction = request.data.get("reaction")
+    reaction_aliases = {
+        "recommend": ItemReaction.Reaction.RECOMMEND,
+        "not_recommend": ItemReaction.Reaction.NOT_RECOMMEND,
+        "disrecommend": ItemReaction.Reaction.NOT_RECOMMEND,
+    }
+    normalized_reaction = reaction_aliases.get(requested_reaction)
+
+    if normalized_reaction is None:
+        return Response(
+            {"detail": "reaction은 recommend 또는 not_recommend 중 하나여야 합니다."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    with transaction.atomic():
+        item = get_object_or_404(Item.objects.select_for_update(), id=item_id)
+        existing_reaction = (
+            ItemReaction.objects.select_for_update().filter(item=item, user=request.user).first()
+        )
+
+        if existing_reaction is None:
+            ItemReaction.objects.create(
+                item=item,
+                user=request.user,
+                reaction=normalized_reaction,
+            )
+        elif existing_reaction.reaction == normalized_reaction:
+            existing_reaction.delete()
+        else:
+            existing_reaction.reaction = normalized_reaction
+            existing_reaction.save(update_fields=["reaction", "updated_at"])
+
+        item.refresh_from_db()
+
+    ranked_item = get_object_or_404(_ranked_items_queryset(), id=item.id)
+    serializer = ItemRankingSerializer(ranked_item, context={"request": request})
+    return Response(serializer.data)
 
 
 class ItemReactionListCreateView(APIView):

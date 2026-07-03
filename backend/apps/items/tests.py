@@ -18,6 +18,7 @@ class ItemApiTests(APITestCase):
         )
         self.item = Item.objects.create(
             name="라벤더 세라마이드 수분크림",
+            category=Item.Category.BEAUTY,
             image_url="https://example.com/item.jpg",
             price=28000,
             shop_or_brand_name="MORU BEAUTY",
@@ -127,3 +128,52 @@ class ItemApiTests(APITestCase):
         self.item.refresh_from_db()
         self.assertEqual(self.item.recommend_count, 1)
         self.assertEqual(self.item.not_recommend_count, 0)
+
+    def test_ranking_endpoint(self):
+        Item.objects.create(
+            name="무선 이어폰",
+            category=Item.Category.ELECTRONICS,
+            image_url="https://example.com/earbuds.jpg",
+            price=129000,
+            shop_or_brand_name="SOUND LAB",
+            original_url="https://shop.example.com/products/earbuds",
+            recommend_count=4,
+            not_recommend_count=0,
+        )
+
+        response = self.client.get(reverse("item-ranking"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["results"][0]["name"], "무선 이어폰")
+        self.assertEqual(response.data["results"][0]["rankingScore"], 4)
+
+    def test_categories_endpoint(self):
+        response = self.client.get(reverse("item-categories"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["results"][0], {"value": "all", "label": "전체"})
+        self.assertIn(
+            {"value": Item.Category.ELECTRONICS, "label": "전자제품"},
+            response.data["results"],
+        )
+
+    def test_toggle_reaction_endpoint(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.post(
+            reverse("item-reaction", args=[self.item.id]),
+            {"reaction": "recommend"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["recommendCount"], 0)
+        self.assertEqual(response.data["userReaction"], None)
+
+        response = self.client.post(
+            reverse("item-reaction", args=[self.item.id]),
+            {"reaction": "disrecommend"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["disrecommendCount"], 2)
+        self.assertEqual(response.data["userReaction"], "not_recommend")

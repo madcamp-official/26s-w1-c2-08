@@ -11,6 +11,7 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "name",
+            "category",
             "image_url",
             "price",
             "shop_or_brand_name",
@@ -30,6 +31,60 @@ class ItemSerializer(serializers.ModelSerializer):
             "updated_at",
             "created_by_id",
         )
+
+
+class ItemRankingSerializer(serializers.ModelSerializer):
+    rankingScore = serializers.SerializerMethodField()
+    categoryLabel = serializers.SerializerMethodField()
+    recommendCount = serializers.IntegerField(source="recommend_count", read_only=True)
+    disrecommendCount = serializers.IntegerField(source="not_recommend_count", read_only=True)
+    brandOrShopName = serializers.CharField(source="shop_or_brand_name", read_only=True)
+    productUrl = serializers.URLField(source="original_url", read_only=True)
+    imageUrl = serializers.URLField(source="image_url", read_only=True)
+    priceText = serializers.SerializerMethodField()
+    externalReviewCount = serializers.SerializerMethodField()
+    userReaction = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Item
+        fields = [
+            "id",
+            "name",
+            "category",
+            "categoryLabel",
+            "brandOrShopName",
+            "productUrl",
+            "imageUrl",
+            "priceText",
+            "externalReviewCount",
+            "recommendCount",
+            "disrecommendCount",
+            "rankingScore",
+            "userReaction",
+        ]
+
+    def get_userReaction(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return None
+
+        reaction = obj.reactions.filter(user=request.user).first()
+        if reaction is None:
+            return None
+
+        return reaction.reaction
+
+    def get_rankingScore(self, obj):
+        return obj.recommend_count - obj.not_recommend_count
+
+    def get_categoryLabel(self, obj):
+        return obj.get_category_display()
+
+    def get_priceText(self, obj):
+        return f"{obj.price:,}원" if obj.price else ""
+
+    def get_externalReviewCount(self, _obj):
+        return None
 
 
 class ItemReactionSerializer(serializers.ModelSerializer):

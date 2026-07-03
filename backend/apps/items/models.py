@@ -4,7 +4,26 @@ from django.db.models import Count, Q
 
 
 class Item(models.Model):
+    class Category(models.TextChoices):
+        FASHION = "fashion", "의류/패션"
+        FOOD = "food", "식품"
+        BEAUTY = "beauty", "뷰티"
+        ELECTRONICS = "electronics", "전자제품"
+        APPLIANCES = "appliances", "가전제품"
+        LIVING = "living", "생활용품"
+        HEALTH = "health", "건강"
+        SPORTS = "sports", "스포츠/레저"
+        BOOKS_HOBBY = "books_hobby", "도서/취미"
+        KIDS_PETS = "kids_pets", "유아/반려동물"
+        ETC = "etc", "기타"
+
     name = models.CharField(max_length=255)
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+        default=Category.ETC,
+        db_index=True,
+    )
     image_url = models.URLField(blank=True)
     price = models.PositiveIntegerField()
     shop_or_brand_name = models.CharField(max_length=255)
@@ -23,6 +42,11 @@ class Item(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["-recommend_count", "-created_at"]),
+            models.Index(fields=["category", "-recommend_count", "-created_at"]),
+            models.Index(fields=["name"]),
+        ]
 
     def __str__(self):
         return self.name

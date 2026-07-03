@@ -16,7 +16,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "api",
-    "apps.common",
     "apps.accounts",
     "apps.items",
 ]
