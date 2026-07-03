@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import UserPage from './pages/UserPage'
 import ItemRegPage from './itemreg/ItemRegPage.jsx'
+import RankingApp from './rank/ranking.jsx'
 
 function App() {
   return (
@@ -12,7 +13,7 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/:userId" element={<UserPage />} />
       <Route path="/itemreg" element={<ItemRegPage />} />
-      <Route path="/ranking" element={<RankingPage />} />
+      <Route path="/ranking" element={<RankingApp />} />
     </Routes>
   )
 }

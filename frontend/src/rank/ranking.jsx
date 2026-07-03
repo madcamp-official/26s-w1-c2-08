@@ -314,7 +314,7 @@ function App() {
           꿀템
         </Link>
         <div className="nav-links">
-          <NavLink to="/">홈</NavLink>
+          <NavLink to="/ranking">홈</NavLink>
           <NavLink to="/ranking">랭킹</NavLink>
         </div>
       </nav>
@@ -327,3 +327,5 @@ function App() {
     </>
   )
 }
+
+export default App
