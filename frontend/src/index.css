@@ -1,22 +1,22 @@
 :root {
-  --bg: #f8f6fc;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-soft: #f2effa;
-  --border: #e4defa;
-  --text: #5b5568;
-  --text-muted: #8b84a3;
-  --text-strong: #2c2740;
+  --surface-soft: #f4f4f5;
+  --border: #e5e5e7;
+  --text: #4a4a4d;
+  --text-muted: #8a8a8e;
+  --text-strong: #19191b;
   --accent: #6d5fc4;
   --positive: #4f9d69;
   --positive-bg: #eaf6ee;
   --negative: #b23b73;
   --negative-bg: #fbeef4;
-  --rank-bg: #2c2740;
-  --rank-text: #f4dfa1;
+  --rank-bg: #19191b;
+  --rank-text: #ffffff;
   --score-bg: #f3ecfb;
   --score-text: #6d5fc4;
-  --image-bg: #efeafa;
-  --soft-bg: #f2effa;
+  --image-bg: #f2f2f3;
+  --soft-bg: #f4f4f5;
   --warning-bg: #fdf6e8;
   --warning-border: #eed9a0;
   --warning-text: #8a6d1f;
@@ -26,9 +26,9 @@
   --error-bg: #fbeef4;
   --error-border: #f0c9e0;
   --error-text: #a1436b;
-  --radius: 12px;
+  --radius: 6px;
   --page-max: 1080px;
-  --shadow-soft: 0 12px 32px rgba(76, 60, 130, 0.08);
+  --shadow-soft: 0 8px 24px rgba(20, 20, 20, 0.06);
   --sans: 'Pretendard Variable', 'Pretendard', system-ui, 'Segoe UI', Roboto, sans-serif;
 
   color: var(--text);
@@ -50,9 +50,7 @@ body {
   min-width: 320px;
   min-height: 100svh;
   margin: 0;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 260px),
-    var(--bg);
+  background: var(--bg);
 }
 
 button,
@@ -95,41 +93,40 @@ select:focus-visible {
   min-height: 64px;
   margin: 0 auto;
   border-bottom: 1px solid var(--border);
-  background: rgba(248, 246, 252, 0.86);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(14px);
 }
 
-.site-brand,
-.site-links a,
+.site-brand {
+  color: var(--text-strong);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
 .text-link {
   color: var(--text-strong);
   font-weight: 800;
   text-decoration: none;
 }
 
-.site-brand {
-  font-size: 20px;
-}
-
 .site-links {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 28px;
 }
 
 .site-links a {
-  min-width: 56px;
-  padding: 8px 12px;
-  border-radius: var(--radius);
   color: var(--text-muted);
   font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
   text-align: center;
 }
 
 .site-links a.active {
-  background: var(--surface);
-  color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-strong);
 }
 
 .page-shell {
