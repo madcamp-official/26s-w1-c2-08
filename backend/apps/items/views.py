@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Item, ItemReaction
+from .models import Item, ItemReaction, Star
 from .serializers import (
     ItemRankingSerializer,
     ItemReactionSerializer,
@@ -240,3 +240,24 @@ class ItemReactionDetailView(APIView):
         reaction = get_object_or_404(ItemReaction, item_id=item_id, user_id=user_id)
         reaction.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(["POST"])
+def ItemStar(request, item_id):
+    user = request.user
+
+    if not user.is_authenticated:
+        return Response({"detail": "로그인이 필요합니다."}, status=status.HTTP_401_UNAUTHORIZED)
+    item = get_object_or_404(Item, id=item_id)
+
+    if Star.objects.filter(user=user, item=item).exists():
+        Star.objects.filter(user=user, item=item).delete()
+        return Response(
+            {"detail": "별이 취소되었습니다."},
+            status=status.HTTP_200_OK
+        )
+    else:
+        Star.objects.create(user=user, item=item)
+        return Response(
+        {"detail": "별이 추가되었습니다."},
+        status=status.HTTP_201_CREATED
+    )

@@ -1,6 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
+<<<<<<< HEAD
+=======
+import { useAuth } from '../context/AuthContext'
+import '../App.css'
+>>>>>>> fbd6ebd3b5afd882150707b9e79ee3cf74ce7c88
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
@@ -12,9 +17,17 @@ const initialForm = {
 
 function SignupPage() {
   const navigate = useNavigate()
+  const { accessToken } = useAuth()
   const [form, setForm] = useState(initialForm)
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle')
+
+  // 이미 로그인되어 있으면 signup 페이지 접근 막기
+  useEffect(() => {
+    if (accessToken) {
+      navigate('/', { replace: true })
+    }
+  }, [accessToken, navigate])
 
   const handleChange = (event) => {
     const { name, value } = event.target

@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Count, Q
 
+from apps.accounts.models import User
 
 class Item(models.Model):
     class Category(models.TextChoices):
@@ -96,3 +97,15 @@ class ItemReaction(models.Model):
         item = self.item
         super().delete(*args, **kwargs)
         item.refresh_reaction_counts()
+
+class Star(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "item"],
+                name="unique_user_item_star"
+            )
+        ]
