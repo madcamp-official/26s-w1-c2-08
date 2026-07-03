@@ -490,20 +490,25 @@ function ItemPageContent() {
                   {reviews.map((review, index) => (
                     <li className="review-card" key={review.id}>
                       <div className="review-rank-badge">{index + 1}</div>
-                      <div className="review-card-header">
-                        <div>
-                          <p className="review-meta">
-                            작성자 #{review.author} · {formatDate(review.created_at)}
-                          </p>
-                          <h4>{review.title}</h4>
+                      <Link
+                        className="review-card-link"
+                        to={`/items/${itemId}/reviews/${review.id}`}
+                      >
+                        <div className="review-card-header">
+                          <div>
+                            <p className="review-meta">
+                              작성자 #{review.author} · {formatDate(review.created_at)}
+                            </p>
+                            <h4>{review.title}</h4>
+                          </div>
+                          <div className="review-score">
+                            <strong>{getReviewScore(review)}</strong>
+                            <span>점수</span>
+                          </div>
                         </div>
-                        <div className="review-score">
-                          <strong>{getReviewScore(review)}</strong>
-                          <span>점수</span>
-                        </div>
-                      </div>
 
-                      <p className="review-content">{review.content}</p>
+                        <p className="review-content">{review.content}</p>
+                      </Link>
 
                       <div className="review-footer">
                         <div className="review-stats">
@@ -513,6 +518,12 @@ function ItemPageContent() {
                         </div>
 
                         <div className="review-actions">
+                          <Link
+                            className="review-detail-link"
+                            to={`/items/${itemId}/reviews/${review.id}`}
+                          >
+                            댓글 보기
+                          </Link>
                           <button
                             className={
                               review.user_reaction === 'like'
