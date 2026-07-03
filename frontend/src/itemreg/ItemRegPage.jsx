@@ -1,0 +1,507 @@
+import { useEffect, useMemo, useState } from 'react'
+import './itemreg.css'
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api'
+
+const aiSeed = {
+  name: '라벤더 세라마이드 수분크림 80ml',
+  imageUrl:
+    'https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=900&q=80',
+  price: '28000',
+  shopOrBrandName: 'MORU BEAUTY',
+  originalUrl: 'https://shop.example.com/products/lavender-ceramide-cream',
+}
+
+const emptyMessage = {
+  type: '',
+  text: '',
+}
+
+const emptyAiFields = {
+  name: '',
+  imageUrl: '',
+  price: '',
+  shopOrBrandName: '',
+  originalUrl: '',
+}
+
+function formatPrice(value) {
+  const numeric = Number(value)
+
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return '가격 미입력'
+  }
+
+  return `₩${numeric.toLocaleString('ko-KR')}`
+}
+
+function normalizeError(error) {
+  if (typeof error === 'string') {
+    return error
+  }
+
+  if (Array.isArray(error)) {
+    return error.join(' ')
+  }
+
+  if (error && typeof error === 'object') {
+    return Object.entries(error)
+      .map(([key, value]) => `${key}: ${normalizeError(value)}`)
+      .join(' / ')
+  }
+
+  return '요청 처리 중 오류가 발생했습니다.'
+}
+
+function toCandidate(item) {
+  return {
+    id: String(item.id),
+    itemId: item.id,
+    name: item.name,
+    brand: item.shop_or_brand_name,
+    price: formatPrice(item.price),
+    recommendCount: item.recommend_count,
+    notRecommendCount: item.not_recommend_count,
+    reason: '현재 DB에 저장된 아이템입니다. 중복 여부를 직접 확인해 주세요.',
+  }
+}
+
+function ItemRegPage() {
+  const [selectedType, setSelectedType] = useState('new')
+  const [selectedCandidate, setSelectedCandidate] = useState('')
+  const [screenshotName, setScreenshotName] = useState('')
+  const [imageFileName, setImageFileName] = useState('')
+  const [aiFields, setAiFields] = useState(emptyAiFields)
+  const [aiPreview, setAiPreview] = useState(null)
+  const [review, setReview] = useState({
+    reason: '민감성 피부인데도 자극이 적고, 아침 메이크업 전에 발라도 밀리지 않았습니다.',
+    content:
+      '구매 사이트 스크린샷 기준으로 성분/용량/가격이 명확해서 등록에 적합해 보입니다. 첫 사용감은 가볍지만 수분막이 오래 남는 편이었고, 향은 약한 라벤더 계열이라 호불호가 크게 갈리진 않을 것 같습니다.',
+  })
+  const [duplicateCandidates, setDuplicateCandidates] = useState([])
+  const [isLoadingCandidates, setIsLoadingCandidates] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [message, setMessage] = useState(emptyMessage)
+  const [createdItem, setCreatedItem] = useState(null)
+
+  const submitLabel = useMemo(() => {
+    if (selectedType === 'existing') {
+      return '기존 아이템 리뷰 연결 준비 중'
+    }
+
+    return isSubmitting ? '등록 중...' : '새 아이템 DB 등록'
+  }, [isSubmitting, selectedType])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadItems() {
+      setIsLoadingCandidates(true)
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/items/`)
+
+        if (!response.ok) {
+          throw new Error('아이템 목록을 불러오지 못했습니다.')
+        }
+
+        const data = await response.json()
+
+        if (!isMounted) {
+          return
+        }
+
+        const candidates = data.map(toCandidate)
+        setDuplicateCandidates(candidates)
+        setSelectedCandidate(candidates[0]?.id ?? '')
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+
+        setMessage({
+          type: 'error',
+          text:
+            error instanceof Error
+              ? error.message
+              : '아이템 목록을 불러오는 중 오류가 발생했습니다.',
+        })
+      } finally {
+        if (isMounted) {
+          setIsLoadingCandidates(false)
+        }
+      }
+    }
+
+    loadItems()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  function handleScreenshotChange(event) {
+    const file = event.target.files?.[0]
+    if (file) {
+      setScreenshotName(file.name)
+    }
+  }
+
+  function handleImageFileChange(event) {
+    const file = event.target.files?.[0]
+    if (file) {
+      setImageFileName(file.name)
+    }
+  }
+
+  function handleAiFill() {
+    const seededFields = {
+      ...aiSeed,
+      originalUrl: aiFields.originalUrl.trim() || aiSeed.originalUrl,
+    }
+
+    setAiFields(seededFields)
+    setAiPreview(seededFields)
+    setMessage(emptyMessage)
+  }
+
+  function handleFieldChange(field, value) {
+    setAiFields((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  function handleReviewChange(field, value) {
+    setReview((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  async function refreshItems(selectedItemId) {
+    const response = await fetch(`${API_BASE_URL}/items/`)
+
+    if (!response.ok) {
+      throw new Error('등록 후 아이템 목록을 새로고침하지 못했습니다.')
+    }
+
+    const data = await response.json()
+    const candidates = data.map(toCandidate)
+    setDuplicateCandidates(candidates)
+    setSelectedCandidate(selectedItemId ? String(selectedItemId) : candidates[0]?.id ?? '')
+  }
+
+  async function handleSubmit() {
+    setMessage(emptyMessage)
+
+    if (selectedType === 'existing') {
+      setMessage({
+        type: 'info',
+        text: '기존 아이템 리뷰 저장 API는 아직 연결되지 않았습니다. 현재는 새 아이템 등록만 가능합니다.',
+      })
+      return
+    }
+
+    if (!aiFields.name.trim()) {
+      setMessage({
+        type: 'error',
+        text: '상품명을 입력해 주세요.',
+      })
+      return
+    }
+
+    if (!aiFields.shopOrBrandName.trim()) {
+      setMessage({
+        type: 'error',
+        text: '쇼핑몰명 또는 브랜드명을 입력해 주세요.',
+      })
+      return
+    }
+
+    if (!aiFields.originalUrl.trim()) {
+      setMessage({
+        type: 'error',
+        text: '원본 URL을 입력해 주세요.',
+      })
+      return
+    }
+
+    const numericPrice = Number(aiFields.price.replaceAll(',', '').replaceAll('₩', '').trim())
+
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      setMessage({
+        type: 'error',
+        text: '가격은 0보다 큰 숫자로 입력해 주세요.',
+      })
+      return
+    }
+
+    const payload = {
+      name: aiFields.name.trim(),
+      image_url: aiFields.imageUrl.trim(),
+      price: numericPrice,
+      shop_or_brand_name: aiFields.shopOrBrandName.trim(),
+      original_url: aiFields.originalUrl.trim(),
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/items/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(normalizeError(data))
+      }
+
+      setCreatedItem(data)
+      await refreshItems(data.id)
+      setMessage({
+        type: 'success',
+        text: `아이템 #${data.id} "${data.name}" 이(가) DB에 저장되었습니다.`,
+      })
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text:
+          error instanceof Error
+            ? error.message
+            : '아이템 등록 중 오류가 발생했습니다.',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <main className="itemreg-page">
+      <section className="itemreg-hero">
+        <h1>아이템 등록 및 리뷰 작성</h1>
+      </section>
+
+      {message.text ? (
+        <section className={`itemreg-feedback itemreg-feedback-${message.type || 'info'}`}>
+          {message.text}
+        </section>
+      ) : null}
+
+      <section className="itemreg-stack">
+        <article className="itemreg-panel itemreg-panel-accent">
+          <div className="itemreg-panel-heading">
+            <span>1</span>
+            <div>
+              <h2>상품 정보 입력</h2>
+              <p>상품 기본 정보는 직접 입력할 수 있고, 스크린샷을 넣으면 같은 칸을 AI 예시값으로 채울 수 있습니다.</p>
+            </div>
+          </div>
+
+          <div className="itemreg-field-grid">
+            <label className="itemreg-field">
+              <span>상품명</span>
+              <input
+                type="text"
+                value={aiFields.name}
+                onChange={(event) => handleFieldChange('name', event.target.value)}
+              />
+            </label>
+            <label className="itemreg-field">
+              <span>쇼핑몰명 또는 브랜드명</span>
+              <input
+                type="text"
+                value={aiFields.shopOrBrandName}
+                onChange={(event) =>
+                  handleFieldChange('shopOrBrandName', event.target.value)
+                }
+              />
+            </label>
+            <label className="itemreg-field">
+              <span>대표 이미지 첨부</span>
+              <input type="file" accept="image/*" onChange={handleImageFileChange} />
+              <small>
+                {imageFileName
+                  ? `선택된 파일: ${imageFileName}`
+                  : '아직 첨부한 대표 이미지가 없습니다.'}
+              </small>
+            </label>
+            <label className="itemreg-field">
+              <span>원본 URL</span>
+              <input
+                type="url"
+                value={aiFields.originalUrl}
+                onChange={(event) => handleFieldChange('originalUrl', event.target.value)}
+                placeholder="https://..."
+              />
+            </label>
+            <label className="itemreg-field">
+              <span>가격</span>
+              <input
+                type="text"
+                value={aiFields.price}
+                onChange={(event) => handleFieldChange('price', event.target.value)}
+                placeholder="28000"
+              />
+            </label>
+          </div>
+
+          <div className="itemreg-ai-box">
+            <label className="itemreg-field">
+              <span>구매 사이트 스크린샷</span>
+              <input type="file" accept="image/*" onChange={handleScreenshotChange} />
+              <small>
+                {screenshotName
+                  ? `선택된 파일: ${screenshotName}`
+                  : '아직 업로드한 파일이 없습니다.'}
+              </small>
+            </label>
+
+            <button type="button" className="itemreg-primary" onClick={handleAiFill}>
+              스크린샷 기준으로 AI 채우기
+            </button>
+          </div>
+
+          {aiPreview ? (
+            <div className="itemreg-preview-card">
+              {aiPreview.imageUrl ? <img src={aiPreview.imageUrl} alt="" /> : <div className="itemreg-image-placeholder" />}
+              <div>
+                <strong>{aiPreview.name}</strong>
+                <p>{aiPreview.shopOrBrandName}</p>
+                <div className="itemreg-chip-row">
+                  <span>{formatPrice(aiPreview.price)}</span>
+                  <span>{aiPreview.originalUrl ? 'AI 입력 완료' : '원본 URL 미입력'}</span>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </article>
+
+        <article className="itemreg-panel">
+          <div className="itemreg-panel-heading">
+            <span>2</span>
+            <div>
+              <h2>중복 아이템 후보 확인</h2>
+              <p>현재는 DB의 아이템 목록을 불러와 중복 여부를 직접 확인하도록 연결했습니다.</p>
+            </div>
+          </div>
+
+          <div className="itemreg-choice-row">
+            <label>
+              <input
+                type="radio"
+                name="item-type"
+                value="new"
+                checked={selectedType === 'new'}
+                onChange={(event) => setSelectedType(event.target.value)}
+              />
+              새 아이템으로 등록
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="item-type"
+                value="existing"
+                checked={selectedType === 'existing'}
+                onChange={(event) => setSelectedType(event.target.value)}
+              />
+              기존 아이템에 리뷰 추가
+            </label>
+          </div>
+
+          <div className="itemreg-candidate-list">
+            {selectedType === 'new' ? (
+              <p className="itemreg-muted">새 아이템으로 등록을 선택했으므로 기존 아이템 목록은 숨깁니다.</p>
+            ) : isLoadingCandidates ? (
+              <p className="itemreg-muted">DB의 아이템 목록을 불러오는 중입니다.</p>
+            ) : duplicateCandidates.length === 0 ? (
+              <p className="itemreg-muted">현재 등록된 아이템이 없습니다. 첫 아이템을 바로 등록할 수 있습니다.</p>
+            ) : (
+              duplicateCandidates.map((candidate) => (
+                <label
+                  key={candidate.id}
+                  className={`itemreg-candidate ${
+                    selectedCandidate === candidate.id ? 'is-selected' : ''
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="candidate"
+                    value={candidate.id}
+                    checked={selectedCandidate === candidate.id}
+                    onChange={(event) => setSelectedCandidate(event.target.value)}
+                  />
+                  <div>
+                    <strong>{candidate.name}</strong>
+                    <p>
+                      {candidate.brand} · {candidate.price}
+                    </p>
+                    <small>
+                      추천 {candidate.recommendCount} / 비추천 {candidate.notRecommendCount}
+                    </small>
+                    <small>{candidate.reason}</small>
+                  </div>
+                </label>
+              ))
+            )}
+          </div>
+        </article>
+
+        <article className="itemreg-panel">
+          <div className="itemreg-panel-heading">
+            <span>3</span>
+            <div>
+              <h2>리뷰 작성</h2>
+              <p>리뷰 입력 UI는 유지하되, 저장 연결은 별도 리뷰 API가 준비된 뒤 붙이면 됩니다.</p>
+            </div>
+          </div>
+
+          <label className="itemreg-field">
+            <span>추천 이유</span>
+            <input
+              type="text"
+              value={review.reason}
+              onChange={(event) => handleReviewChange('reason', event.target.value)}
+              placeholder="이 아이템을 추천하는 한 줄 요약"
+            />
+          </label>
+
+          <label className="itemreg-field">
+            <span>리뷰 본문</span>
+            <textarea
+              rows="8"
+              value={review.content}
+              onChange={(event) => handleReviewChange('content', event.target.value)}
+              placeholder="실사용 경험, 장단점, 추천 대상 등을 작성"
+            />
+          </label>
+
+          {createdItem ? (
+            <p className="itemreg-created">
+              최근 등록: #{createdItem.id} {createdItem.name}
+            </p>
+          ) : null}
+        </article>
+      </section>
+
+      <div className="itemreg-action-row">
+        <button
+          type="button"
+          className="itemreg-primary"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+        >
+          {submitLabel}
+        </button>
+      </div>
+    </main>
+  )
+}
+
+export default ItemRegPage

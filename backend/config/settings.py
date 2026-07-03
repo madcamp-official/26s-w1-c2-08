@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "api",
     "apps.common",
     "apps.accounts",
+    "apps.items",
 ]
 
 MIDDLEWARE = [
