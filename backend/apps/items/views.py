@@ -4,6 +4,7 @@ from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -85,6 +86,7 @@ def _ranked_items_queryset(category=None):
 
 class ItemListCreateView(generics.ListCreateAPIView):
     serializer_class = ItemSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         queryset = Item.objects.all()
@@ -106,6 +108,7 @@ class ItemListCreateView(generics.ListCreateAPIView):
 class ItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
 
 @api_view(["GET"])

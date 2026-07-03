@@ -71,6 +71,8 @@ function ItemRegPage() {
   const [selectedType, setSelectedType] = useState('new')
   const [selectedCandidate, setSelectedCandidate] = useState('')
   const [screenshotName, setScreenshotName] = useState('')
+  const [selectedImageFile, setSelectedImageFile] = useState(null)
+  const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState('')
   const [imageFileName, setImageFileName] = useState('')
   const [aiFields, setAiFields] = useState(emptyAiFields)
   const [aiPreview, setAiPreview] = useState(null)
@@ -143,6 +145,14 @@ function ItemRegPage() {
     }
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (selectedImagePreviewUrl) {
+        URL.revokeObjectURL(selectedImagePreviewUrl)
+      }
+    }
+  }, [selectedImagePreviewUrl])
+
   function handleScreenshotChange(event) {
     const file = event.target.files?.[0]
     if (file) {
@@ -152,9 +162,20 @@ function ItemRegPage() {
 
   function handleImageFileChange(event) {
     const file = event.target.files?.[0]
-    if (file) {
-      setImageFileName(file.name)
+    if (selectedImagePreviewUrl) {
+      URL.revokeObjectURL(selectedImagePreviewUrl)
     }
+
+    if (!file) {
+      setSelectedImageFile(null)
+      setSelectedImagePreviewUrl('')
+      setImageFileName('')
+      return
+    }
+
+    setSelectedImageFile(file)
+    setSelectedImagePreviewUrl(URL.createObjectURL(file))
+    setImageFileName(file.name)
   }
 
   function handleAiFill() {
@@ -283,20 +304,19 @@ function getStoredUserId() {
         throw new Error('가격은 0보다 큰 숫자로 입력해 주세요.')
       }
 
-      const payload = {
-        name: aiFields.name.trim(),
-        image_url: aiFields.imageUrl.trim(),
-        price: numericPrice,
-        shop_or_brand_name: aiFields.shopOrBrandName.trim(),
-        original_url: aiFields.originalUrl.trim(),
+      const formData = new FormData()
+      formData.append('name', aiFields.name.trim())
+      formData.append('price', String(numericPrice))
+      formData.append('shop_or_brand_name', aiFields.shopOrBrandName.trim())
+      formData.append('original_url', aiFields.originalUrl.trim())
+
+      if (selectedImageFile) {
+        formData.append('image', selectedImageFile)
       }
 
       const itemResponse = await fetch(`${API_BASE_URL}/items/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+        body: formData,
       })
 
       const itemData = await itemResponse.json().catch(() => null)
@@ -422,7 +442,13 @@ function getStoredUserId() {
 
           {aiPreview ? (
             <div className="itemreg-preview-card">
-              {aiPreview.imageUrl ? <img src={aiPreview.imageUrl} alt="" /> : <div className="itemreg-image-placeholder" />}
+              {selectedImagePreviewUrl ? (
+                <img src={selectedImagePreviewUrl} alt="" />
+              ) : aiPreview.imageUrl ? (
+                <img src={aiPreview.imageUrl} alt="" />
+              ) : (
+                <div className="itemreg-image-placeholder" />
+              )}
               <div>
                 <strong>{aiPreview.name}</strong>
                 <p>{aiPreview.shopOrBrandName}</p>

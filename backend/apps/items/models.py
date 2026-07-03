@@ -25,6 +25,7 @@ class Item(models.Model):
         db_index=True,
     )
     image_url = models.URLField(blank=True)
+    image_file = models.ImageField(upload_to="items/", blank=True, null=True)
     price = models.PositiveIntegerField()
     shop_or_brand_name = models.CharField(max_length=255)
     original_url = models.URLField(unique=True)
