@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Route, Routes } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import './ranking.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
@@ -45,20 +45,6 @@ async function readErrorMessage(response) {
   } catch {
     return '요청을 처리하지 못했습니다.'
   }
-}
-
-function HomePage() {
-  return (
-    <main className="app-shell">
-      <section className="home-section">
-        <p className="eyebrow">아이템 추천 웹 서비스</p>
-        <h1>좋은 아이템을 빠르게 찾기</h1>
-        <Link className="home-primary-link" to="/ranking">
-          꿀템 랭킹 보기
-        </Link>
-      </section>
-    </main>
-  )
 }
 
 function RankingPage() {
@@ -306,7 +292,7 @@ function RankingPage() {
   )
 }
 
-function App() {
+function RankingPageApp() {
   return (
     <>
       <nav className="top-nav">
@@ -314,18 +300,13 @@ function App() {
           꿀템
         </Link>
         <div className="nav-links">
-          <NavLink to="/ranking">홈</NavLink>
+          <NavLink to="/">홈</NavLink>
           <NavLink to="/ranking">랭킹</NavLink>
         </div>
       </nav>
-
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/ranking" element={<RankingPage />} />
-        <Route path="*" element={<HomePage />} />
-      </Routes>
+      <RankingPage />
     </>
   )
 }
 
-export default App
+export default RankingPageApp
