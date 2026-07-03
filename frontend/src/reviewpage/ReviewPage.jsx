@@ -42,11 +42,9 @@ function getStoredUserId() {
     return ''
   }
 
-  return window.localStorage.getItem('ggultem-user-id')?.trim() ?? ''
-}
-
-function isNumericId(value) {
-  return /^\d+$/.test(value)
+  // 추후 localStorage에 숫자형 user id가 저장되면 아래 구현으로 되돌립니다.
+  // return window.localStorage.getItem('ggultem-user-id')?.trim() ?? ''
+  return 1
 }
 
 function formatDateTime(value) {
@@ -102,11 +100,7 @@ function ReviewPageContent() {
       setNotice('')
 
       const userId = getStoredUserId()
-      const userQuery = userId && isNumericId(userId) ? `?user_id=${encodeURIComponent(userId)}` : ''
-      const initialNotice =
-        userId && !isNumericId(userId)
-          ? '로그인 사용자 반응 정보는 제외하고 리뷰와 댓글을 먼저 표시합니다.'
-          : ''
+      const userQuery = userId ? `?user_id=${encodeURIComponent(userId)}` : ''
 
       try {
         const itemResponse = await fetch(`${API_BASE_URL}/items/${itemId}/`)
@@ -118,7 +112,7 @@ function ReviewPageContent() {
 
         let reviewResponse = await fetch(`${API_BASE_URL}/reviews/${reviewId}/${userQuery}`)
         let commentsResponse = await fetch(`${API_BASE_URL}/reviews/${reviewId}/comments/${userQuery}`)
-        let fallbackUsed = Boolean(initialNotice)
+        let fallbackUsed = false
 
         if ((!reviewResponse.ok || !commentsResponse.ok) && userQuery) {
           const [fallbackReviewResponse, fallbackCommentsResponse] = await Promise.all([
@@ -162,9 +156,7 @@ function ReviewPageContent() {
         }
 
         if (fallbackUsed) {
-          setNotice(
-            initialNotice || '내 반응 상태를 제외한 리뷰와 댓글만 먼저 표시합니다.',
-          )
+          setNotice('내 반응 상태를 제외한 리뷰와 댓글만 먼저 표시합니다.')
           return
         }
 

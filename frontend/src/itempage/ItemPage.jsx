@@ -96,7 +96,9 @@ function getStoredUserId() {
     return ''
   }
 
-  return window.localStorage.getItem('ggultem-user-id')?.trim() ?? ''
+  // 추후 localStorage에 숫자형 user id가 저장되면 아래 구현으로 되돌립니다.
+  // return window.localStorage.getItem('ggultem-user-id')?.trim() ?? ''
+  return 1
 }
 
 function formatDate(value) {

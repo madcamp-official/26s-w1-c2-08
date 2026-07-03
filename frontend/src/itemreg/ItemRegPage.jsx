@@ -195,14 +195,13 @@ function ItemRegPage() {
     setSelectedCandidate(selectedItemId ? String(selectedItemId) : candidates[0]?.id ?? '')
   }
 
-  function getStoredUserId() {
-    if (typeof window === 'undefined') {
-      return ''
-    }
-
-    // return window.localStorage.getItem('ggultem-user-id')?.trim() ?? ''
-    return 1;
+function getStoredUserId() {
+  if (typeof window === 'undefined') {
+    return ''
   }
+
+  return 1
+}
 
   async function createReview(itemId) {
     const userId = getStoredUserId()
