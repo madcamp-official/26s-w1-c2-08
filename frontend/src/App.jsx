@@ -5,6 +5,7 @@ import SignupPage from './pages/SignupPage'
 import UserPage from './pages/UserPage'
 import ItemRegPage from './itemreg/ItemRegPage.jsx'
 import RankingApp from './rank/ranking.jsx'
+import ItemPage from './itempage/ItemPage.jsx'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Route path="/:userId" element={<UserPage />} />
       <Route path="/itemreg" element={<ItemRegPage />} />
       <Route path="/ranking" element={<RankingApp />} />
+      <Route path="/items/:itemId" element={<ItemPage />} />
     </Routes>
   )
 }

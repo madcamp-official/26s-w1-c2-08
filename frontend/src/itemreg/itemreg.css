@@ -109,6 +109,28 @@
   color: #6a5b55;
 }
 
+.itemreg-active-block,
+.itemreg-disabled-block {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.itemreg-disabled-block {
+  opacity: 0.48;
+}
+
+.itemreg-disabled-note {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid #e5d6c1;
+  border-radius: 16px;
+  background: #fff7eb;
+  color: #7a5230;
+  font-weight: 600;
+}
+
 .itemreg-field,
 .itemreg-candidate {
   display: flex;

@@ -1,0 +1,109 @@
+from django.conf import settings
+from django.db import migrations, models
+import django.db.models.deletion
+
+
+class Migration(migrations.Migration):
+    initial = True
+
+    dependencies = [
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ("items", "0004_item_category_item_items_item_recomme_c8c8f5_idx_and_more"),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name="Review",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("title", models.CharField(max_length=255)),
+                ("content", models.TextField()),
+                ("like_count", models.PositiveIntegerField(default=0)),
+                ("dislike_count", models.PositiveIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("author", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="reviews", to=settings.AUTH_USER_MODEL)),
+                ("item", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="reviews", to="items.item")),
+            ],
+            options={
+                "ordering": ["-created_at"],
+            },
+        ),
+        migrations.CreateModel(
+            name="ReviewComment",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("content", models.TextField()),
+                ("like_count", models.PositiveIntegerField(default=0)),
+                ("dislike_count", models.PositiveIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("author", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="review_comments", to=settings.AUTH_USER_MODEL)),
+                ("review", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="comments", to="reviews.review")),
+            ],
+            options={
+                "ordering": ["created_at"],
+            },
+        ),
+        migrations.CreateModel(
+            name="ReviewReaction",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("reaction", models.CharField(choices=[("like", "Like"), ("dislike", "Dislike")], max_length=20)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("review", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="reactions", to="reviews.review")),
+                ("user", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="review_reactions", to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                "ordering": ["-updated_at", "-created_at"],
+            },
+        ),
+        migrations.CreateModel(
+            name="ReviewCommentReaction",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("reaction", models.CharField(choices=[("like", "Like"), ("dislike", "Dislike")], max_length=20)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("comment", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="reactions", to="reviews.reviewcomment")),
+                ("user", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="review_comment_reactions", to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                "ordering": ["-updated_at", "-created_at"],
+            },
+        ),
+        migrations.AddIndex(
+            model_name="review",
+            index=models.Index(fields=["item", "-created_at"], name="reviews_rev_item_id_251ba0_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="review",
+            index=models.Index(fields=["author", "-created_at"], name="reviews_rev_author__7c13ab_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="review",
+            index=models.Index(fields=["-like_count", "-created_at"], name="reviews_rev_like_co_3de2f7_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="reviewcomment",
+            index=models.Index(fields=["review", "created_at"], name="reviews_rev_review__bb8a1c_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="reviewcomment",
+            index=models.Index(fields=["author", "-created_at"], name="reviews_rev_author__96883a_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="reviewcomment",
+            index=models.Index(fields=["-like_count", "-created_at"], name="reviews_rev_like_co_a911da_idx"),
+        ),
+        migrations.AddConstraint(
+            model_name="reviewreaction",
+            constraint=models.UniqueConstraint(fields=("review", "user"), name="unique_review_reaction_per_user"),
+        ),
+        migrations.AddConstraint(
+            model_name="reviewcommentreaction",
+            constraint=models.UniqueConstraint(fields=("comment", "user"), name="unique_review_comment_reaction_per_user"),
+        ),
+    ]
+

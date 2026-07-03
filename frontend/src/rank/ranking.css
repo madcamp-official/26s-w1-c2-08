@@ -242,10 +242,19 @@
     font-weight: 900;
   }
   
-  .item-image img {
+.item-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .ranking-item-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .ranking-item-link:hover {
+    color: var(--accent);
   }
   
   .item-body {

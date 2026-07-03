@@ -36,6 +36,7 @@ function LoginPage() {
       const response = await axios.post(`${API_BASE_URL}/api/accounts/login/`, form)
       const userId = response.data?.user?.id ?? form.id
 
+      window.localStorage.setItem('ggultem-user-id', userId)
       setStatus('success')
       navigate(`/${encodeURIComponent(userId)}`)
     } catch (error) {

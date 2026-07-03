@@ -7,4 +7,5 @@ urlpatterns = [
     path("health/", health_check, name="health-check"),
     path("accounts/", include("apps.accounts.urls")),
     path("items/", include("apps.items.urls")),
+    path("reviews/", include("apps.reviews.urls")),
 ]
