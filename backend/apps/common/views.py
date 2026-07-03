@@ -27,3 +27,4 @@ def health_check(_request):
             "message": "Backend server is running.",
         }
     )
+

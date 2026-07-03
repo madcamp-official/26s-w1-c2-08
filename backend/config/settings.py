@@ -16,6 +16,10 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "api",
+    "apps.accounts",
+    "apps.items",
+    "apps.reviews",
+    "apps.recommendations",
 ]
 
 MIDDLEWARE = [
