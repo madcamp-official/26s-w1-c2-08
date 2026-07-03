@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import '../App.css'
 
 const API_BASE_URL =
@@ -14,10 +15,18 @@ const initialForm = {
 function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { accessToken, login } = useAuth()
   const [form, setForm] = useState(initialForm)
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle')
   const signedUpId = location.state?.signedUpId
+
+  // 이미 로그인되어 있으면 로그인 페이지 접근 막기
+  useEffect(() => {
+    if (accessToken) {
+      navigate('/', { replace: true })
+    }
+  }, [accessToken, navigate])
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -36,8 +45,10 @@ function LoginPage() {
       const response = await axios.post(`${API_BASE_URL}/api/accounts/login/`, form)
       const userId = response.data?.user?.id ?? form.id
 
+      login(response.data.access, response.data.refresh)
+
       setStatus('success')
-      navigate(`/${encodeURIComponent(userId)}`)
+      navigate(`/user/${encodeURIComponent(userId)}`)
     } catch (error) {
       setStatus('error')
       setMessage(

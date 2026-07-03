@@ -12,7 +12,7 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/:userId" element={<UserPage />} />
+      <Route path="/user/:userId" element={<UserPage />} />
       <Route path="/itemreg" element={<ItemRegPage />} />
       <Route path="/ranking" element={<RankingApp />} />
     </Routes>

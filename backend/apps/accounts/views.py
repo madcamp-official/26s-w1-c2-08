@@ -1,8 +1,9 @@
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-
 from django.contrib.auth.hashers import check_password
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
 from .serializers import LoginSerializer, SignupSerializer
@@ -10,7 +11,31 @@ from .serializers import LoginSerializer, SignupSerializer
 
 @api_view(["GET"])
 def index(_request):
-    return Response({"service": "accounts", "status": "ready"})
+    users = User.objects.values("id")
+    return Response({"users": list(users)})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def me(request):
+    user = request.user
+    return Response({"id": user.id})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    try:
+        refresh_token = request.data["refresh"]
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+    except Exception:
+        return Response(
+            {"detail": "유효하지 않은 refresh 토큰입니다."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    return Response({"message": "logout success"})
 
 
 @api_view(["POST"])
@@ -22,9 +47,7 @@ def signup(request):
     return Response(
         {
             "message": "signup success",
-            "user": {
-                "id": user.id,
-            },
+            "user": {"id": user.id},
         },
         status=status.HTTP_201_CREATED,
     )
@@ -45,11 +68,13 @@ def login(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    refresh = RefreshToken.for_user(user)
+
     return Response(
         {
             "message": "login success",
-            "user": {
-                "id": user.id,
-            },
+            "user": {"id": user.id},
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
         }
     )

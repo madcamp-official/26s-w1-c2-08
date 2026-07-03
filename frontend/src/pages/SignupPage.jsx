@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
+import { useAuth } from '../context/AuthContext'
 import '../App.css'
 
 const API_BASE_URL =
@@ -13,10 +14,18 @@ const initialForm = {
 
 function SignupPage() {
   const navigate = useNavigate()
+  const { accessToken } = useAuth()
   const [form, setForm] = useState(initialForm)
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle')
   const [userId, setUserId] = useState('')
+
+  // 이미 로그인되어 있으면 signup 페이지 접근 막기
+  useEffect(() => {
+    if (accessToken) {
+      navigate('/', { replace: true })
+    }
+  }, [accessToken, navigate])
 
   const handleChange = (event) => {
     const { name, value } = event.target
