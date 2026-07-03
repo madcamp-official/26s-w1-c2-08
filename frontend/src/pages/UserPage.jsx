@@ -1,13 +1,18 @@
-import { Link, useParams } from 'react-router-dom'
-import '../App.css'
+import { useParams } from 'react-router-dom'
 
 function UserPage() {
   const { userId } = useParams()
 
   return (
-    <main className="app-shell">
-      <section className="hero-panel">
-        <div className="signup-card user-card">
+    <main className="page-shell page-shell-narrow">
+      <header className="page-header">
+        <div>
+          <h1>환영합니다</h1>
+        </div>
+      </header>
+
+      <section className="page-content">
+        <div className="panel user-card">
           <p className="user-id-label">user id</p>
           <p className="user-id-value">{userId}</p>
         </div>

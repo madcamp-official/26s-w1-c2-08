@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import axios from 'axios'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import '../App.css'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
@@ -48,10 +47,16 @@ function LoginPage() {
   }
 
   return (
-    <main className="app-shell">
-      <section className="login-card">
-        <form className="signup-card" onSubmit={handleSubmit}>
-          <label>
+    <main className="page-shell page-shell-narrow auth-page">
+      <header className="page-header">
+        <div>
+          <h1>계정 로그인</h1>
+        </div>
+      </header>
+
+      <section className="page-content">
+        <form className="auth-card panel" onSubmit={handleSubmit}>
+          <label className="form-field">
             <span>ID</span>
             <input
               name="id"
@@ -63,7 +68,7 @@ function LoginPage() {
             />
           </label>
 
-          <label>
+          <label className="form-field">
             <span>Password</span>
             <input
               name="password"
@@ -76,14 +81,16 @@ function LoginPage() {
             />
           </label>
 
-          <button type="submit" disabled={status === 'loading'}>
+          {message ? <p className="feedback feedback-error">{message}</p> : null}
+
+          <button className="primary-button" type="submit" disabled={status === 'loading'}>
             {status === 'loading' ? 'Logging in...' : 'Log in'}
           </button>
           {signedUpId ? (
-            <p className="page-link">회원가입이 완료됐어요. 이제 로그인해 주세요.</p>
+            <p className="auth-link">회원가입이 완료됐어요. 이제 로그인해 주세요.</p>
           ) : null}
-          <p className="page-link">
-            아직 계정이 없나요? <Link to="/signup">회원가입</Link>
+          <p className="auth-link">
+            아직 계정이 없나요? <Link className="text-link" to="/signup">회원가입</Link>
           </p>
         </form>
       </section>

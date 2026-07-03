@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import axios from 'axios'
-import '../App.css'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
@@ -16,7 +15,6 @@ function SignupPage() {
   const [form, setForm] = useState(initialForm)
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle')
-  const [userId, setUserId] = useState('')
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -39,7 +37,6 @@ function SignupPage() {
 
       setStatus('success')
       const signedUpId = response.data?.user?.id ?? form.id
-      setUserId(signedUpId)
       setMessage(response.data?.message ?? 'signup success')
       setForm(initialForm)
       navigate('/login', {
@@ -58,14 +55,16 @@ function SignupPage() {
   }
 
   return (
-    <main className="app-shell">
-      <section className="hero-panel">
-        <form className="signup-card" onSubmit={handleSubmit}>
-          <p className="page-link">
-            이미 계정이 있나요? <Link to="/login">로그인</Link>
-          </p>
+    <main className="page-shell page-shell-narrow auth-page">
+      <header className="page-header">
+        <div>
+          <h1>계정 만들기</h1>
+        </div>
+      </header>
 
-          <label>
+      <section className="page-content">
+        <form className="auth-card panel" onSubmit={handleSubmit}>
+          <label className="form-field">
             <span>ID</span>
             <input
               name="id"
@@ -77,7 +76,7 @@ function SignupPage() {
             />
           </label>
 
-          <label>
+          <label className="form-field">
             <span>Password</span>
             <input
               name="password"
@@ -91,9 +90,18 @@ function SignupPage() {
             />
           </label>
 
-          <button type="submit" disabled={status === 'loading'}>
+          {message ? (
+            <p className={`feedback ${status === 'error' ? 'feedback-error' : 'feedback-success'}`}>
+              {message}
+            </p>
+          ) : null}
+
+          <button className="primary-button" type="submit" disabled={status === 'loading'}>
             {status === 'loading' ? 'Signing up...' : 'Sign up'}
           </button>
+          <p className="auth-link">
+            이미 계정이 있나요? <Link className="text-link" to="/login">로그인</Link>
+          </p>
         </form>
       </section>
     </main>

@@ -283,19 +283,19 @@ function ItemRegPage() {
   }
 
   return (
-    <main className="itemreg-page">
-      <section className="itemreg-hero">
-        <h1>아이템 등록 및 리뷰 작성</h1>
-      </section>
+    <main className="page-shell">
+      <header className="page-header">
+        <div>
+          <h1>아이템 등록 및 리뷰 작성</h1>
+        </div>
+      </header>
 
       {message.text ? (
-        <section className={`itemreg-feedback itemreg-feedback-${message.type || 'info'}`}>
-          {message.text}
-        </section>
+        <p className={`feedback feedback-${message.type || 'info'}`}>{message.text}</p>
       ) : null}
 
       <section className="itemreg-stack">
-        <article className="itemreg-panel itemreg-panel-accent">
+        <article className="panel itemreg-panel">
           <div className="itemreg-panel-heading">
             <span>1</span>
             <div>
@@ -305,7 +305,7 @@ function ItemRegPage() {
           </div>
 
           <div className="itemreg-field-grid">
-            <label className="itemreg-field">
+            <label className="form-field">
               <span>상품명</span>
               <input
                 type="text"
@@ -313,7 +313,7 @@ function ItemRegPage() {
                 onChange={(event) => handleFieldChange('name', event.target.value)}
               />
             </label>
-            <label className="itemreg-field">
+            <label className="form-field">
               <span>쇼핑몰명 또는 브랜드명</span>
               <input
                 type="text"
@@ -323,7 +323,7 @@ function ItemRegPage() {
                 }
               />
             </label>
-            <label className="itemreg-field">
+            <label className="form-field">
               <span>대표 이미지 첨부</span>
               <input type="file" accept="image/*" onChange={handleImageFileChange} />
               <small>
@@ -332,7 +332,7 @@ function ItemRegPage() {
                   : '아직 첨부한 대표 이미지가 없습니다.'}
               </small>
             </label>
-            <label className="itemreg-field">
+            <label className="form-field">
               <span>원본 URL</span>
               <input
                 type="url"
@@ -341,7 +341,7 @@ function ItemRegPage() {
                 placeholder="https://..."
               />
             </label>
-            <label className="itemreg-field">
+            <label className="form-field">
               <span>가격</span>
               <input
                 type="text"
@@ -353,7 +353,7 @@ function ItemRegPage() {
           </div>
 
           <div className="itemreg-ai-box">
-            <label className="itemreg-field">
+            <label className="form-field">
               <span>구매 사이트 스크린샷</span>
               <input type="file" accept="image/*" onChange={handleScreenshotChange} />
               <small>
@@ -363,7 +363,7 @@ function ItemRegPage() {
               </small>
             </label>
 
-            <button type="button" className="itemreg-primary" onClick={handleAiFill}>
+            <button type="button" className="secondary-button" onClick={handleAiFill}>
               스크린샷 기준으로 AI 채우기
             </button>
           </div>
@@ -383,7 +383,7 @@ function ItemRegPage() {
           ) : null}
         </article>
 
-        <article className="itemreg-panel">
+        <article className="panel itemreg-panel">
           <div className="itemreg-panel-heading">
             <span>2</span>
             <div>
@@ -453,7 +453,7 @@ function ItemRegPage() {
           </div>
         </article>
 
-        <article className="itemreg-panel">
+        <article className="panel itemreg-panel">
           <div className="itemreg-panel-heading">
             <span>3</span>
             <div>
@@ -462,7 +462,7 @@ function ItemRegPage() {
             </div>
           </div>
 
-          <label className="itemreg-field">
+          <label className="form-field">
             <span>추천 이유</span>
             <input
               type="text"
@@ -472,7 +472,7 @@ function ItemRegPage() {
             />
           </label>
 
-          <label className="itemreg-field">
+          <label className="form-field">
             <span>리뷰 본문</span>
             <textarea
               rows="8"
@@ -493,7 +493,7 @@ function ItemRegPage() {
       <div className="itemreg-action-row">
         <button
           type="button"
-          className="itemreg-primary"
+          className="primary-button"
           onClick={handleSubmit}
           disabled={isSubmitting}
         >
