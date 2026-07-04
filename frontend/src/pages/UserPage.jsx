@@ -71,7 +71,7 @@ function UserPage() {
 
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/reviews/`,
+          buildApiUrl('/reviews/'),
           { params: { author_id: userId } },
         )
 
@@ -91,7 +91,7 @@ function UserPage() {
 
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/items/`,
+          buildApiUrl('/items/'),
           { params: { created_by: userId } },
         )
 
