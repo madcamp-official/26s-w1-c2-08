@@ -9,6 +9,7 @@ import ItemRegPage from './itemreg/ItemRegPage.jsx'
 import ItemPage from './itempage/ItemPage.jsx'
 import ReviewPage from './reviewpage/ReviewPage.jsx'
 import RankingPage from './rank/ranking.jsx'
+import ItemStarPage from './pages/itemstartest.jsx'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
@@ -67,6 +68,7 @@ function App() {
         <Route path="/items/:itemId" element={<ItemPage />} />
         <Route path="/items/:itemId/reviews/:reviewId" element={<ReviewPage />} />
         <Route path="/user/:userId" element={<UserPage />} />
+        <Route path="/teststar" element={<ItemStarPage />} />
       </Routes>
     </>
   )

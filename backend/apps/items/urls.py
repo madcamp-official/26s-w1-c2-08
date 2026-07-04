@@ -10,6 +10,7 @@ from .views import (
     ItemReactionDetailView,
     ItemReactionListCreateView,
     ItemStar,
+    item_star_summary,
 )
 
 urlpatterns = [
@@ -26,4 +27,5 @@ urlpatterns = [
         name="item-reaction-detail",
     ),
     path("<int:item_id>/star/", ItemStar, name="item-start"),
+    path("star-summary/", item_star_summary, name="item-star-summary"),
 ]
