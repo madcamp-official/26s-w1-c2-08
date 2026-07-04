@@ -449,7 +449,12 @@ function ItemPageContent() {
                   <h3>리뷰 목록</h3>
                   <p>좋아요 수에서 싫어요 수를 뺀 점수가 높은 순으로 정렬됩니다.</p>
                 </div>
-                <span className="review-count-chip">{reviews.length}개 리뷰</span>
+                <div className="review-section-utility">
+                  <Link className="primary-button" to={`/items/${itemId}/reviews/new`}>
+                    리뷰 작성
+                  </Link>
+                  <span className="review-count-chip">{reviews.length}개 리뷰</span>
+                </div>
               </div>
 
               {reviewsError ? (
