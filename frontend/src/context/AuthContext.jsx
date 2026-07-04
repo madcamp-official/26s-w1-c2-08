@@ -6,21 +6,26 @@ export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(
     localStorage.getItem('access_token'),
   )
+  const [refreshToken, setRefreshToken] = useState(
+    localStorage.getItem('refresh_token'),
+  )
 
   const login = (access, refresh) => {
     localStorage.setItem('access_token', access)
     localStorage.setItem('refresh_token', refresh)
     setAccessToken(access)
+    setRefreshToken(refresh)
   }
 
   const logout = () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     setAccessToken(null)
+    setRefreshToken(null)
   }
 
   return (
-    <AuthContext.Provider value={{ accessToken, login, logout }}>
+    <AuthContext.Provider value={{ accessToken, refreshToken, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
