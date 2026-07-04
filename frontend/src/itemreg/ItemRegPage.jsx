@@ -62,7 +62,6 @@ function toCandidate(item) {
     brand: item.shop_or_brand_name,
     price: formatPrice(item.price),
     recommendCount: item.recommend_count,
-    notRecommendCount: item.not_recommend_count,
     reason: '현재 DB에 저장된 아이템입니다. 중복 여부를 직접 확인해 주세요.',
   }
 }
@@ -520,9 +519,7 @@ function getStoredUserId() {
                     <p>
                       {candidate.brand} · {candidate.price}
                     </p>
-                    <small>
-                      추천 {candidate.recommendCount} / 비추천 {candidate.notRecommendCount}
-                    </small>
+                    <small>추천 {candidate.recommendCount}</small>
                     <small>{candidate.reason}</small>
                   </div>
                 </label>

@@ -66,17 +66,11 @@ def _parse_category(request):
 
 
 def _ranked_items_queryset(category=None):
-    queryset = (
-        Item.objects.annotate(
-            ranking_score_value=F("recommend_count") - F("not_recommend_count")
-        )
-        .order_by(
-            "-ranking_score_value",
-            "-recommend_count",
-            "not_recommend_count",
-            "-created_at",
-            "id",
-        )
+    queryset = Item.objects.annotate(ranking_score_value=F("recommend_count")).order_by(
+        "-ranking_score_value",
+        "-recommend_count",
+        "-created_at",
+        "id",
     )
     if category is not None:
         queryset = queryset.filter(category=category)
@@ -148,17 +142,10 @@ def item_ranking_detail(request, item_id):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def item_reaction_toggle(request, item_id):
-    requested_reaction = request.data.get("reaction")
-    reaction_aliases = {
-        "recommend": ItemReaction.Reaction.RECOMMEND,
-        "not_recommend": ItemReaction.Reaction.NOT_RECOMMEND,
-        "disrecommend": ItemReaction.Reaction.NOT_RECOMMEND,
-    }
-    normalized_reaction = reaction_aliases.get(requested_reaction)
-
-    if normalized_reaction is None:
+    requested_reaction = request.data.get("reaction", "recommend")
+    if requested_reaction not in {"recommend", None}:
         return Response(
-            {"detail": "reaction은 recommend 또는 not_recommend 중 하나여야 합니다."},
+            {"detail": "reaction은 recommend만 지원합니다."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -169,16 +156,9 @@ def item_reaction_toggle(request, item_id):
         )
 
         if existing_reaction is None:
-            ItemReaction.objects.create(
-                item=item,
-                user=request.user,
-                reaction=normalized_reaction,
-            )
-        elif existing_reaction.reaction == normalized_reaction:
-            existing_reaction.delete()
+            ItemReaction.objects.create(item=item, user=request.user)
         else:
-            existing_reaction.reaction = normalized_reaction
-            existing_reaction.save(update_fields=["reaction", "updated_at"])
+            existing_reaction.delete()
 
         item.refresh_from_db()
 
@@ -201,17 +181,18 @@ class ItemReactionListCreateView(APIView):
         item = get_object_or_404(Item, id=item_id)
         serializer = ItemReactionUpsertSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if not serializer.validated_data.get("is_recommended", True):
+            return Response(
+                {"is_recommended": ["False는 지원하지 않습니다. DELETE를 사용하세요."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user_id = request.data.get("user_id")
         if user_id is None:
             return Response({"user_id": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
 
         user = get_object_or_404(get_user_model(), id=user_id)
-        reaction, created = ItemReaction.objects.update_or_create(
-            item=item,
-            user=user,
-            defaults={"reaction": serializer.validated_data["reaction"]},
-        )
+        reaction, created = ItemReaction.objects.get_or_create(item=item, user=user)
         output = ItemReactionSerializer(reaction)
         return Response(output.data, status=success_status if created else status.HTTP_200_OK)
 
@@ -230,12 +211,13 @@ class ItemReactionDetailView(APIView):
         user = get_object_or_404(get_user_model(), id=user_id)
         serializer = ItemReactionUpsertSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if not serializer.validated_data.get("is_recommended", True):
+            return Response(
+                {"is_recommended": ["False는 지원하지 않습니다. DELETE를 사용하세요."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        reaction, created = ItemReaction.objects.update_or_create(
-            item=item,
-            user=user,
-            defaults={"reaction": serializer.validated_data["reaction"]},
-        )
+        reaction, created = ItemReaction.objects.get_or_create(item=item, user=user)
         output = ItemReactionSerializer(reaction)
         return Response(output.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 

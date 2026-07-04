@@ -19,11 +19,11 @@ def make_test_image_file(name="item.png"):
 class ItemApiTests(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
-            username="tester",
+            id="tester",
             password="secret1234",
         )
         self.other_user = get_user_model().objects.create_user(
-            username="tester2",
+            id="tester2",
             password="secret1234",
         )
         self.item = Item.objects.create(
@@ -38,12 +38,10 @@ class ItemApiTests(APITestCase):
         ItemReaction.objects.create(
             item=self.item,
             user=self.user,
-            reaction=ItemReaction.Reaction.RECOMMEND,
         )
         ItemReaction.objects.create(
             item=self.item,
             user=self.other_user,
-            reaction=ItemReaction.Reaction.NOT_RECOMMEND,
         )
 
     def test_list_items(self):
@@ -70,7 +68,6 @@ class ItemApiTests(APITestCase):
         self.assertEqual(created_item.name, payload["name"])
         self.assertTrue(created_item.image_file.name.startswith("items/"))
         self.assertEqual(response.data["recommend_count"], 0)
-        self.assertEqual(response.data["not_recommend_count"], 0)
         self.assertIn("/media/items/", response.data["image_url"])
 
     def test_update_item(self):
@@ -83,8 +80,7 @@ class ItemApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.item.refresh_from_db()
         self.assertEqual(self.item.price, 30000)
-        self.assertEqual(self.item.recommend_count, 1)
-        self.assertEqual(self.item.not_recommend_count, 1)
+        self.assertEqual(self.item.recommend_count, 2)
 
     def test_delete_item(self):
         response = self.client.delete(reverse("items-detail", args=[self.item.id]))
@@ -106,7 +102,7 @@ class ItemApiTests(APITestCase):
 
     def test_create_item_reaction(self):
         third_user = get_user_model().objects.create_user(
-            username="tester3",
+            id="tester3",
             password="secret1234",
         )
         response = self.client.post(
@@ -117,20 +113,18 @@ class ItemApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.item.refresh_from_db()
-        self.assertEqual(self.item.recommend_count, 2)
-        self.assertEqual(self.item.not_recommend_count, 1)
+        self.assertEqual(self.item.recommend_count, 3)
 
     def test_update_item_reaction_by_user(self):
         response = self.client.put(
             reverse("item-reaction-detail", args=[self.item.id, self.other_user.id]),
-            {"reaction": "recommend"},
+            {"is_recommended": True},
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.item.refresh_from_db()
         self.assertEqual(self.item.recommend_count, 2)
-        self.assertEqual(self.item.not_recommend_count, 0)
 
     def test_delete_item_reaction_by_user(self):
         response = self.client.delete(
@@ -140,7 +134,6 @@ class ItemApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.item.refresh_from_db()
         self.assertEqual(self.item.recommend_count, 1)
-        self.assertEqual(self.item.not_recommend_count, 0)
 
     def test_ranking_endpoint(self):
         Item.objects.create(
@@ -151,14 +144,13 @@ class ItemApiTests(APITestCase):
             shop_or_brand_name="SOUND LAB",
             original_url="https://shop.example.com/products/earbuds",
             recommend_count=4,
-            not_recommend_count=0,
         )
 
         response = self.client.get(reverse("item-ranking"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["results"][0]["name"], "무선 이어폰")
-        self.assertEqual(response.data["results"][0]["rankingScore"], 4)
+        self.assertEqual(response.data["results"][0]["recommendCount"], 4)
 
     def test_categories_endpoint(self):
         response = self.client.get(reverse("item-categories"))
@@ -179,14 +171,14 @@ class ItemApiTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["recommendCount"], 0)
-        self.assertEqual(response.data["userReaction"], None)
+        self.assertEqual(response.data["recommendCount"], 1)
+        self.assertEqual(response.data["isRecommended"], False)
 
         response = self.client.post(
             reverse("item-reaction", args=[self.item.id]),
-            {"reaction": "disrecommend"},
+            {"reaction": "recommend"},
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["disrecommendCount"], 2)
-        self.assertEqual(response.data["userReaction"], "not_recommend")
+        self.assertEqual(response.data["recommendCount"], 2)
+        self.assertEqual(response.data["isRecommended"], True)

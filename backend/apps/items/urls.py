@@ -21,7 +21,7 @@ urlpatterns = [
     path("<int:item_id>/ranking-detail/", item_ranking_detail, name="item-ranking-detail"),
     path("<int:item_id>/reactions/", ItemReactionListCreateView.as_view(), name="item-reactions"),
     path(
-        "<int:item_id>/reactions/<int:user_id>/",
+        "<int:item_id>/reactions/<str:user_id>/",
         ItemReactionDetailView.as_view(),
         name="item-reaction-detail",
     ),

@@ -20,7 +20,7 @@ const FALLBACK_CATEGORIES = [
 ]
 
 function getRankingScore(item) {
-  return item.rankingScore ?? item.recommendCount - item.disrecommendCount
+  return item.recommendCount
 }
 
 function sortRankingItems(items) {
@@ -30,9 +30,6 @@ function sortRankingItems(items) {
 
     const recommendDiff = b.recommendCount - a.recommendCount
     if (recommendDiff !== 0) return recommendDiff
-
-    const disrecommendDiff = a.disrecommendCount - b.disrecommendCount
-    if (disrecommendDiff !== 0) return disrecommendDiff
 
     return a.id - b.id
   })
@@ -123,7 +120,7 @@ function RankingPage() {
       })
 
       if (response.status === 401 || response.status === 403) {
-        throw new Error('로그인 기능이 연결되면 추천과 비추천을 사용할 수 있습니다.')
+        throw new Error('로그인 기능이 연결되면 추천을 사용할 수 있습니다.')
       }
 
       if (!response.ok) {
@@ -247,7 +244,7 @@ function RankingPage() {
                     <div className="item-actions">
                       <button
                         className={
-                          item.userReaction === 'recommend'
+                          item.isRecommended
                             ? 'reaction-button active-positive'
                             : 'reaction-button'
                         }
@@ -257,20 +254,6 @@ function RankingPage() {
                       >
                         <span>+</span>
                         추천 {item.recommendCount}
-                      </button>
-
-                      <button
-                        className={
-                          item.userReaction === 'disrecommend'
-                            ? 'reaction-button active-negative'
-                            : 'reaction-button'
-                        }
-                        type="button"
-                        disabled={pendingReaction === `${item.id}-disrecommend`}
-                        onClick={() => handleReaction(item.id, 'disrecommend')}
-                      >
-                        <span>-</span>
-                        비추천 {item.disrecommendCount}
                       </button>
 
                       {item.productUrl && (

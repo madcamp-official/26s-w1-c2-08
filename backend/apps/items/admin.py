@@ -11,7 +11,6 @@ class ItemAdmin(admin.ModelAdmin):
         "shop_or_brand_name",
         "price",
         "recommend_count",
-        "not_recommend_count",
         "created_by",
         "created_at",
     )
@@ -21,6 +20,6 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(ItemReaction)
 class ItemReactionAdmin(admin.ModelAdmin):
-    list_display = ("id", "item", "user", "reaction", "updated_at")
+    list_display = ("id", "item", "user", "updated_at")
     search_fields = ("item__name", "user__username")
-    list_filter = ("reaction", "updated_at")
+    list_filter = ("updated_at",)

@@ -4,7 +4,7 @@ const FEATURES = [
   {
     index: '01',
     title: '사용자 추천수 랭킹',
-    description: '추천/비추천 반응을 집계해 진짜 쓸만한 아이템만 상위에 노출해요.',
+    description: '사용자 추천 반응을 집계해 진짜 쓸만한 아이템만 상위에 노출해요.',
   },
   {
     index: '02',

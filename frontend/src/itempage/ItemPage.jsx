@@ -123,7 +123,7 @@ function ItemPageContent() {
   const { itemId } = useParams()
   const [item, setItem] = useState(null)
   const [reviews, setReviews] = useState([])
-  const [itemReaction, setItemReaction] = useState(null)
+  const [isItemRecommended, setIsItemRecommended] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [reviewsError, setReviewsError] = useState('')
@@ -197,9 +197,9 @@ function ItemPageContent() {
 
             if (itemReactionResponse.ok) {
               const reactionData = await itemReactionResponse.json()
-              setItemReaction(reactionData.reaction ?? null)
+              setIsItemRecommended(Boolean(reactionData.is_recommended))
             } else if (itemReactionResponse.status === 404) {
-              setItemReaction(null)
+              setIsItemRecommended(false)
             } else {
               setNotice('내 아이템 반응 상태를 불러오지 못했습니다.')
             }
@@ -209,7 +209,7 @@ function ItemPageContent() {
             }
           }
         } else {
-          setItemReaction(null)
+          setIsItemRecommended(false)
         }
       } catch (error) {
         if (!isMounted) {
@@ -249,54 +249,45 @@ function ItemPageContent() {
     }
 
     const itemData = await itemResponse.json()
-    let reactionValue = null
+    let recommended = false
 
     if (reactionResponse) {
       if (reactionResponse.ok) {
         const reactionData = await reactionResponse.json()
-        reactionValue = reactionData.reaction ?? null
+        recommended = Boolean(reactionData.is_recommended)
       } else if (reactionResponse.status !== 404) {
         throw new Error('내 아이템 반응 상태를 새로고침하지 못했습니다.')
       }
     }
 
     setItem(itemData)
-    setItemReaction(reactionValue)
+    setIsItemRecommended(recommended)
   }
 
-  async function handleItemReaction(nextReaction) {
+  async function handleItemReaction() {
     const userId = getStoredUserId()
 
     if (!userId) {
-      setNotice('아이템 추천과 비추천은 로그인 후 사용할 수 있습니다.')
+      setNotice('아이템 추천은 로그인 후 사용할 수 있습니다.')
       return
     }
 
-    setPendingTarget(`item-${nextReaction}`)
+    setPendingTarget('item-recommend')
     setNotice('')
 
     try {
       let response
 
-      if (itemReaction === nextReaction) {
+      if (isItemRecommended) {
         response = await fetch(
           `${API_BASE_URL}/items/${itemId}/reactions/${encodeURIComponent(userId)}/`,
           { method: 'DELETE' },
-        )
-      } else if (itemReaction) {
-        response = await fetch(
-          `${API_BASE_URL}/items/${itemId}/reactions/${encodeURIComponent(userId)}/`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reaction: nextReaction }),
-          },
         )
       } else {
         response = await fetch(`${API_BASE_URL}/items/${itemId}/reactions/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, reaction: nextReaction }),
+          body: JSON.stringify({ user_id: userId, is_recommended: true }),
         })
       }
 
@@ -397,8 +388,8 @@ function ItemPageContent() {
                     <h2>{item.name}</h2>
                   </div>
                   <div className="item-score-panel">
-                    <strong>{item.recommend_count - item.not_recommend_count}</strong>
-                    <span>추천 점수</span>
+                    <strong>{item.recommend_count}</strong>
+                    <span>추천 수</span>
                   </div>
                 </div>
 
@@ -416,10 +407,6 @@ function ItemPageContent() {
                     <dd>{item.recommend_count}</dd>
                   </div>
                   <div>
-                    <dt>비추천</dt>
-                    <dd>{item.not_recommend_count}</dd>
-                  </div>
-                  <div>
                     <dt>리뷰 수</dt>
                     <dd>{reviews.length}</dd>
                   </div>
@@ -432,27 +419,15 @@ function ItemPageContent() {
                 <div className="item-hero-actions">
                   <button
                     className={
-                      itemReaction === 'recommend'
+                      isItemRecommended
                         ? 'reaction-button active-positive'
                         : 'reaction-button'
                     }
                     type="button"
                     disabled={pendingTarget === 'item-recommend'}
-                    onClick={() => handleItemReaction('recommend')}
+                    onClick={() => handleItemReaction()}
                   >
                     추천 {item.recommend_count}
-                  </button>
-                  <button
-                    className={
-                      itemReaction === 'not_recommend'
-                        ? 'reaction-button active-negative'
-                        : 'reaction-button'
-                    }
-                    type="button"
-                    disabled={pendingTarget === 'item-not_recommend'}
-                    onClick={() => handleItemReaction('not_recommend')}
-                  >
-                    비추천 {item.not_recommend_count}
                   </button>
                   {item.original_url && (
                     <a

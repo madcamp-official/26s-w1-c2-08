@@ -73,32 +73,23 @@ class Command(BaseCommand):
         item_map = {item.name: item for item in created_items}
 
         reactions = [
-            ("라벤더 세라마이드 수분크림 80ml", "alice", ItemReaction.Reaction.RECOMMEND),
-            ("라벤더 세라마이드 수분크림 80ml", "bora", ItemReaction.Reaction.RECOMMEND),
-            ("라벤더 세라마이드 수분크림 80ml", "cody", ItemReaction.Reaction.RECOMMEND),
-            ("라벤더 세라마이드 수분크림 80ml", "dana", ItemReaction.Reaction.RECOMMEND),
-            ("라벤더 세라마이드 수분크림 80ml", "eunjin", ItemReaction.Reaction.NOT_RECOMMEND),
-            ("저소음 무선 기계식 키보드", "alice", ItemReaction.Reaction.RECOMMEND),
-            ("저소음 무선 기계식 키보드", "bora", ItemReaction.Reaction.RECOMMEND),
-            ("저소음 무선 기계식 키보드", "felix", ItemReaction.Reaction.RECOMMEND),
-            ("저소음 무선 기계식 키보드", "gayeon", ItemReaction.Reaction.NOT_RECOMMEND),
-            ("스테인리스 진공 텀블러 600ml", "cody", ItemReaction.Reaction.RECOMMEND),
-            ("스테인리스 진공 텀블러 600ml", "dana", ItemReaction.Reaction.RECOMMEND),
-            ("스테인리스 진공 텀블러 600ml", "eunjin", ItemReaction.Reaction.RECOMMEND),
-            ("스테인리스 진공 텀블러 600ml", "felix", ItemReaction.Reaction.NOT_RECOMMEND),
-            ("목 허리 분리형 메모리폼 쿠션", "alice", ItemReaction.Reaction.RECOMMEND),
-            ("목 허리 분리형 메모리폼 쿠션", "bora", ItemReaction.Reaction.NOT_RECOMMEND),
-            ("목 허리 분리형 메모리폼 쿠션", "cody", ItemReaction.Reaction.NOT_RECOMMEND),
+            ("라벤더 세라마이드 수분크림 80ml", "alice"),
+            ("라벤더 세라마이드 수분크림 80ml", "bora"),
+            ("라벤더 세라마이드 수분크림 80ml", "cody"),
+            ("라벤더 세라마이드 수분크림 80ml", "dana"),
+            ("저소음 무선 기계식 키보드", "alice"),
+            ("저소음 무선 기계식 키보드", "bora"),
+            ("저소음 무선 기계식 키보드", "felix"),
+            ("스테인리스 진공 텀블러 600ml", "cody"),
+            ("스테인리스 진공 텀블러 600ml", "dana"),
+            ("스테인리스 진공 텀블러 600ml", "eunjin"),
+            ("목 허리 분리형 메모리폼 쿠션", "alice"),
         ]
 
-        for item_name, username, reaction_type in reactions:
-            ItemReaction.objects.create(
-                item=item_map[item_name],
-                user=user_map[username],
-                reaction=reaction_type,
-            )
+        for item_name, username in reactions:
+            ItemReaction.objects.create(item=item_map[item_name], user=user_map[username])
 
         for item in created_items:
             item.refresh_from_db()
 
-        self.stdout.write(self.style.SUCCESS("Seeded 4 items and 16 item reactions."))
+        self.stdout.write(self.style.SUCCESS("Seeded 4 items and 11 item recommendations."))
