@@ -119,7 +119,7 @@ function UserPage() {
   }, [accessToken])
 
   return (
-    <main className="page-shell page-shell-narrow">
+    <main className="page-shell">
       <section className="page-content">
         {status === 'loading' && (
           <p className="state-text">불러오는 중...</p>
@@ -133,128 +133,100 @@ function UserPage() {
 
         {status === 'success' && user && (
           <>
-            <div className="panel user-card">
-              <p className="user-id-value">{user.username}</p>
+            <div className="panel user-profile-header">
+              <p className="user-profile-name">{user.username}</p>
             </div>
 
-            <div
-              className="panel"
-              style={{ marginTop: '24px', padding: '20px' }}
-            >
-              <h2 style={{ marginTop: 0 }}>별표한 아이템</h2>
+            <div className="user-profile-sections">
+              <div className="panel user-profile-section">
+                <h2>별표한 아이템</h2>
 
-              {starStatus === 'loading' && (
-                <p className="state-text">불러오는 중...</p>
-              )}
+                {starStatus === 'loading' && (
+                  <p className="state-text">불러오는 중...</p>
+                )}
 
-              {starStatus === 'error' && (
-                <p className="feedback feedback-error">
-                  별표 목록을 불러오는 중 오류가 발생했습니다.
-                </p>
-              )}
+                {starStatus === 'error' && (
+                  <p className="feedback feedback-error">
+                    별표 목록을 불러오는 중 오류가 발생했습니다.
+                  </p>
+                )}
 
-              {starStatus === 'success' && starredItems.length === 0 && (
-                <p className="state-text">아직 별표한 아이템이 없습니다.</p>
-              )}
+                {starStatus === 'success' && starredItems.length === 0 && (
+                  <p className="state-text">아직 별표한 아이템이 없습니다.</p>
+                )}
 
-              {starStatus === 'success' && starredItems.length > 0 && (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {starredItems.map((item) => (
-                    <li
-                      key={item.itemId}
-                      style={{
-                        padding: '12px 0',
-                        borderBottom: '1px solid var(--border)',
-                      }}
-                    >
-                      <Link
-                        to={`/items/${item.itemId}`}
-                        className="text-link"
-                      >
-                        {item.itemName}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                {starStatus === 'success' && starredItems.length > 0 && (
+                  <ul className="user-profile-list">
+                    {starredItems.map((item) => (
+                      <li key={item.itemId}>
+                        <Link to={`/items/${item.itemId}`} className="text-link">
+                          {item.itemName}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-            <div
-              className="panel"
-              style={{ marginTop: '24px', padding: '20px' }}
-            >
-              <h2 style={{ marginTop: 0 }}>작성한 리뷰</h2>
+              <div className="panel user-profile-section">
+                <h2>작성한 리뷰</h2>
 
-              {reviewStatus === 'loading' && (
-                <p className="state-text">불러오는 중...</p>
-              )}
+                {reviewStatus === 'loading' && (
+                  <p className="state-text">불러오는 중...</p>
+                )}
 
-              {reviewStatus === 'error' && (
-                <p className="feedback feedback-error">
-                  리뷰 목록을 불러오는 중 오류가 발생했습니다.
-                </p>
-              )}
+                {reviewStatus === 'error' && (
+                  <p className="feedback feedback-error">
+                    리뷰 목록을 불러오는 중 오류가 발생했습니다.
+                  </p>
+                )}
 
-              {reviewStatus === 'success' && reviews.length === 0 && (
-                <p className="state-text">아직 작성한 리뷰가 없습니다.</p>
-              )}
+                {reviewStatus === 'success' && reviews.length === 0 && (
+                  <p className="state-text">아직 작성한 리뷰가 없습니다.</p>
+                )}
 
-              {reviewStatus === 'success' && reviews.length > 0 && (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {reviews.map((review) => (
-                    <li
-                      key={review.id}
-                      style={{
-                        padding: '12px 0',
-                        borderBottom: '1px solid var(--border)',
-                      }}
-                    >
-                      <Link to={`/items/${review.item}/reviews/${review.id}`} className="text-link">
-                        {review.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                {reviewStatus === 'success' && reviews.length > 0 && (
+                  <ul className="user-profile-list">
+                    {reviews.map((review) => (
+                      <li key={review.id}>
+                        <Link to={`/items/${review.item}/reviews/${review.id}`} className="text-link">
+                          {review.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-            <div
-              className="panel"
-              style={{ marginTop: '24px', padding: '20px' }}
-            >
-              <h2 style={{ marginTop: 0 }}>등록한 아이템</h2>
+              <div className="panel user-profile-section">
+                <h2>등록한 아이템</h2>
 
-              {createdItemsStatus === 'loading' && (
-                <p className="state-text">불러오는 중...</p>
-              )}
+                {createdItemsStatus === 'loading' && (
+                  <p className="state-text">불러오는 중...</p>
+                )}
 
-              {createdItemsStatus === 'error' && (
-                <p className="feedback feedback-error">
-                  등록한 아이템 목록을 불러오는 중 오류가 발생했습니다.
-                </p>
-              )}
+                {createdItemsStatus === 'error' && (
+                  <p className="feedback feedback-error">
+                    등록한 아이템 목록을 불러오는 중 오류가 발생했습니다.
+                  </p>
+                )}
 
-              {createdItemsStatus === 'success' && createdItems.length === 0 && (
-                <p className="state-text">아직 등록한 아이템이 없습니다.</p>
-              )}
+                {createdItemsStatus === 'success' && createdItems.length === 0 && (
+                  <p className="state-text">아직 등록한 아이템이 없습니다.</p>
+                )}
 
-              {createdItemsStatus === 'success' && createdItems.length > 0 && (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {createdItems.map((item) => (
-                    <li
-                      key={item.id}
-                      style={{
-                        padding: '12px 0',
-                        borderBottom: '1px solid var(--border)',
-                      }}
-                    >
-                      <Link to={`/items/${item.id}`} className="text-link">
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                {createdItemsStatus === 'success' && createdItems.length > 0 && (
+                  <ul className="user-profile-list">
+                    {createdItems.map((item) => (
+                      <li key={item.id}>
+                        <Link to={`/items/${item.id}`} className="text-link">
+                          {item.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </>
         )}

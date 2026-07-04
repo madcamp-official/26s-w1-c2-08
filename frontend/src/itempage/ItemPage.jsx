@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import LoginPopup from '../components/LoginPopup'
+import ConfirmPopup from '../components/ConfirmPopup'
 import '../rank/ranking.css'
 import './itempage.css'
 
@@ -132,6 +133,7 @@ function ItemPage() {
   const [loginPopupMessage, setLoginPopupMessage] = useState('')
   const [pendingTarget, setPendingTarget] = useState('')
   const [brokenImage, setBrokenImage] = useState(false)
+  const [showRecommendConfirm, setShowRecommendConfirm] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -228,12 +230,17 @@ function ItemPage() {
     setItem(itemData)
   }
 
-  async function handleItemStarToggle() {
+  function handleRecommendClick() {
     if (!accessToken) {
       setLoginPopupMessage('아이템 추천은 로그인 후 사용할 수 있습니다.')
       return
     }
 
+    setShowRecommendConfirm(true)
+  }
+
+  async function handleItemStarToggle() {
+    setShowRecommendConfirm(false)
     setPendingTarget('item-recommend')
     setNotice('')
 
@@ -322,6 +329,17 @@ function ItemPage() {
     <main className="page-shell">
       {notice && <p className="notice">{notice}</p>}
       <LoginPopup message={loginPopupMessage} onClose={() => setLoginPopupMessage('')} />
+      <ConfirmPopup
+        message={
+          showRecommendConfirm
+            ? item?.isStarred
+              ? '추천을 취소하시겠습니까?'
+              : '이 아이템을 추천하겠습니까?'
+            : ''
+        }
+        onConfirm={handleItemStarToggle}
+        onCancel={() => setShowRecommendConfirm(false)}
+      />
 
       <section className="item-page-section">
         {isLoading && <p className="state-text">상세 정보를 불러오는 중입니다.</p>}
@@ -363,7 +381,7 @@ function ItemPage() {
                       }
                       type="button"
                       disabled={pendingTarget === 'item-recommend'}
-                      onClick={() => handleItemStarToggle()}
+                      onClick={() => handleRecommendClick()}
                     >
                       추천하기
                     </button>

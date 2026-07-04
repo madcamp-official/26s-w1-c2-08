@@ -39,7 +39,6 @@ function RankingPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [actionMessage, setActionMessage] = useState('')
-  const [pendingStar, setPendingStar] = useState(null)
   const [brokenImages, setBrokenImages] = useState({})
 
   async function loadCategories() {
@@ -129,54 +128,6 @@ function RankingPage() {
     setActiveCategory(category)
   }
 
-  async function handleStarToggle(itemId) {
-    if (!accessToken) return
-
-    setPendingStar(itemId)
-    setActionMessage('')
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/items/${itemId}/star/`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('로그인이 필요합니다.')
-      }
-
-      if (!response.ok) {
-        throw new Error(await readErrorMessage(response))
-      }
-
-      const wasAdded = response.status === 201 // 201: 추가됨, 200: 취소됨
-
-      setItems((currentItems) =>
-        sortRankingItems(
-          currentItems.map((item) =>
-            item.id === itemId
-              ? {
-                  ...item,
-                  isStarred: wasAdded,
-                  starCount: wasAdded
-                    ? (item.starCount ?? 0) + 1
-                    : Math.max((item.starCount ?? 1) - 1, 0),
-                }
-              : item,
-          ),
-        ),
-      )
-    } catch (error) {
-      setActionMessage(
-        error instanceof Error ? error.message : '별표를 저장하지 못했습니다.',
-      )
-    } finally {
-      setPendingStar(null)
-    }
-  }
-
   return (
     <main className="page-shell ranking-page">
       <div className="category-filter" aria-label="카테고리 필터">
@@ -220,7 +171,6 @@ function RankingPage() {
             {items.map((item, index) => {
               const hasImage = item.imageUrl && !brokenImages[item.id]
               const hasMeta =
-                item.categoryLabel ||
                 item.brandOrShopName ||
                 item.priceText ||
                 (item.externalReviewCount !== null &&
@@ -264,33 +214,14 @@ function RankingPage() {
                     <div className="item-heading">
                       <h2 className="ranking-item-link">{item.name}</h2>
 
-                      {accessToken ? (
-                        <button
-                          className={
-                            item.isStarred
-                              ? 'star-button star-button-active'
-                              : 'star-button'
-                          }
-                          type="button"
-                          disabled={pendingStar === item.id}
-                          onClick={() => handleStarToggle(item.id)}
-                          aria-pressed={Boolean(item.isStarred)}
-                          aria-label={item.isStarred ? '별표 취소' : '별표 추가'}
-                        >
-                          <span className="star-icon">★</span>
-                          <span className="star-count">{item.starCount ?? 0}</span>
-                        </button>
-                      ) : (
-                        <span className="reaction-count-text">
-                          <span className="star-icon">★</span>
-                          {item.starCount ?? 0}
-                        </span>
-                      )}
+                      <span className="reaction-count-text">
+                        <span className="star-icon">★</span>
+                        {item.starCount ?? 0}
+                      </span>
                     </div>
 
                     {hasMeta && (
                       <div className="item-meta">
-                        {item.categoryLabel && <span>{item.categoryLabel}</span>}
                         {item.brandOrShopName && <span>{item.brandOrShopName}</span>}
                         {item.priceText && <span>{item.priceText}</span>}
                         {item.externalReviewCount !== null &&

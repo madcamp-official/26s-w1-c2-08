@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import LoginPopup from '../components/LoginPopup'
+import ConfirmPopup from '../components/ConfirmPopup'
 import '../rank/ranking.css'
 import '../itempage/itempage.css'
 import './reviewpage.css'
@@ -80,6 +81,7 @@ function ReviewPageContent() {
   const [loginPopupMessage, setLoginPopupMessage] = useState('')
   const [pendingTarget, setPendingTarget] = useState('')
   const [brokenImage, setBrokenImage] = useState(false)
+  const [showCommentConfirm, setShowCommentConfirm] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -221,7 +223,7 @@ function ReviewPageContent() {
     }
   }
 
-  async function handleCreateComment(event) {
+  function handleCommentFormSubmit(event) {
     event.preventDefault()
 
     if (!accessToken || !currentUserId) {
@@ -229,11 +231,18 @@ function ReviewPageContent() {
       return
     }
 
-    const content = commentForm.content.trim()
-    if (!content) {
+    if (!commentForm.content.trim()) {
       setNotice('댓글 내용을 입력해 주세요.')
       return
     }
+
+    setShowCommentConfirm(true)
+  }
+
+  async function handleCreateComment() {
+    setShowCommentConfirm(false)
+
+    const content = commentForm.content.trim()
 
     setPendingTarget('comment-create')
     setNotice('')
@@ -403,6 +412,11 @@ function ReviewPageContent() {
 
       {notice && <p className="notice">{notice}</p>}
       <LoginPopup message={loginPopupMessage} onClose={() => setLoginPopupMessage('')} />
+      <ConfirmPopup
+        message={showCommentConfirm ? '댓글을 등록하시겠습니까?' : ''}
+        onConfirm={handleCreateComment}
+        onCancel={() => setShowCommentConfirm(false)}
+      />
 
       <section className="item-page-section">
         {isLoading && <p className="state-text">리뷰와 댓글을 불러오는 중입니다.</p>}
@@ -492,14 +506,14 @@ function ReviewPageContent() {
                 <span className="review-count-chip">{comments.length}개 댓글</span>
               </div>
 
-              <form className="comment-composer" onSubmit={handleCreateComment}>
+              <form className="comment-composer" onSubmit={handleCommentFormSubmit}>
                 <label className="comment-composer-field">
                   <span>댓글 작성</span>
                   <textarea
                     value={commentForm.content}
                     onChange={handleCommentFormChange}
                     placeholder="이 리뷰에 대한 의견을 남겨보세요."
-                    rows={4}
+                    rows={2}
                   />
                 </label>
                 <div className="comment-composer-actions">
@@ -563,7 +577,7 @@ function ReviewPageContent() {
                             <textarea
                               value={editingContent}
                               onChange={(event) => setEditingContent(event.target.value)}
-                              rows={4}
+                              rows={2}
                             />
                             <div className="comment-edit-actions">
                               <button

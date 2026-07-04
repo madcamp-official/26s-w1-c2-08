@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import ConfirmPopup from '../components/ConfirmPopup'
 import './itemreg.css'
 
 const API_BASE_URL =
@@ -90,6 +91,7 @@ function ItemRegPage() {
   const [message, setMessage] = useState(emptyMessage)
   const [createdItem, setCreatedItem] = useState(null)
   const [createdReview, setCreatedReview] = useState(null)
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   const isExistingItemMode = selectedType === 'existing'
 
   const submitLabel = useMemo(() => {
@@ -262,7 +264,17 @@ function ItemRegPage() {
     return data
   }
 
+  function handleSubmitClick() {
+    if (selectedType === 'new') {
+      setShowSubmitConfirm(true)
+      return
+    }
+
+    handleSubmit()
+  }
+
   async function handleSubmit() {
+    setShowSubmitConfirm(false)
     setMessage(emptyMessage)
     setCreatedReview(null)
 
@@ -370,6 +382,12 @@ function ItemRegPage() {
       {message.text ? (
         <p className={`feedback feedback-${message.type || 'info'}`}>{message.text}</p>
       ) : null}
+
+      <ConfirmPopup
+        message={showSubmitConfirm ? '새 아이템을 등록하시겠습니까?' : ''}
+        onConfirm={handleSubmit}
+        onCancel={() => setShowSubmitConfirm(false)}
+      />
 
       <section className="itemreg-stack">
         <article className="panel itemreg-panel">
@@ -595,7 +613,7 @@ function ItemRegPage() {
         <button
           type="button"
           className="primary-button"
-          onClick={handleSubmit}
+          onClick={handleSubmitClick}
           disabled={isSubmitting}
         >
           {submitLabel}

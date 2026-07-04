@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import LoginPopup from '../components/LoginPopup'
+import ConfirmPopup from '../components/ConfirmPopup'
 import '../rank/ranking.css'
 import '../itempage/itempage.css'
 import '../reviewpage/reviewpage.css'
@@ -85,6 +86,7 @@ function ReviewCreatePage() {
   const [loginPopupMessage, setLoginPopupMessage] = useState('')
   const [pendingTarget, setPendingTarget] = useState('')
   const [brokenImage, setBrokenImage] = useState(false)
+  const [createdReviewId, setCreatedReviewId] = useState(null)
 
   useEffect(() => {
     if (!accessToken || !userId) {
@@ -194,7 +196,7 @@ function ReviewCreatePage() {
       }
 
       const createdReview = await response.json()
-      navigate(`/items/${itemId}/reviews/${createdReview.id}`, { replace: true })
+      setCreatedReviewId(createdReview.id)
     } catch (error) {
       setNotice(error instanceof Error ? error.message : '리뷰를 저장하지 못했습니다.')
     } finally {
@@ -212,6 +214,12 @@ function ReviewCreatePage() {
 
       {notice && <p className="notice">{notice}</p>}
       <LoginPopup message={loginPopupMessage} onClose={() => setLoginPopupMessage('')} />
+      <ConfirmPopup
+        message={createdReviewId ? '리뷰가 등록되었습니다.' : ''}
+        onConfirm={() =>
+          navigate(`/items/${itemId}/reviews/${createdReviewId}`, { replace: true })
+        }
+      />
 
       <section className="item-page-section">
         {isLoading && <p className="state-text">아이템 정보를 불러오는 중입니다.</p>}
