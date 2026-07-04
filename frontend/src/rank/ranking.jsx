@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { FALLBACK_CATEGORIES } from '../constants/categories'
-import '../rank/ranking.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
 
@@ -41,6 +40,7 @@ function RankingPage() {
   const [actionMessage, setActionMessage] = useState('')
   const [pendingStar, setPendingStar] = useState(null)
   const [brokenImages, setBrokenImages] = useState({})
+  const [searchTerm, setSearchTerm] = useState('')
 
   async function loadCategories() {
     try {
@@ -177,6 +177,11 @@ function RankingPage() {
     }
   }
 
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
+  const visibleItems = normalizedSearchTerm
+    ? items.filter((item) => item.name.toLowerCase().includes(normalizedSearchTerm))
+    : items
+
   return (
     <main className="page-shell ranking-page">
       <div className="category-filter" aria-label="카테고리 필터">
@@ -194,6 +199,17 @@ function RankingPage() {
             {category.label}
           </button>
         ))}
+      </div>
+
+      <div className="search-bar" style={{ margin: '16px 0' }}>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="아이템 이름으로 검색"
+          aria-label="아이템 이름 검색"
+          style={{ width: '100%', padding: '10px 12px' }}
+        />
       </div>
 
       {actionMessage && <p className="notice">{actionMessage}</p>}
@@ -215,9 +231,16 @@ function RankingPage() {
           </div>
         )}
 
-        {!isLoading && !errorMessage && items.length > 0 && (
+        {!isLoading && !errorMessage && items.length > 0 && visibleItems.length === 0 && (
+          <div className="empty-state">
+            <strong>검색 결과가 없습니다.</strong>
+            <p>'{searchTerm}'에 해당하는 아이템을 찾을 수 없습니다.</p>
+          </div>
+        )}
+
+        {!isLoading && !errorMessage && visibleItems.length > 0 && (
           <ol className="ranking-list">
-            {items.map((item, index) => {
+            {visibleItems.map((item, index) => {
               const hasImage = item.imageUrl && !brokenImages[item.id]
               const hasMeta =
                 item.categoryLabel ||
