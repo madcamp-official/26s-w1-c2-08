@@ -461,7 +461,7 @@ function ReviewPageContent() {
                     onClick={() => handleReviewReaction('like')}
                     aria-pressed={review.user_reaction === 'like'}
                   >
-                    <span className="like-icon">♥</span>
+                    <span className="like-icon">♥︎</span>
                     {review.like_count}
                   </button>
                   <button
@@ -597,7 +597,7 @@ function ReviewPageContent() {
                               onClick={() => handleCommentReaction(comment.id, 'like')}
                               aria-pressed={comment.user_reaction === 'like'}
                             >
-                              <span className="like-icon">♥</span>
+                              <span className="like-icon">♥︎</span>
                               {comment.like_count}
                             </button>
                             <button

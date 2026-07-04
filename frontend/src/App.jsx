@@ -46,12 +46,22 @@ function App() {
             height="20"
             aria-hidden="true"
           >
-            <path
-              d="M4 20L13 11"
+            <circle
+              cx="8"
+              cy="13"
+              r="5"
+              stroke="currentColor"
+              strokeWidth="2"
+              fill="none"
+            />
+            <line
+              x1="11.5"
+              y1="16.5"
+              x2="16"
+              y2="21"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
-              fill="none"
             />
             <path
               d="M17 2L18.5 5.5L22 7L18.5 8.5L17 12L15.5 8.5L12 7L15.5 5.5Z"

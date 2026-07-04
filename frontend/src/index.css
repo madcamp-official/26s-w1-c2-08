@@ -33,6 +33,7 @@
   --shadow-soft: 0 8px 24px rgba(20, 20, 20, 0.06);
   --sans: 'Pretendard Variable', 'Pretendard', system-ui, 'Segoe UI', Roboto, sans-serif;
   --script: 'Orbit', var(--sans);
+  --handwritten: 'Caveat', cursive;
 
   color: var(--text);
   background: var(--bg);
@@ -285,6 +286,14 @@ select:focus-visible {
   line-height: 1.16;
 }
 
+.page-header h3 {
+  margin: 0;
+  color: var(--text-strong);
+  font-family: var(--script);
+  font-size: 26px;
+  line-height: 1.16;
+}
+
 .page-content {
   margin-top: 20px;
 }
@@ -473,10 +482,12 @@ select:focus-visible {
   margin: 0;
   max-width: 780px;
   color: var(--text-strong);
+  font-family: var(--script);
   font-size: clamp(36px, 6vw, 60px);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.02em;
+  word-spacing: -0.3em;
   word-break: keep-all;
 }
 
@@ -590,8 +601,10 @@ select:focus-visible {
 .home-section-header h2 {
   margin: 6px 0 0;
   color: var(--text-strong);
+  font-family: var(--script);
   font-size: clamp(22px, 3vw, 28px);
   letter-spacing: -0.01em;
+  word-spacing: -0.3em;
 }
 
 .home-features {

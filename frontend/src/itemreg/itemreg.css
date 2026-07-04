@@ -31,13 +31,13 @@
 .itemreg-panel-heading span {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  min-width: 36px;
   flex-shrink: 0;
-  border-radius: 999px;
-  background: var(--rank-bg);
-  color: var(--rank-text);
-  font-weight: 800;
+  font-family: var(--handwritten);
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--price);
+  line-height: 1;
 }
 
 .itemreg-panel-heading h2 {

@@ -350,7 +350,7 @@ function ItemRegPage() {
     <main className="page-shell">
       <header className="page-header">
         <div>
-          <h3>아이템 등록 및 리뷰 작성</h3>
+          <h3>추천템 등록하기</h3>
         </div>
       </header>
 

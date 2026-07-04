@@ -350,45 +350,49 @@ function ItemPage() {
                       <p className="item-category-badge">{getCategoryLabel(item.category)}</p>
                       <h2>{item.name}</h2>
                     </div>
-                  <div className="item-score-panel">
-                    <span className="star-icon">★</span>
-                    <strong>{item.starCount ?? 0}</strong>
+                  <div className="item-score-block">
+                    <div className="item-score-panel">
+                      <span className="star-icon">★</span>
+                      <strong>{item.starCount ?? 0}</strong>
+                    </div>
+                    <button
+                      className={
+                        item.isStarred
+                          ? 'reaction-button active-positive'
+                          : 'reaction-button'
+                      }
+                      type="button"
+                      disabled={pendingTarget === 'item-recommend'}
+                      onClick={() => handleItemStarToggle()}
+                    >
+                      추천하기
+                    </button>
                   </div>
                 </div>
 
-                <dl className="item-detail-grid">
-                  <div>
-                    <dt>브랜드/쇼핑몰</dt>
-                    <dd>{item.shop_or_brand_name}</dd>
-                  </div>
-                  <div>
-                    <dt>가격</dt>
-                    <dd>{formatPrice(item.price)}</dd>
-                  </div>
-                </dl>
+                <div className="item-detail-box">
+                  <dl className="item-detail-grid">
+                    <div>
+                      <dt>브랜드/쇼핑몰</dt>
+                      <dd>{item.shop_or_brand_name}</dd>
+                    </div>
+                    <div>
+                      <dt>가격</dt>
+                      <dd>{formatPrice(item.price)}</dd>
+                    </div>
+                  </dl>
 
-                <div className="item-hero-actions">
-                  <button
-                    className={
-                      item.isStarred
-                        ? 'reaction-button active-positive'
-                        : 'reaction-button'
-                    }
-                    type="button"
-                    disabled={pendingTarget === 'item-recommend'}
-                    onClick={() => handleItemStarToggle()}
-                  >
-                    추천하기
-                  </button>
                   {item.original_url && (
-                    <a
-                      className="product-link"
-                      href={item.original_url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      원본 URL 이동
-                    </a>
+                    <div className="item-url-row">
+                      <a
+                        className="product-link"
+                        href={item.original_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        원본 URL로 이동하기
+                      </a>
+                    </div>
                   )}
                 </div>
               </div>
@@ -452,7 +456,7 @@ function ItemPage() {
                             onClick={() => handleReviewReaction(review.id, 'like')}
                             aria-pressed={review.user_reaction === 'like'}
                           >
-                            <span className="like-icon">♥</span>
+                            <span className="like-icon">♥︎</span>
                             {review.like_count}
                           </button>
                           <button
