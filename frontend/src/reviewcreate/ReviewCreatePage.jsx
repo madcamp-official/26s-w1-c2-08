@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import LoginPopup from '../components/LoginPopup'
 import '../rank/ranking.css'
 import '../itempage/itempage.css'
 import '../reviewpage/reviewpage.css'
@@ -81,6 +82,7 @@ function ReviewCreatePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [notice, setNotice] = useState('')
+  const [loginPopupMessage, setLoginPopupMessage] = useState('')
   const [pendingTarget, setPendingTarget] = useState('')
   const [brokenImage, setBrokenImage] = useState(false)
 
@@ -145,7 +147,7 @@ function ReviewCreatePage() {
     event.preventDefault()
 
     if (!accessToken || !userId) {
-      setNotice('리뷰 작성은 로그인 후 사용할 수 있습니다.')
+      setLoginPopupMessage('리뷰 작성은 로그인 후 사용할 수 있습니다.')
       return
     }
 
@@ -209,6 +211,7 @@ function ReviewCreatePage() {
       </div>
 
       {notice && <p className="notice">{notice}</p>}
+      <LoginPopup message={loginPopupMessage} onClose={() => setLoginPopupMessage('')} />
 
       <section className="item-page-section">
         {isLoading && <p className="state-text">아이템 정보를 불러오는 중입니다.</p>}

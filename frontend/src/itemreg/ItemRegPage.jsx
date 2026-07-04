@@ -574,6 +574,13 @@ function ItemRegPage() {
       <div className="itemreg-action-row">
         <button
           type="button"
+          className="secondary-button"
+          onClick={() => navigate(-1)}
+        >
+          뒤로가기
+        </button>
+        <button
+          type="button"
           className="primary-button"
           onClick={handleSubmit}
           disabled={isSubmitting}

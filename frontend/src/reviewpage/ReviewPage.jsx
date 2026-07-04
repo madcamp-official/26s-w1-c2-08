@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import LoginPopup from '../components/LoginPopup'
 import '../rank/ranking.css'
 import '../itempage/itempage.css'
 import './reviewpage.css'
@@ -76,6 +77,7 @@ function ReviewPageContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [notice, setNotice] = useState('')
+  const [loginPopupMessage, setLoginPopupMessage] = useState('')
   const [pendingTarget, setPendingTarget] = useState('')
   const [brokenImage, setBrokenImage] = useState(false)
 
@@ -189,7 +191,7 @@ function ReviewPageContent() {
 
   async function handleReviewReaction(reaction) {
     if (!accessToken || !currentUserId) {
-      setNotice('리뷰 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
+      setLoginPopupMessage('리뷰 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
       return
     }
 
@@ -223,7 +225,7 @@ function ReviewPageContent() {
     event.preventDefault()
 
     if (!accessToken || !currentUserId) {
-      setNotice('댓글 작성은 로그인 후 사용할 수 있습니다.')
+      setLoginPopupMessage('댓글 작성은 로그인 후 사용할 수 있습니다.')
       return
     }
 
@@ -270,7 +272,7 @@ function ReviewPageContent() {
     const content = editingContent.trim()
 
     if (!accessToken || !currentUserId) {
-      setNotice('댓글 수정은 로그인 후 사용할 수 있습니다.')
+      setLoginPopupMessage('댓글 수정은 로그인 후 사용할 수 있습니다.')
       return
     }
 
@@ -312,7 +314,7 @@ function ReviewPageContent() {
 
   async function handleDeleteComment(commentId) {
     if (!accessToken || !currentUserId) {
-      setNotice('댓글 삭제는 로그인 후 사용할 수 있습니다.')
+      setLoginPopupMessage('댓글 삭제는 로그인 후 사용할 수 있습니다.')
       return
     }
 
@@ -355,7 +357,7 @@ function ReviewPageContent() {
 
   async function handleCommentReaction(commentId, reaction) {
     if (!accessToken || !currentUserId) {
-      setNotice('댓글 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
+      setLoginPopupMessage('댓글 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
       return
     }
 
@@ -400,6 +402,7 @@ function ReviewPageContent() {
       </div>
 
       {notice && <p className="notice">{notice}</p>}
+      <LoginPopup message={loginPopupMessage} onClose={() => setLoginPopupMessage('')} />
 
       <section className="item-page-section">
         {isLoading && <p className="state-text">리뷰와 댓글을 불러오는 중입니다.</p>}
@@ -447,36 +450,35 @@ function ReviewPageContent() {
 
               <div className="review-footer">
                 <div className="review-stats">
-                  <span>좋아요 {review.like_count}</span>
-                  <span>싫어요 {review.dislike_count}</span>
-                  <span>댓글 {review.comments_count}</span>
-                </div>
-
-                <div className="review-actions">
                   <button
                     className={
                       review.user_reaction === 'like'
-                        ? 'reaction-button active-positive'
-                        : 'reaction-button'
+                        ? 'like-button like-button-active'
+                        : 'like-button'
                     }
                     type="button"
                     disabled={pendingTarget === 'review-like'}
                     onClick={() => handleReviewReaction('like')}
+                    aria-pressed={review.user_reaction === 'like'}
                   >
-                    좋아요
+                    <span className="like-icon">♥</span>
+                    {review.like_count}
                   </button>
                   <button
                     className={
                       review.user_reaction === 'dislike'
-                        ? 'reaction-button active-negative'
-                        : 'reaction-button'
+                        ? 'dislike-button dislike-button-active'
+                        : 'dislike-button'
                     }
                     type="button"
                     disabled={pendingTarget === 'review-dislike'}
                     onClick={() => handleReviewReaction('dislike')}
+                    aria-pressed={review.user_reaction === 'dislike'}
                   >
-                    싫어요
+                    <span className="dislike-icon">👎</span>
+                    {review.dislike_count}
                   </button>
+                  <span>댓글 {review.comments_count}</span>
                 </div>
               </div>
             </article>
@@ -582,38 +584,37 @@ function ReviewPageContent() {
 
                         <div className="review-footer comment-footer">
                           <div className="review-stats">
-                            <span>좋아요 {comment.like_count}</span>
-                            <span>싫어요 {comment.dislike_count}</span>
-                          </div>
-
-                          <div className="review-actions">
                             <button
                               className={
                                 comment.user_reaction === 'like'
-                                  ? 'reaction-button active-positive'
-                                  : 'reaction-button'
+                                  ? 'like-button like-button-active'
+                                  : 'like-button'
                               }
                               type="button"
                               disabled={
                                 pendingTarget === `comment-reaction-${comment.id}-like`
                               }
                               onClick={() => handleCommentReaction(comment.id, 'like')}
+                              aria-pressed={comment.user_reaction === 'like'}
                             >
-                              좋아요
+                              <span className="like-icon">♥</span>
+                              {comment.like_count}
                             </button>
                             <button
                               className={
                                 comment.user_reaction === 'dislike'
-                                  ? 'reaction-button active-negative'
-                                  : 'reaction-button'
+                                  ? 'dislike-button dislike-button-active'
+                                  : 'dislike-button'
                               }
                               type="button"
                               disabled={
                                 pendingTarget === `comment-reaction-${comment.id}-dislike`
                               }
                               onClick={() => handleCommentReaction(comment.id, 'dislike')}
+                              aria-pressed={comment.user_reaction === 'dislike'}
                             >
-                              싫어요
+                              <span className="dislike-icon">👎</span>
+                              {comment.dislike_count}
                             </button>
                           </div>
                         </div>
