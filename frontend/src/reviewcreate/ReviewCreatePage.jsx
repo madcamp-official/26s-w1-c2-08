@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import '../rank/ranking.css'
 import '../itempage/itempage.css'
 import '../reviewpage/reviewpage.css'
@@ -57,16 +58,6 @@ function normalizeError(data, fallbackMessage) {
   return fallbackMessage
 }
 
-function getStoredUserId() {
-  if (typeof window === 'undefined') {
-    return ''
-  }
-
-  // 추후 localStorage에 숫자형 user id가 저장되면 아래 구현으로 되돌립니다.
-  // return window.localStorage.getItem('ggultem-user-id')?.trim() ?? ''
-  return 1
-}
-
 function formatPrice(value) {
   const numeric = Number(value)
 
@@ -84,6 +75,7 @@ function getCategoryLabel(category) {
 function ReviewCreatePage() {
   const { itemId } = useParams()
   const navigate = useNavigate()
+  const { accessToken, userId, logout } = useAuth()
   const [item, setItem] = useState(null)
   const [reviewForm, setReviewForm] = useState(initialReviewForm)
   const [isLoading, setIsLoading] = useState(true)
@@ -93,6 +85,11 @@ function ReviewCreatePage() {
   const [brokenImage, setBrokenImage] = useState(false)
 
   useEffect(() => {
+    if (!accessToken || !userId) {
+      navigate('/login', { replace: true })
+      return
+    }
+
     let isMounted = true
 
     async function loadItem() {
@@ -135,7 +132,7 @@ function ReviewCreatePage() {
     return () => {
       isMounted = false
     }
-  }, [itemId])
+  }, [accessToken, itemId, navigate, userId])
 
   function handleReviewFormChange(field, value) {
     setReviewForm((current) => ({
@@ -147,8 +144,7 @@ function ReviewCreatePage() {
   async function handleCreateReview(event) {
     event.preventDefault()
 
-    const userId = getStoredUserId()
-    if (!userId) {
+    if (!accessToken || !userId) {
       setNotice('리뷰 작성은 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -172,7 +168,10 @@ function ReviewCreatePage() {
     try {
       const response = await fetch(`${API_BASE_URL}/reviews/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({
           item: Number(itemId),
           user_id: userId,
@@ -180,6 +179,12 @@ function ReviewCreatePage() {
           content,
         }),
       })
+
+      if (response.status === 401 || response.status === 403) {
+        logout()
+        navigate('/login', { replace: true })
+        return
+      }
 
       if (!response.ok) {
         const errorData = await readJson(response)
@@ -197,15 +202,11 @@ function ReviewCreatePage() {
 
   return (
     <main className="app-shell">
-      <header className="app-header review-page-header">
-        <div>
-          <p className="eyebrow">리뷰 작성</p>
-          <h1>아이템 리뷰 등록</h1>
-        </div>
+      <div className="review-page-topbar">
         <Link className="review-back-link" to={`/items/${itemId}`}>
           아이템으로 돌아가기
         </Link>
-      </header>
+      </div>
 
       {notice && <p className="notice">{notice}</p>}
 

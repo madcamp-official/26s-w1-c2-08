@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import './itemreg.css'
 
 const API_BASE_URL =
@@ -67,6 +69,8 @@ function toCandidate(item) {
 }
 
 function ItemRegPage() {
+  const navigate = useNavigate()
+  const { accessToken, userId, logout } = useAuth()
   const [selectedType, setSelectedType] = useState('new')
   const [selectedCandidate, setSelectedCandidate] = useState('')
   const [screenshotName, setScreenshotName] = useState('')
@@ -215,18 +219,8 @@ function ItemRegPage() {
     setSelectedCandidate(selectedItemId ? String(selectedItemId) : candidates[0]?.id ?? '')
   }
 
-function getStoredUserId() {
-  if (typeof window === 'undefined') {
-    return ''
-  }
-
-  return 1
-}
-
   async function createReview(itemId) {
-    const userId = getStoredUserId()
-
-    if (!userId) {
+    if (!accessToken || !userId) {
       throw new Error('리뷰를 저장하려면 먼저 로그인해 주세요.')
     }
 
@@ -242,6 +236,7 @@ function getStoredUserId() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         item: itemId,
@@ -252,6 +247,12 @@ function getStoredUserId() {
     })
 
     const data = await response.json().catch(() => null)
+
+    if (response.status === 401 || response.status === 403) {
+      logout()
+      navigate('/login', { replace: true })
+      throw new Error('로그인이 필요합니다.')
+    }
 
     if (!response.ok) {
       throw new Error(normalizeError(data))

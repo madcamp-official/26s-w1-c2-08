@@ -189,6 +189,12 @@ select:focus-visible {
   padding: 32px 0 56px;
 }
 
+.app-shell {
+  width: min(1160px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 28px 0 56px;
+}
+
 .page-shell-narrow {
   width: min(520px, calc(100% - 32px));
 }
@@ -548,11 +554,13 @@ select:focus-visible {
 
 @media (max-width: 720px) {
   .site-nav,
+  .app-shell,
   .page-shell,
   .page-shell-narrow {
     width: min(100% - 24px, var(--page-max));
   }
 
+  .app-shell,
   .page-shell,
   .page-shell-narrow {
     padding: 20px 0 36px;

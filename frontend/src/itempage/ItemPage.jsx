@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useParams } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import '../rank/ranking.css'
 import './itempage.css'
 
@@ -91,16 +92,6 @@ function normalizeError(data, fallbackMessage) {
   return fallbackMessage
 }
 
-function getStoredUserId() {
-  if (typeof window === 'undefined') {
-    return ''
-  }
-
-  // 추후 localStorage에 숫자형 user id가 저장되면 아래 구현으로 되돌립니다.
-  // return window.localStorage.getItem('ggultem-user-id')?.trim() ?? ''
-  return 1
-}
-
 function formatDate(value) {
   const date = new Date(value)
 
@@ -121,6 +112,7 @@ function getCategoryLabel(category) {
 
 function ItemPageContent() {
   const { itemId } = useParams()
+  const { accessToken, userId } = useAuth()
   const [item, setItem] = useState(null)
   const [reviews, setReviews] = useState([])
   const [isItemRecommended, setIsItemRecommended] = useState(false)
@@ -141,7 +133,6 @@ function ItemPageContent() {
       setNotice('')
 
       try {
-        const userId = getStoredUserId()
         const [itemResponse, initialReviewsResponse] = await Promise.all([
           fetch(`${API_BASE_URL}/items/${itemId}/`),
           fetch(
@@ -236,7 +227,6 @@ function ItemPageContent() {
   }, [itemId])
 
   async function refreshItemAndReaction() {
-    const userId = getStoredUserId()
     const [itemResponse, reactionResponse] = await Promise.all([
       fetch(`${API_BASE_URL}/items/${itemId}/`),
       userId
@@ -265,9 +255,7 @@ function ItemPageContent() {
   }
 
   async function handleItemReaction() {
-    const userId = getStoredUserId()
-
-    if (!userId) {
+    if (!accessToken || !userId) {
       setNotice('아이템 추천은 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -307,9 +295,7 @@ function ItemPageContent() {
   }
 
   async function handleReviewReaction(reviewId, reaction) {
-    const userId = getStoredUserId()
-
-    if (!userId) {
+    if (!accessToken || !userId) {
       setNotice('리뷰 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -349,15 +335,10 @@ function ItemPageContent() {
     }
   }
 
+  const showReviewCreateButton = Boolean(accessToken && userId)
+
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <div>
-          <p className="eyebrow">아이템 상세</p>
-          <h1>아이템 상세 및 리뷰 목록</h1>
-        </div>
-      </header>
-
       {notice && <p className="notice">{notice}</p>}
 
       <section className="item-page-section">
@@ -450,9 +431,11 @@ function ItemPageContent() {
                   <p>좋아요 수에서 싫어요 수를 뺀 점수가 높은 순으로 정렬됩니다.</p>
                 </div>
                 <div className="review-section-utility">
-                  <Link className="primary-button" to={`/items/${itemId}/reviews/new`}>
-                    리뷰 작성
-                  </Link>
+                  {showReviewCreateButton && (
+                    <Link className="primary-button" to={`/items/${itemId}/reviews/new`}>
+                      리뷰 작성
+                    </Link>
+                  )}
                   <span className="review-count-chip">{reviews.length}개 리뷰</span>
                 </div>
               </div>
@@ -547,16 +530,6 @@ function ItemPageContent() {
 function ItemPage() {
   return (
     <>
-      <nav className="top-nav">
-        <Link className="brand-link" to="/">
-          꿀템
-        </Link>
-        <div className="nav-links">
-          <NavLink to="/">홈</NavLink>
-          <NavLink to="/ranking">랭킹</NavLink>
-          <NavLink to="/itemreg">등록</NavLink>
-        </div>
-      </nav>
       <ItemPageContent />
     </>
   )

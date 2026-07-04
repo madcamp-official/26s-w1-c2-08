@@ -84,20 +84,29 @@ class ReviewCommentSerializer(serializers.ModelSerializer):
 
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
-    user_id = serializers.CharField(write_only=True)
+    user_id = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Review
         fields = ("item", "user_id", "title", "content")
 
     def create(self, validated_data):
-        user_id = validated_data.pop("user_id")
-        validated_data["author"] = self._get_user(user_id)
+        validated_data["author"] = self._resolve_author(validated_data.pop("user_id", None))
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
         validated_data.pop("user_id", None)
         return super().update(instance, validated_data)
+
+    def _resolve_author(self, user_id):
+        request = self.context.get("request")
+        if request is not None and request.user.is_authenticated:
+            return request.user
+
+        if not user_id:
+            raise serializers.ValidationError({"user_id": ["This field is required."]})
+
+        return self._get_user(user_id)
 
     def _get_user(self, user_id):
         try:

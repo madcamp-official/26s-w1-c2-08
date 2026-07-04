@@ -44,7 +44,7 @@ function LoginPage() {
       const response = await axios.post(`${API_BASE_URL}/api/accounts/login/`, form)
       const userId = response.data?.user?.id ?? form.id
 
-      login(response.data.access, response.data.refresh)
+      login(response.data.access, response.data.refresh, userId)
 
       setStatus('success')
       navigate(`/user/${encodeURIComponent(userId)}`)

@@ -21,7 +21,10 @@ from .serializers import (
 
 
 def _serializer_context(request):
-    return {"user_id": request.query_params.get("user_id") or request.data.get("user_id")}
+    return {
+        "request": request,
+        "user_id": request.query_params.get("user_id") or request.data.get("user_id"),
+    }
 
 
 def _request_user_id(request):
