@@ -8,6 +8,7 @@ import UserPage from './pages/UserPage'
 import ItemRegPage from './itemreg/ItemRegPage.jsx'
 import ItemPage from './itempage/ItemPage.jsx'
 import ReviewPage from './reviewpage/ReviewPage.jsx'
+import ReviewCreatePage from './reviewcreate/ReviewCreatePage.jsx'
 import RankingPage from './rank/ranking.jsx'
 
 const API_BASE_URL =
@@ -65,6 +66,7 @@ function App() {
         <Route path="/itemreg" element={<ItemRegPage />} />
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/items/:itemId" element={<ItemPage />} />
+        <Route path="/items/:itemId/reviews/new" element={<ReviewCreatePage />} />
         <Route path="/items/:itemId/reviews/:reviewId" element={<ReviewPage />} />
         <Route path="/user/:username" element={<UserPage />} />
       </Routes>
