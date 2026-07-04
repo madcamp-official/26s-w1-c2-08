@@ -6,6 +6,7 @@ from .views import (
     item_ranking_detail,
     ItemDetailView,
     ItemListCreateView,
+    ItemScreenshotExtractView,
     ItemStar,
     item_star_summary,
     item_star_detail,
@@ -14,6 +15,7 @@ from .views import (
 
 urlpatterns = [
     path("", ItemListCreateView.as_view(), name="items-list-create"),
+    path("extract-from-screenshot/", ItemScreenshotExtractView.as_view(), name="items-extract-from-screenshot"),
     path("ranking/", item_ranking, name="item-ranking"),
     path("categories/", item_categories, name="item-categories"),
     path("<int:pk>/", ItemDetailView.as_view(), name="items-detail"),

@@ -12,10 +12,8 @@ import ReviewPage from './reviewpage/ReviewPage.jsx'
 import ReviewCreatePage from './reviewcreate/ReviewCreatePage.jsx'
 import RankingPage from './rank/ranking.jsx'
 import MyPage from './pages/MyPage.jsx'
+import { buildApiUrl } from './lib/api'
 import UserlistPage from './pages/UserlistPage.jsx'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
 function App() {
   const navigate = useNavigate()
@@ -24,7 +22,7 @@ function App() {
   const handleLogout = async () => {
     try {
       await axios.post(
-        `${API_BASE_URL}/api/accounts/logout/`,
+        buildApiUrl('/accounts/logout/'),
         { refresh: refreshToken },
         { headers: { Authorization: `Bearer ${accessToken}` } },
       )

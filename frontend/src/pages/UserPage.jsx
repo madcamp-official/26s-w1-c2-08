@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import axios from 'axios'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
+import { buildApiUrl } from '../lib/api'
 
 function UserPage() {
   const { username } = useParams()
@@ -27,7 +25,7 @@ function UserPage() {
 
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/user/${encodeURIComponent(username)}/`,
+          buildApiUrl(`/user/${encodeURIComponent(username)}/`),
         )
 
         if (!ignore) {
@@ -52,10 +50,10 @@ function UserPage() {
     const fetchStarredItems = async (userId) => {
       setStarStatus('loading')
 
-      try {
-        const response = await axios.get(
-          `${API_BASE_URL}/api/items/users/${userId}/stars/`,
-        )
+    try {
+      const response = await axios.get(
+        buildApiUrl(`/items/users/${userId}/stars/`),
+      )
 
         if (!ignore) {
           setStarredItems(response.data?.results ?? [])

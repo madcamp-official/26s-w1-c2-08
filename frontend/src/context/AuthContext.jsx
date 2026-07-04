@@ -1,10 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import axios from 'axios'
+import { buildApiUrl } from '../lib/api'
 
 const AuthContext = createContext(null)
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
 function decodeTokenPayload(token) {
   if (!token) {
@@ -56,7 +54,7 @@ export function AuthProvider({ children }) {
     let ignore = false
 
     axios
-      .get(`${API_BASE_URL}/api/accounts/me/`, {
+      .get(buildApiUrl('/accounts/me/'), {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
       .then((response) => {

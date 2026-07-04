@@ -4,8 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import LoginPopup from '../components/LoginPopup'
 import '../rank/ranking.css'
 import './itempage.css'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
+import { apiFetch, buildApiUrl } from '../lib/api'
 
 const CATEGORY_LABELS = {
   fashion: '의류/패션',
@@ -144,13 +143,13 @@ function ItemPage() {
 
       try {
         const [itemResponse, initialReviewsResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/items/${itemId}/`, {
+          apiFetch(`/items/${itemId}/`, {
             headers: accessToken
               ? { Authorization: `Bearer ${accessToken}` }
               : {},
           }),
-          fetch(
-            `${API_BASE_URL}/reviews/?item_id=${encodeURIComponent(itemId)}${
+          apiFetch(
+            `${buildApiUrl('/reviews/')}?item_id=${encodeURIComponent(itemId)}${
               userId ? `&user_id=${encodeURIComponent(userId)}` : ''
             }`,
           ),
@@ -172,7 +171,7 @@ function ItemPage() {
         let reviewsFallbackUsed = false
 
         if (!reviewsResponse.ok && userId) {
-          reviewsResponse = await fetch(`${API_BASE_URL}/reviews/?item_id=${encodeURIComponent(itemId)}`)
+          reviewsResponse = await apiFetch(`${buildApiUrl('/reviews/')}?item_id=${encodeURIComponent(itemId)}`)
           reviewsFallbackUsed = reviewsResponse.ok
         }
 
@@ -214,7 +213,7 @@ function ItemPage() {
   }, [itemId, accessToken, userId])
 
   async function refreshItem() {
-    const itemResponse = await fetch(`${API_BASE_URL}/items/${itemId}/`, {
+    const itemResponse = await apiFetch(`/items/${itemId}/`, {
       headers: accessToken
         ? { Authorization: `Bearer ${accessToken}` }
         : {},
@@ -238,7 +237,7 @@ function ItemPage() {
     setNotice('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/items/${itemId}/star/`, {
+      const response = await apiFetch(`/items/${itemId}/star/`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -285,7 +284,7 @@ function ItemPage() {
     setNotice('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}/reaction/`, {
+      const response = await apiFetch(`/reviews/${reviewId}/reaction/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

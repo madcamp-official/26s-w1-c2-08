@@ -1,21 +1,18 @@
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from django.db.models import BooleanField, Count, Exists, OuterRef, Q, Value
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from django.db.models import Count, Exists, OuterRef, BooleanField, Value
 
 from .models import Item, Star, User
 from .serializers import (
     ItemRankingSerializer,
     ItemSerializer,
 )
+from .vision_service import VisionExtractionError, extract_item_info_from_screenshot
 
 
 DEFAULT_RANKING_LIMIT = 20
@@ -125,6 +122,39 @@ class ItemDetailView(generics.RetrieveUpdateDestroyAPIView):
             )
 
         return queryset.annotate(isStarred=Value(False, output_field=BooleanField()))
+
+
+class ItemScreenshotExtractView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        screenshot = request.FILES.get("screenshot")
+        if screenshot is None:
+            return Response(
+                {"detail": "스크린샷 파일을 업로드해 주세요."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = extract_item_info_from_screenshot(screenshot)
+        except VisionExtractionError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(
+            {
+                "name": result["product_name"],
+                "shop_or_brand_name": result["shop_name"],
+                "price": result["price_value"],
+                "price_text": result["price_text"],
+                "cropped_image_url": request.build_absolute_uri(result["cropped_image_url"]),
+                "confidence": result["confidence"],
+                "warnings": result["warnings"],
+            }
+        )
 
 
 @api_view(["GET"])

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { FALLBACK_CATEGORIES } from '../constants/categories'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
+import '../rank/ranking.css'
+import { apiFetch, buildApiUrl } from '../lib/api'
 
 function getRankingScore(item) {
   return item.rankingScore ?? item.starCount ?? 0
@@ -44,7 +44,7 @@ function RankingPage() {
 
   async function loadCategories() {
     try {
-      const response = await fetch(`${API_BASE_URL}/items/categories/`)
+      const response = await apiFetch('/items/categories/')
       if (!response.ok) return
 
       const data = await response.json()
@@ -68,8 +68,8 @@ function RankingPage() {
 
       // 아이템 목록 + star 정보를 동시에 요청
       const [itemsResponse, starResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/items/ranking/${categoryQuery}`),
-        fetch(`${API_BASE_URL}/items/star-summary/`, {
+        apiFetch(`/items/ranking/${categoryQuery}`),
+        apiFetch('/items/star-summary/', {
           headers: accessToken
             ? { Authorization: `Bearer ${accessToken}` }
             : {},
@@ -136,7 +136,7 @@ function RankingPage() {
     setActionMessage('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/items/${itemId}/star/`, {
+      const response = await apiFetch(`/items/${itemId}/star/`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
