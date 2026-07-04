@@ -291,21 +291,4 @@ function RankingPage() {
   )
 }
 
-function RankingPageApp() {
-  return (
-    <>
-      <nav className="top-nav">
-        <Link className="brand-link" to="/">
-          꿀템
-        </Link>
-        <div className="nav-links">
-          <NavLink to="/">홈</NavLink>
-          <NavLink to="/ranking">랭킹</NavLink>
-        </div>
-      </nav>
-      <RankingPage />
-    </>
-  )
-}
-
-export default RankingPageApp
+export default RankingPage

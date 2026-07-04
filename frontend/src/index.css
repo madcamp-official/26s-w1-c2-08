@@ -129,6 +129,22 @@ select:focus-visible {
   color: var(--text-strong);
 }
 
+.nav-logout-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav-logout-button:hover {
+  color: var(--text-strong);
+}
+
 .page-shell {
   width: min(var(--page-max), calc(100% - 32px));
   margin: 0 auto;
