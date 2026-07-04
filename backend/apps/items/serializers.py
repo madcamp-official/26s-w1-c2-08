@@ -4,7 +4,7 @@ from .models import Item, Star
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    created_by_id = serializers.CharField(source="created_by.id", read_only=True)
+    created_by_id = serializers.SerializerMethodField()
     image = serializers.ImageField(source="image_file", write_only=True, required=False, allow_null=True)
     image_url = serializers.SerializerMethodField()
     starCount = serializers.SerializerMethodField()
@@ -34,8 +34,12 @@ class ItemSerializer(serializers.ModelSerializer):
             "isStarred",
             "created_at",
             "updated_at",
+            "created_by",
             "created_by_id",
         )
+
+    def get_created_by_id(self, obj):
+        return obj.created_by_id
 
     def get_image_url(self, obj):
         request = self.context.get("request")

@@ -18,6 +18,9 @@ function UserPage() {
   const [reviews, setReviews] = useState([])
   const [reviewStatus, setReviewStatus] = useState('loading')
 
+  const [createdItems, setCreatedItems] = useState([])
+  const [createdItemsStatus, setCreatedItemsStatus] = useState('loading')
+
   useEffect(() => {
     let ignore = false
 
@@ -60,6 +63,26 @@ function UserPage() {
       }
     }
 
+    const fetchCreatedItems = async (userId) => {
+      setCreatedItemsStatus('loading')
+
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/api/items/`,
+          { params: { created_by: userId } },
+        )
+
+        if (ignore) return
+
+        setCreatedItems(response.data?.results ?? response.data ?? [])
+        setCreatedItemsStatus('success')
+      } catch {
+        if (!ignore) {
+          setCreatedItemsStatus('error')
+        }
+      }
+    }
+
     const fetchUser = async () => {
       setStatus('loading')
 
@@ -80,6 +103,7 @@ function UserPage() {
 
         fetchStarredItems(response.data.id)
         fetchUserReviews(response.data.id)
+        fetchCreatedItems(response.data.id)
       } catch {
         if (!ignore) {
           setStatus('error')
@@ -187,6 +211,45 @@ function UserPage() {
                     >
                       <Link to={`/items/${review.item}/reviews/${review.id}`} className="text-link">
                         {review.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div
+              className="panel"
+              style={{ marginTop: '24px', padding: '20px' }}
+            >
+              <h2 style={{ marginTop: 0 }}>등록한 아이템</h2>
+
+              {createdItemsStatus === 'loading' && (
+                <p className="state-text">불러오는 중...</p>
+              )}
+
+              {createdItemsStatus === 'error' && (
+                <p className="feedback feedback-error">
+                  등록한 아이템 목록을 불러오는 중 오류가 발생했습니다.
+                </p>
+              )}
+
+              {createdItemsStatus === 'success' && createdItems.length === 0 && (
+                <p className="state-text">아직 등록한 아이템이 없습니다.</p>
+              )}
+
+              {createdItemsStatus === 'success' && createdItems.length > 0 && (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {createdItems.map((item) => (
+                    <li
+                      key={item.id}
+                      style={{
+                        padding: '12px 0',
+                        borderBottom: '1px solid var(--border)',
+                      }}
+                    >
+                      <Link to={`/items/${item.id}`} className="text-link">
+                        {item.name}
                       </Link>
                     </li>
                   ))}

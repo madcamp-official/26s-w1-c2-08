@@ -84,11 +84,17 @@ class ItemListCreateView(generics.ListCreateAPIView):
     serializer_class = ItemSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
     def get_queryset(self):
         queryset = Item.objects.all()
         name = self.request.query_params.get("name")
         brand = self.request.query_params.get("shop_or_brand_name")
         original_url = self.request.query_params.get("original_url")
+        created_by = self.request.query_params.get("created_by")
 
         if name:
             queryset = queryset.filter(name__icontains=name)
@@ -98,7 +104,12 @@ class ItemListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(
                 Q(original_url__iexact=original_url) | Q(original_url__icontains=original_url)
             )
+        if created_by:
+            queryset = queryset.filter(created_by_id=created_by)
         return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 
 class ItemDetailView(generics.RetrieveUpdateDestroyAPIView):
