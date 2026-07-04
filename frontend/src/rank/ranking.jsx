@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react'
-<<<<<<< HEAD
-=======
 import { Link, NavLink } from 'react-router-dom'
->>>>>>> fbd6ebd3b5afd882150707b9e79ee3cf74ce7c88
 import './ranking.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
@@ -294,9 +291,6 @@ function RankingPage() {
   )
 }
 
-<<<<<<< HEAD
-export default RankingPage
-=======
 function RankingPageApp() {
   return (
     <>
@@ -315,4 +309,3 @@ function RankingPageApp() {
 }
 
 export default RankingPageApp
->>>>>>> fbd6ebd3b5afd882150707b9e79ee3cf74ce7c88
