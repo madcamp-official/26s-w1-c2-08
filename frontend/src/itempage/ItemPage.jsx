@@ -351,8 +351,8 @@ function ItemPage() {
                       <h2>{item.name}</h2>
                     </div>
                   <div className="item-score-panel">
+                    <span className="star-icon">★</span>
                     <strong>{item.starCount ?? 0}</strong>
-                    <span>추천 수</span>
                   </div>
                 </div>
 
@@ -364,10 +364,6 @@ function ItemPage() {
                   <div>
                     <dt>가격</dt>
                     <dd>{formatPrice(item.price)}</dd>
-                  </div>
-                  <div>
-                    <dt>리뷰 수</dt>
-                    <dd>{reviews.length}</dd>
                   </div>
                 </dl>
 
@@ -382,7 +378,7 @@ function ItemPage() {
                     disabled={pendingTarget === 'item-recommend'}
                     onClick={() => handleItemStarToggle()}
                   >
-                    추천 {item.starCount ?? 0}
+                    추천하기
                   </button>
                   {item.original_url && (
                     <a
@@ -401,7 +397,7 @@ function ItemPage() {
             <section className="review-section">
               <div className="review-section-header">
                 <div>
-                  <h3>리뷰 목록</h3>
+                  <h3>리뷰 목록 ({reviews.length})</h3>
                   <p>좋아요와 싫어요 반응을 기준으로 리뷰가 정렬됩니다.</p>
                 </div>
                 <div className="review-section-utility">
@@ -410,7 +406,6 @@ function ItemPage() {
                       리뷰 작성
                     </Link>
                   )}
-                  <span className="review-count-chip">{reviews.length}개 리뷰</span>
                 </div>
               </div>
 

@@ -262,11 +262,7 @@ function RankingPage() {
 
                   <div className="item-body">
                     <div className="item-heading">
-                      <h2>
-                        <Link className="ranking-item-link" to={`/items/${item.id}`}>
-                          {item.name}
-                        </Link>
-                      </h2>
+                      <h2 className="ranking-item-link">{item.name}</h2>
 
                       {accessToken ? (
                         <button
