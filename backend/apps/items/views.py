@@ -1,23 +1,12 @@
-from django.contrib.auth import get_user_model
-from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import BooleanField, Count, Exists, OuterRef, Q, Value
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from django.db.models import Count, Exists, OuterRef, BooleanField, Value
-
-from .models import Item, ItemReaction, Star
-from .serializers import (
-    ItemRankingSerializer,
-    ItemReactionSerializer,
-    ItemReactionUpsertSerializer,
-    ItemSerializer,
-)
+from rest_framework.response import Response
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from .models import Item, Star
+from .serializers import ItemRankingSerializer, ItemSerializer
 
 
 DEFAULT_RANKING_LIMIT = 20
@@ -68,9 +57,11 @@ def _parse_category(request):
 
 
 def _ranked_items_queryset(category=None):
-    queryset = Item.objects.annotate(ranking_score_value=F("recommend_count")).order_by(
+    queryset = Item.objects.annotate(
+        starCount=Count("star"),
+        ranking_score_value=Count("star"),
+    ).order_by(
         "-ranking_score_value",
-        "-recommend_count",
         "-created_at",
         "id",
     )
@@ -102,9 +93,18 @@ class ItemListCreateView(generics.ListCreateAPIView):
 
 
 class ItemDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Item.objects.all()
     serializer_class = ItemSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        queryset = Item.objects.annotate(starCount=Count("star"))
+
+        if self.request.user.is_authenticated:
+            return queryset.annotate(
+                isStarred=Exists(Star.objects.filter(user=self.request.user, item=OuterRef("pk")))
+            )
+
+        return queryset.annotate(isStarred=Value(False, output_field=BooleanField()))
 
 
 @api_view(["GET"])
@@ -139,94 +139,6 @@ def item_ranking_detail(request, item_id):
     item = get_object_or_404(_ranked_items_queryset(), id=item_id)
     serializer = ItemRankingSerializer(item, context={"request": request})
     return Response(serializer.data)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def item_reaction_toggle(request, item_id):
-    requested_reaction = request.data.get("reaction", "recommend")
-    if requested_reaction not in {"recommend", None}:
-        return Response(
-            {"detail": "reaction은 recommend만 지원합니다."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    with transaction.atomic():
-        item = get_object_or_404(Item.objects.select_for_update(), id=item_id)
-        existing_reaction = (
-            ItemReaction.objects.select_for_update().filter(item=item, user=request.user).first()
-        )
-
-        if existing_reaction is None:
-            ItemReaction.objects.create(item=item, user=request.user)
-        else:
-            existing_reaction.delete()
-
-        item.refresh_from_db()
-
-    ranked_item = get_object_or_404(_ranked_items_queryset(), id=item.id)
-    serializer = ItemRankingSerializer(ranked_item, context={"request": request})
-    return Response(serializer.data)
-
-
-class ItemReactionListCreateView(APIView):
-    def get(self, request, item_id):
-        item = get_object_or_404(Item, id=item_id)
-        reactions = item.reactions.select_related("user")
-        serializer = ItemReactionSerializer(reactions, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, item_id):
-        return self._upsert_reaction(request, item_id, status.HTTP_201_CREATED)
-
-    def _upsert_reaction(self, request, item_id, success_status):
-        item = get_object_or_404(Item, id=item_id)
-        serializer = ItemReactionUpsertSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        if not serializer.validated_data.get("is_recommended", True):
-            return Response(
-                {"is_recommended": ["False는 지원하지 않습니다. DELETE를 사용하세요."]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        user_id = request.data.get("user_id")
-        if user_id is None:
-            return Response({"user_id": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
-
-        user = get_object_or_404(get_user_model(), id=user_id)
-        reaction, created = ItemReaction.objects.get_or_create(item=item, user=user)
-        output = ItemReactionSerializer(reaction)
-        return Response(output.data, status=success_status if created else status.HTTP_200_OK)
-
-
-class ItemReactionDetailView(APIView):
-    def get(self, request, item_id, user_id):
-        reaction = get_object_or_404(
-            ItemReaction.objects.select_related("item", "user"),
-            item_id=item_id,
-            user_id=user_id,
-        )
-        return Response(ItemReactionSerializer(reaction).data)
-
-    def put(self, request, item_id, user_id):
-        item = get_object_or_404(Item, id=item_id)
-        user = get_object_or_404(get_user_model(), id=user_id)
-        serializer = ItemReactionUpsertSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        if not serializer.validated_data.get("is_recommended", True):
-            return Response(
-                {"is_recommended": ["False는 지원하지 않습니다. DELETE를 사용하세요."]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        reaction, created = ItemReaction.objects.get_or_create(item=item, user=user)
-        output = ItemReactionSerializer(reaction)
-        return Response(output.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
-
-    def delete(self, request, item_id, user_id):
-        reaction = get_object_or_404(ItemReaction, item_id=item_id, user_id=user_id)
-        reaction.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(["POST"])
 def ItemStar(request, item_id):

@@ -63,7 +63,7 @@ function toCandidate(item) {
     name: item.name,
     brand: item.shop_or_brand_name,
     price: formatPrice(item.price),
-    recommendCount: item.recommend_count,
+    starCount: item.starCount ?? 0,
     reason: '현재 DB에 저장된 아이템입니다. 중복 여부를 직접 확인해 주세요.',
   }
 }
@@ -520,7 +520,7 @@ function ItemRegPage() {
                     <p>
                       {candidate.brand} · {candidate.price}
                     </p>
-                    <small>추천 {candidate.recommendCount}</small>
+                    <small>추천 {candidate.starCount}</small>
                     <small>{candidate.reason}</small>
                   </div>
                 </label>

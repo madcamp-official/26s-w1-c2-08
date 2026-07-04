@@ -54,10 +54,6 @@ function formatDateTime(value) {
   }).format(date)
 }
 
-function getReviewScore(review) {
-  return review.like_count - review.dislike_count
-}
-
 function sortComments(comments) {
   return [...comments].sort(
     (left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
@@ -396,7 +392,7 @@ function ReviewPageContent() {
   }
 
   return (
-    <main className="app-shell">
+    <main className="page-shell">
       <div className="review-page-topbar">
         <Link className="review-back-link" to={`/items/${itemId}`}>
           아이템으로 돌아가기
@@ -444,10 +440,6 @@ function ReviewPageContent() {
                     작성자 #{review.author} · {formatDateTime(review.created_at)}
                   </p>
                   <h4>{review.title}</h4>
-                </div>
-                <div className="review-score">
-                  <strong>{getReviewScore(review)}</strong>
-                  <span>점수</span>
                 </div>
               </div>
 
@@ -641,16 +633,6 @@ function ReviewPageContent() {
 function ReviewPage() {
   return (
     <>
-      <nav className="top-nav">
-        <Link className="brand-link" to="/">
-          꿀템
-        </Link>
-        <div className="nav-links">
-          <NavLink to="/">홈</NavLink>
-          <NavLink to="/ranking">랭킹</NavLink>
-          <NavLink to="/itemreg">등록</NavLink>
-        </div>
-      </nav>
       <ReviewPageContent />
     </>
   )

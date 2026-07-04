@@ -238,7 +238,7 @@ function ReviewCreatePage() {
                     <h2>{item.name}</h2>
                   </div>
                   <div className="item-score-panel">
-                    <strong>{item.recommend_count}</strong>
+                    <strong>{item.starCount ?? 0}</strong>
                     <span>추천 수</span>
                   </div>
                 </div>
@@ -254,7 +254,7 @@ function ReviewCreatePage() {
                   </div>
                   <div>
                     <dt>추천</dt>
-                    <dd>{item.recommend_count}</dd>
+                    <dd>{item.starCount ?? 0}</dd>
                   </div>
                   <div>
                     <dt>아이템 ID</dt>

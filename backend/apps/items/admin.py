@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Item, ItemReaction
+from .models import Item, Star
 
 
 @admin.register(Item)
@@ -10,7 +10,6 @@ class ItemAdmin(admin.ModelAdmin):
         "name",
         "shop_or_brand_name",
         "price",
-        "recommend_count",
         "created_by",
         "created_at",
     )
@@ -18,8 +17,7 @@ class ItemAdmin(admin.ModelAdmin):
     list_filter = ("shop_or_brand_name", "created_at")
 
 
-@admin.register(ItemReaction)
-class ItemReactionAdmin(admin.ModelAdmin):
-    list_display = ("id", "item", "user", "updated_at")
+@admin.register(Star)
+class StarAdmin(admin.ModelAdmin):
+    list_display = ("id", "item", "user")
     search_fields = ("item__name", "user__username")
-    list_filter = ("updated_at",)

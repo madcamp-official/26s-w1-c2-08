@@ -7,7 +7,7 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Item, ItemReaction
+from .models import Item, Star
 
 
 def make_test_image_file(name="item.png"):
@@ -35,20 +35,16 @@ class ItemApiTests(APITestCase):
             original_url="https://shop.example.com/products/lavender-cream",
             created_by=self.user,
         )
-        ItemReaction.objects.create(
-            item=self.item,
-            user=self.user,
-        )
-        ItemReaction.objects.create(
-            item=self.item,
-            user=self.other_user,
-        )
+        Star.objects.create(item=self.item, user=self.user)
+        Star.objects.create(item=self.item, user=self.other_user)
 
     def test_list_items(self):
         response = self.client.get(reverse("items-list-create"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data[0]["name"], self.item.name)
+        self.assertEqual(response.data[0]["starCount"], 2)
+        self.assertFalse(response.data[0]["isStarred"])
 
     def test_create_item(self):
         payload = {
@@ -67,7 +63,7 @@ class ItemApiTests(APITestCase):
         created_item = Item.objects.get(original_url=payload["original_url"])
         self.assertEqual(created_item.name, payload["name"])
         self.assertTrue(created_item.image_file.name.startswith("items/"))
-        self.assertEqual(response.data["recommend_count"], 0)
+        self.assertEqual(response.data["starCount"], 0)
         self.assertIn("/media/items/", response.data["image_url"])
 
     def test_update_item(self):
@@ -80,7 +76,15 @@ class ItemApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.item.refresh_from_db()
         self.assertEqual(self.item.price, 30000)
-        self.assertEqual(self.item.recommend_count, 2)
+
+    def test_item_detail_includes_star_summary(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get(reverse("items-detail", args=[self.item.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["starCount"], 2)
+        self.assertTrue(response.data["isStarred"])
 
     def test_delete_item(self):
         response = self.client.delete(reverse("items-detail", args=[self.item.id]))
@@ -94,63 +98,23 @@ class ItemApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
-    def test_list_item_reactions(self):
-        response = self.client.get(reverse("item-reactions", args=[self.item.id]))
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-
-    def test_create_item_reaction(self):
-        third_user = get_user_model().objects.create_user(
-            id="tester3",
-            password="secret1234",
-        )
-        response = self.client.post(
-            reverse("item-reactions", args=[self.item.id]),
-            {"user_id": third_user.id, "reaction": "recommend"},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.item.refresh_from_db()
-        self.assertEqual(self.item.recommend_count, 3)
-
-    def test_update_item_reaction_by_user(self):
-        response = self.client.put(
-            reverse("item-reaction-detail", args=[self.item.id, self.other_user.id]),
-            {"is_recommended": True},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.item.refresh_from_db()
-        self.assertEqual(self.item.recommend_count, 2)
-
-    def test_delete_item_reaction_by_user(self):
-        response = self.client.delete(
-            reverse("item-reaction-detail", args=[self.item.id, self.other_user.id]),
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.item.refresh_from_db()
-        self.assertEqual(self.item.recommend_count, 1)
-
     def test_ranking_endpoint(self):
-        Item.objects.create(
+        ranked_item = Item.objects.create(
             name="무선 이어폰",
             category=Item.Category.ELECTRONICS,
             image_url="https://example.com/earbuds.jpg",
             price=129000,
             shop_or_brand_name="SOUND LAB",
             original_url="https://shop.example.com/products/earbuds",
-            recommend_count=4,
         )
+        Star.objects.create(item=ranked_item, user=self.user)
+        Star.objects.create(item=ranked_item, user=self.other_user)
 
         response = self.client.get(reverse("item-ranking"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["results"][0]["name"], "무선 이어폰")
-        self.assertEqual(response.data["results"][0]["recommendCount"], 4)
+        self.assertEqual(response.data["results"][0]["starCount"], 2)
+        self.assertEqual(response.data["results"][0]["rankingScore"], 2)
 
     def test_categories_endpoint(self):
         response = self.client.get(reverse("item-categories"))
@@ -162,23 +126,27 @@ class ItemApiTests(APITestCase):
             response.data["results"],
         )
 
-    def test_toggle_reaction_endpoint(self):
+    def test_toggle_star_endpoint(self):
         self.client.force_authenticate(user=self.user)
 
         response = self.client.post(
-            reverse("item-reaction", args=[self.item.id]),
-            {"reaction": "recommend"},
-            format="json",
+            reverse("item-start", args=[self.item.id]),
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["recommendCount"], 1)
-        self.assertEqual(response.data["isRecommended"], False)
+        self.assertFalse(Star.objects.filter(item=self.item, user=self.user).exists())
 
         response = self.client.post(
-            reverse("item-reaction", args=[self.item.id]),
-            {"reaction": "recommend"},
-            format="json",
+            reverse("item-start", args=[self.item.id]),
         )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Star.objects.filter(item=self.item, user=self.user).exists())
+
+    def test_star_summary_endpoint(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get(reverse("item-star-summary"))
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["recommendCount"], 2)
-        self.assertEqual(response.data["isRecommended"], True)
+        item_summary = next(result for result in response.data["results"] if result["id"] == self.item.id)
+        self.assertEqual(item_summary["starCount"], 2)
+        self.assertTrue(item_summary["isStarred"])

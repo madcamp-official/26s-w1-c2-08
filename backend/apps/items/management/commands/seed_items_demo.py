@@ -2,18 +2,18 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.items.models import Item, ItemReaction
+from apps.items.models import Item, Star
 
 
 class Command(BaseCommand):
-    help = "Reset item-related demo data and seed example items with reactions."
+    help = "Reset item-related demo data and seed example items with stars."
 
     @transaction.atomic
     def handle(self, *args, **options):
         user_model = get_user_model()
 
         self.stdout.write("Deleting existing item and user data...")
-        ItemReaction.objects.all().delete()
+        Star.objects.all().delete()
         Item.objects.all().delete()
         user_model.objects.exclude(is_superuser=True).delete()
 
@@ -72,7 +72,7 @@ class Command(BaseCommand):
         created_items = list(Item.objects.all().order_by("id"))
         item_map = {item.name: item for item in created_items}
 
-        reactions = [
+        stars = [
             ("라벤더 세라마이드 수분크림 80ml", "alice"),
             ("라벤더 세라마이드 수분크림 80ml", "bora"),
             ("라벤더 세라마이드 수분크림 80ml", "cody"),
@@ -86,10 +86,7 @@ class Command(BaseCommand):
             ("목 허리 분리형 메모리폼 쿠션", "alice"),
         ]
 
-        for item_name, username in reactions:
-            ItemReaction.objects.create(item=item_map[item_name], user=user_map[username])
+        for item_name, username in stars:
+            Star.objects.create(item=item_map[item_name], user=user_map[username])
 
-        for item in created_items:
-            item.refresh_from_db()
-
-        self.stdout.write(self.style.SUCCESS("Seeded 4 items and 11 item recommendations."))
+        self.stdout.write(self.style.SUCCESS("Seeded 4 items and 11 item stars."))
