@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import '../rank/ranking.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
@@ -20,19 +21,13 @@ const FALLBACK_CATEGORIES = [
 ]
 
 function getRankingScore(item) {
-  return item.rankingScore ?? item.recommendCount - item.disrecommendCount
+  return item.rankingScore ?? item.starCount ?? 0
 }
 
 function sortRankingItems(items) {
   return [...items].sort((a, b) => {
     const scoreDiff = getRankingScore(b) - getRankingScore(a)
     if (scoreDiff !== 0) return scoreDiff
-
-    const recommendDiff = b.recommendCount - a.recommendCount
-    if (recommendDiff !== 0) return recommendDiff
-
-    const disrecommendDiff = a.disrecommendCount - b.disrecommendCount
-    if (disrecommendDiff !== 0) return disrecommendDiff
 
     return a.id - b.id
   })
@@ -48,13 +43,14 @@ async function readErrorMessage(response) {
 }
 
 function RankingPage() {
+  const { accessToken } = useAuth()
   const [items, setItems] = useState([])
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [activeCategory, setActiveCategory] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [actionMessage, setActionMessage] = useState('')
-  const [pendingReaction, setPendingReaction] = useState(null)
+  const [pendingStar, setPendingStar] = useState(null)
   const [brokenImages, setBrokenImages] = useState({})
 
   async function loadCategories() {
@@ -80,13 +76,40 @@ function RankingPage() {
         category && category !== 'all'
           ? `?category=${encodeURIComponent(category)}`
           : ''
-      const response = await fetch(`${API_BASE_URL}/items/ranking/${categoryQuery}`)
-      if (!response.ok) {
-        throw new Error(await readErrorMessage(response))
+
+      // 아이템 목록 + star 정보를 동시에 요청
+      const [itemsResponse, starResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/items/ranking/${categoryQuery}`),
+        fetch(`${API_BASE_URL}/items/star-summary/`, {
+          headers: accessToken
+            ? { Authorization: `Bearer ${accessToken}` }
+            : {},
+        }),
+      ])
+
+      if (!itemsResponse.ok) {
+        throw new Error(await readErrorMessage(itemsResponse))
       }
 
-      const data = await response.json()
-      setItems(sortRankingItems(data.results ?? []))
+      const itemsData = await itemsResponse.json()
+      const rawItems = itemsData.results ?? []
+
+      // star API 실패해도 목록 자체는 보여줄 수 있게 별도 처리
+      let starMap = {}
+      if (starResponse.ok) {
+        const starData = await starResponse.json()
+        starMap = Object.fromEntries(
+          (starData.results ?? []).map((s) => [s.id, s]),
+        )
+      }
+
+      const merged = rawItems.map((item) => ({
+        ...item,
+        starCount: starMap[item.id]?.starCount ?? 0,
+        isStarred: starMap[item.id]?.isStarred ?? false,
+      }))
+
+      setItems(sortRankingItems(merged))
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : '랭킹을 불러오지 못했습니다.',
@@ -109,41 +132,51 @@ function RankingPage() {
     setActiveCategory(category)
   }
 
-  async function handleReaction(itemId, reaction) {
-    setPendingReaction(`${itemId}-${reaction}`)
+  async function handleStarToggle(itemId) {
+    if (!accessToken) return
+
+    setPendingStar(itemId)
     setActionMessage('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/items/${itemId}/reaction/`, {
+      const response = await fetch(`${API_BASE_URL}/items/${itemId}/star/`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ reaction }),
       })
 
       if (response.status === 401 || response.status === 403) {
-        throw new Error('로그인 기능이 연결되면 추천과 비추천을 사용할 수 있습니다.')
+        throw new Error('로그인이 필요합니다.')
       }
 
       if (!response.ok) {
         throw new Error(await readErrorMessage(response))
       }
 
-      const updatedItem = await response.json()
+      const wasAdded = response.status === 201 // 201: 추가됨, 200: 취소됨
+
       setItems((currentItems) =>
         sortRankingItems(
           currentItems.map((item) =>
-            item.id === updatedItem.id ? updatedItem : item,
+            item.id === itemId
+              ? {
+                  ...item,
+                  isStarred: wasAdded,
+                  starCount: wasAdded
+                    ? (item.starCount ?? 0) + 1
+                    : Math.max((item.starCount ?? 1) - 1, 0),
+                }
+              : item,
           ),
         ),
       )
     } catch (error) {
       setActionMessage(
-        error instanceof Error ? error.message : '반응을 저장하지 못했습니다.',
+        error instanceof Error ? error.message : '별표를 저장하지 못했습니다.',
       )
     } finally {
-      setPendingReaction(null)
+      setPendingStar(null)
     }
   }
 
@@ -245,33 +278,28 @@ function RankingPage() {
                     )}
 
                     <div className="item-actions">
-                      <button
-                        className={
-                          item.userReaction === 'recommend'
-                            ? 'reaction-button active-positive'
-                            : 'reaction-button'
-                        }
-                        type="button"
-                        disabled={pendingReaction === `${item.id}-recommend`}
-                        onClick={() => handleReaction(item.id, 'recommend')}
-                      >
-                        <span>+</span>
-                        추천 {item.recommendCount}
-                      </button>
-
-                      <button
-                        className={
-                          item.userReaction === 'disrecommend'
-                            ? 'reaction-button active-negative'
-                            : 'reaction-button'
-                        }
-                        type="button"
-                        disabled={pendingReaction === `${item.id}-disrecommend`}
-                        onClick={() => handleReaction(item.id, 'disrecommend')}
-                      >
-                        <span>-</span>
-                        비추천 {item.disrecommendCount}
-                      </button>
+                      {accessToken ? (
+                        <button
+                          className={
+                            item.isStarred
+                              ? 'star-button star-button-active'
+                              : 'star-button'
+                          }
+                          type="button"
+                          disabled={pendingStar === item.id}
+                          onClick={() => handleStarToggle(item.id)}
+                          aria-pressed={Boolean(item.isStarred)}
+                          aria-label={item.isStarred ? '별표 취소' : '별표 추가'}
+                        >
+                          <span className="star-icon">★</span>
+                          {item.starCount ?? 0}
+                        </button>
+                      ) : (
+                        <span className="reaction-count-text">
+                          <span className="star-icon">★</span>
+                          {item.starCount ?? 0}
+                        </span>
+                      )}
 
                       {item.productUrl && (
                         <a

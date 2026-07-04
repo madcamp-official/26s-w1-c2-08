@@ -8,6 +8,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Count, Exists, OuterRef, BooleanField, Value
 
 from .models import Item, ItemReaction, Star
 from .serializers import (
@@ -264,3 +265,25 @@ def ItemStar(request, item_id):
         {"detail": "별이 추가되었습니다."},
         status=status.HTTP_201_CREATED
     )
+
+@api_view(["GET"])
+def item_star_summary(request):
+    user = request.user
+
+    stars = Item.objects.annotate(
+        starCount=Count("star"),
+    )
+
+    if user.is_authenticated:
+        stars = stars.annotate(
+            isStarred=Exists(
+                Star.objects.filter(user=user, item=OuterRef("pk"))
+            )
+        )
+    else:
+        stars = stars.annotate(
+            isStarred=Value(False, output_field=BooleanField())
+        )
+
+    data = stars.values("id", "starCount", "isStarred")
+    return Response({"results": list(data)})
