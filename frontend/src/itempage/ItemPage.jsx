@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import '../rank/ranking.css'
 import './itempage.css'
 
@@ -119,7 +119,7 @@ function getCategoryLabel(category) {
   return CATEGORY_LABELS[category] ?? category ?? '기타'
 }
 
-function ItemPageContent() {
+function ItemPage() {
   const { itemId } = useParams()
   const [item, setItem] = useState(null)
   const [reviews, setReviews] = useState([])
@@ -350,11 +350,10 @@ function ItemPageContent() {
   }
 
   return (
-    <main className="app-shell">
-      <header className="app-header">
+    <main className="page-shell">
+      <header className="page-header item-page-header">
         <div>
-          <p className="eyebrow">아이템 상세</p>
-          <h1>아이템 상세 및 리뷰 목록</h1>
+          <h2>아이템 상세</h2>
         </div>
       </header>
 
@@ -387,10 +386,24 @@ function ItemPageContent() {
                     <p className="item-category-badge">{getCategoryLabel(item.category)}</p>
                     <h2>{item.name}</h2>
                   </div>
-                  <div className="item-score-panel">
+                  <button
+                    type="button"
+                    className={
+                      isItemRecommended
+                        ? 'item-score-panel is-recommended'
+                        : 'item-score-panel'
+                    }
+                    disabled={pendingTarget === 'item-recommend'}
+                    onClick={() => {
+                      if (window.confirm('이 아이템을 추천하시겠습니까?')) {
+                        handleItemReaction()
+                      }
+                    }}
+                    aria-pressed={isItemRecommended}
+                  >
                     <strong>{item.recommend_count}</strong>
-                    <span>추천 수</span>
-                  </div>
+                    <span>추천</span>
+                  </button>
                 </div>
 
                 <dl className="item-detail-grid">
@@ -402,33 +415,9 @@ function ItemPageContent() {
                     <dt>가격</dt>
                     <dd>{formatPrice(item.price)}</dd>
                   </div>
-                  <div>
-                    <dt>추천</dt>
-                    <dd>{item.recommend_count}</dd>
-                  </div>
-                  <div>
-                    <dt>리뷰 수</dt>
-                    <dd>{reviews.length}</dd>
-                  </div>
-                  <div>
-                    <dt>등록 ID</dt>
-                    <dd>#{item.id}</dd>
-                  </div>
                 </dl>
 
                 <div className="item-hero-actions">
-                  <button
-                    className={
-                      isItemRecommended
-                        ? 'reaction-button active-positive'
-                        : 'reaction-button'
-                    }
-                    type="button"
-                    disabled={pendingTarget === 'item-recommend'}
-                    onClick={() => handleItemReaction()}
-                  >
-                    추천 {item.recommend_count}
-                  </button>
                   {item.original_url && (
                     <a
                       className="product-link"
@@ -445,16 +434,7 @@ function ItemPageContent() {
 
             <section className="review-section">
               <div className="review-section-header">
-                <div>
-                  <h3>리뷰 목록</h3>
-                  <p>좋아요 수에서 싫어요 수를 뺀 점수가 높은 순으로 정렬됩니다.</p>
-                </div>
-                <div className="review-section-utility">
-                  <Link className="primary-button" to={`/items/${itemId}/reviews/new`}>
-                    리뷰 작성
-                  </Link>
-                  <span className="review-count-chip">{reviews.length}개 리뷰</span>
-                </div>
+                <h3>리뷰 목록 ({reviews.length})</h3>
               </div>
 
               {reviewsError ? (
@@ -541,24 +521,6 @@ function ItemPageContent() {
         )}
       </section>
     </main>
-  )
-}
-
-function ItemPage() {
-  return (
-    <>
-      <nav className="top-nav">
-        <Link className="brand-link" to="/">
-          꿀템
-        </Link>
-        <div className="nav-links">
-          <NavLink to="/">홈</NavLink>
-          <NavLink to="/ranking">랭킹</NavLink>
-          <NavLink to="/itemreg">등록</NavLink>
-        </div>
-      </nav>
-      <ItemPageContent />
-    </>
   )
 }
 

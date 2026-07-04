@@ -1,24 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { FALLBACK_CATEGORIES } from '../constants/categories'
 import '../rank/ranking.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
-
-const FALLBACK_CATEGORIES = [
-  { value: 'all', label: '전체' },
-  { value: 'fashion', label: '의류/패션' },
-  { value: 'food', label: '식품' },
-  { value: 'beauty', label: '뷰티' },
-  { value: 'electronics', label: '전자제품' },
-  { value: 'appliances', label: '가전제품' },
-  { value: 'living', label: '생활용품' },
-  { value: 'health', label: '건강' },
-  { value: 'sports', label: '스포츠/레저' },
-  { value: 'books_hobby', label: '도서/취미' },
-  { value: 'kids_pets', label: '유아/반려동물' },
-  { value: 'etc', label: '기타' },
-]
 
 function getRankingScore(item) {
   return item.rankingScore ?? item.starCount ?? 0
@@ -44,9 +30,12 @@ async function readErrorMessage(response) {
 
 function RankingPage() {
   const { accessToken } = useAuth()
+  const location = useLocation()
   const [items, setItems] = useState([])
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
-  const [activeCategory, setActiveCategory] = useState('all')
+  const [activeCategory, setActiveCategory] = useState(
+    () => new URLSearchParams(location.search).get('category') ?? 'all',
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [actionMessage, setActionMessage] = useState('')
@@ -127,6 +116,14 @@ function RankingPage() {
     loadRanking(activeCategory)
   }, [activeCategory])
 
+  useEffect(() => {
+    const categoryFromUrl = new URLSearchParams(location.search).get('category')
+    if (categoryFromUrl && categoryFromUrl !== activeCategory) {
+      setActionMessage('')
+      setActiveCategory(categoryFromUrl)
+    }
+  }, [location.search])
+
   function handleCategoryChange(category) {
     setActionMessage('')
     setActiveCategory(category)
@@ -182,12 +179,6 @@ function RankingPage() {
 
   return (
     <main className="page-shell ranking-page">
-      <header className="page-header">
-        <div>
-          <h1>추천 아이템</h1>
-        </div>
-      </header>
-
       <div className="category-filter" aria-label="카테고리 필터">
         {categories.map((category) => (
           <button
@@ -235,9 +226,22 @@ function RankingPage() {
                 (item.externalReviewCount !== null &&
                   item.externalReviewCount !== undefined)
 
+              const rank = index + 1
+              const rankBadgeClass =
+                rank === 1
+                  ? 'rank-badge rank-badge-gold'
+                  : rank === 2
+                    ? 'rank-badge rank-badge-silver'
+                    : rank === 3
+                      ? 'rank-badge rank-badge-bronze'
+                      : 'rank-badge'
+
               return (
                 <li className="ranking-item" key={item.id}>
-                  <div className="rank-badge">{index + 1}</div>
+                  <div className={rankBadgeClass}>
+                    {rank === 1 && <span className="rank-star" aria-hidden="true">★</span>}
+                    {rank}
+                  </div>
 
                   <Link className="item-image" to={`/items/${item.id}`} aria-label={item.name}>
                     {hasImage ? (
@@ -299,17 +303,6 @@ function RankingPage() {
                           <span className="star-icon">★</span>
                           {item.starCount ?? 0}
                         </span>
-                      )}
-
-                      {item.productUrl && (
-                        <a
-                          className="product-link"
-                          href={item.productUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          원본 보기
-                        </a>
                       )}
                     </div>
                   </div>

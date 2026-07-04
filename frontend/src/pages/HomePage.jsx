@@ -25,9 +25,9 @@ function HomePage() {
   return (
     <main className="page-shell">
       <section className="home-hero">
-        <h1>써본 사람만 아는 진짜 꿀템을 한곳에서</h1>
+        <h1 style={{ fontSize: "2rem" }}>써본 사람만 아는 진짜 꿀템을 한곳에서</h1>
         <p className="home-lead">
-          꿀템은 사용자들의 추천을 받아 카테고리별 아이템 순위를 매기는 서비스예요.
+          꿀템은 사용자들의 추천을 받아 카테고리별 아이템 순위를 매기는 서비스예요.<br />
           랭킹에서 검증된 아이템을 둘러보고, 내가 찾은 꿀템도 직접 등록해 보세요.
         </p>
         <div className="home-actions">
@@ -50,7 +50,6 @@ function HomePage() {
 
       <div className="home-section-header">
         <div>
-          <span className="home-eyebrow">Why wishlist</span>
           <h2>사람들의 추천템을 한 눈에</h2>
         </div>
       </div>

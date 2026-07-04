@@ -349,7 +349,7 @@ function getStoredUserId() {
     <main className="page-shell">
       <header className="page-header">
         <div>
-          <h1>아이템 등록 및 리뷰 작성</h1>
+          <h3>아이템 등록 및 리뷰 작성</h3>
         </div>
       </header>
 
@@ -368,14 +368,14 @@ function getStoredUserId() {
           </div>
 
           {isExistingItemMode ? (
-            <p className="itemreg-disabled-note">
+            <p className="feedback feedback-info">
               기존 아이템에 리뷰를 연결하는 중입니다. 상품 정보 입력 없이 바로 리뷰만 저장할 수 있습니다.
             </p>
           ) : null}
 
           <fieldset className={isExistingItemMode ? 'itemreg-disabled-block' : 'itemreg-active-block'} disabled={isExistingItemMode}>
             <div className="itemreg-field-grid">
-              <label className="itemreg-field">
+              <label className="form-field">
                 <span>상품명</span>
                 <input
                   type="text"
@@ -383,7 +383,7 @@ function getStoredUserId() {
                   onChange={(event) => handleFieldChange('name', event.target.value)}
                 />
               </label>
-              <label className="itemreg-field">
+              <label className="form-field">
                 <span>쇼핑몰명 또는 브랜드명</span>
                 <input
                   type="text"
@@ -393,7 +393,7 @@ function getStoredUserId() {
                   }
                 />
               </label>
-              <label className="itemreg-field">
+              <label className="form-field">
                 <span>대표 이미지 첨부</span>
                 <input type="file" accept="image/*" onChange={handleImageFileChange} />
                 <small>
@@ -402,7 +402,7 @@ function getStoredUserId() {
                     : '아직 첨부한 대표 이미지가 없습니다.'}
                 </small>
               </label>
-              <label className="itemreg-field">
+              <label className="form-field">
                 <span>원본 URL</span>
                 <input
                   type="url"
@@ -411,7 +411,7 @@ function getStoredUserId() {
                   placeholder="https://..."
                 />
               </label>
-              <label className="itemreg-field">
+              <label className="form-field">
                 <span>가격</span>
                 <input
                   type="text"
@@ -423,7 +423,7 @@ function getStoredUserId() {
             </div>
 
             <div className="itemreg-ai-box">
-              <label className="itemreg-field">
+              <label className="form-field">
                 <span>구매 사이트 스크린샷</span>
                 <input type="file" accept="image/*" onChange={handleScreenshotChange} />
                 <small>
@@ -433,7 +433,7 @@ function getStoredUserId() {
                 </small>
               </label>
 
-              <button type="button" className="itemreg-primary" onClick={handleAiFill}>
+              <button type="button" className="secondary-button" onClick={handleAiFill}>
                 스크린샷 기준으로 AI 채우기
               </button>
             </div>
@@ -470,7 +470,7 @@ function getStoredUserId() {
           </div>
 
           <div className="itemreg-choice-row">
-            <label>
+            <label className={selectedType === 'new' ? 'is-selected' : ''}>
               <input
                 type="radio"
                 name="item-type"
@@ -480,7 +480,7 @@ function getStoredUserId() {
               />
               새 아이템으로 등록
             </label>
-            <label>
+            <label className={selectedType === 'existing' ? 'is-selected' : ''}>
               <input
                 type="radio"
                 name="item-type"
@@ -537,7 +537,7 @@ function getStoredUserId() {
             </div>
           </div>
 
-          <label className="itemreg-field">
+          <label className="form-field">
             <span>리뷰 제목</span>
             <input
               type="text"
