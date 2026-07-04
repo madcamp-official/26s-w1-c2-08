@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+import traceback
 
 from .models import User
 from .serializers import LoginSerializer, SignupSerializer
@@ -11,7 +12,7 @@ from .serializers import LoginSerializer, SignupSerializer
 
 @api_view(["GET"])
 def index(_request):
-    users = User.objects.values("id")
+    users = User.objects.values("id", "username")
     return Response({"users": list(users)})
 
 
@@ -19,19 +20,25 @@ def index(_request):
 @permission_classes([IsAuthenticated])
 def me(request):
     user = request.user
-    return Response({"id": user.id})
+    return Response({"id": user.id, "username": user.username})
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout(request):
     try:
+        print(request.data)
+
         refresh_token = request.data["refresh"]
         token = RefreshToken(refresh_token)
         token.blacklist()
-    except Exception:
+
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+
         return Response(
-            {"detail": "유효하지 않은 refresh 토큰입니다."},
+            {"detail": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -47,7 +54,7 @@ def signup(request):
     return Response(
         {
             "message": "signup success",
-            "user": {"id": user.id},
+            "user": {"id": user.id, "username": user.username},
         },
         status=status.HTTP_201_CREATED,
     )
@@ -58,13 +65,13 @@ def login(request):
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    user_id = serializer.validated_data["id"]
+    username = serializer.validated_data["username"]
     password = serializer.validated_data["password"]
 
-    user = User.objects.filter(id=user_id).first()
+    user = User.objects.filter(username=username).first()
     if user is None or not check_password(password, user.password):
         return Response(
-            {"detail": "id 또는 password가 올바르지 않습니다."},
+            {"detail": "username 또는 password가 올바르지 않습니다."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -73,7 +80,7 @@ def login(request):
     return Response(
         {
             "message": "login success",
-            "user": {"id": user.id},
+            "user": {"id": user.id, "username": user.username},
             "access": str(refresh.access_token),
             "refresh": str(refresh),
         }

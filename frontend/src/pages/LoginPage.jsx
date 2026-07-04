@@ -7,7 +7,7 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
 const initialForm = {
-  id: '',
+  username: '',
   password: '',
 }
 
@@ -18,7 +18,7 @@ function LoginPage() {
   const [form, setForm] = useState(initialForm)
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle')
-  const signedUpId = location.state?.signedUpId
+  const signedUpUsername = location.state?.signedUpUsername
 
   // 이미 로그인되어 있으면 로그인 페이지 접근 막기
   useEffect(() => {
@@ -42,7 +42,7 @@ function LoginPage() {
 
     try {
       const response = await axios.post(`${API_BASE_URL}/api/accounts/login/`, form)
-      const userId = response.data?.user?.id ?? form.id
+      const username = response.data?.user?.username ?? form.username
 
       login(response.data.access, response.data.refresh)
 
@@ -70,8 +70,8 @@ function LoginPage() {
           <label className="form-field">
             <span>ID</span>
             <input
-              name="id"
-              value={form.id}
+              name="username"
+              value={form.username}
               onChange={handleChange}
               placeholder="example01"
               autoComplete="username"
@@ -97,7 +97,7 @@ function LoginPage() {
           <button className="primary-button" type="submit" disabled={status === 'loading'}>
             {status === 'loading' ? 'Logging in...' : 'Log in'}
           </button>
-          {signedUpId ? (
+          {signedUpUsername ? (
             <p className="auth-link">회원가입이 완료됐어요. 이제 로그인해 주세요.</p>
           ) : null}
           <p className="auth-link">

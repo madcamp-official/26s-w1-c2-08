@@ -6,7 +6,7 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
 function UserPage() {
-  const { userId } = useParams()
+  const { username } = useParams()
   const [user, setUser] = useState(null)
   const [status, setStatus] = useState('loading') // loading | success | not-found | error
 
@@ -21,12 +21,14 @@ function UserPage() {
 
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/user/${encodeURIComponent(userId)}/`,
+          `${API_BASE_URL}/api/user/${encodeURIComponent(username)}/`,
         )
 
         if (!ignore) {
           setUser(response.data)
           setStatus('success')
+
+          fetchStarredItems(response.data.id)
         }
       } catch (error) {
         if (ignore) return
@@ -39,12 +41,12 @@ function UserPage() {
       }
     }
 
-    const fetchStarredItems = async () => {
+    const fetchStarredItems = async (userId) => {
     setStarStatus('loading')
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/items/users/${encodeURIComponent(userId)}/stars/`,
+        `${API_BASE_URL}/api/items/users/${userId}/stars/`,
       )
 
       if (!ignore) {
@@ -59,12 +61,11 @@ function UserPage() {
   }
 
     fetchUser()
-    fetchStarredItems()
 
     return () => {
       ignore = true
     }
-  }, [userId])
+  }, [username])
 
   return (
     <main className="page-shell page-shell-narrow">
@@ -76,7 +77,7 @@ function UserPage() {
         {status === 'not-found' && (
           <div className="empty-state">
             <strong>사용자를 찾을 수 없습니다</strong>
-            <p>'{userId}'에 해당하는 유저가 존재하지 않습니다.</p>
+            <p>'{username}'에 해당하는 유저가 존재하지 않습니다.</p>
           </div>
         )}
 
@@ -89,8 +90,7 @@ function UserPage() {
         {status === 'success' && user && (
           <>
             <div className="panel user-card">
-              <p className="user-id-label">user id</p>
-              <p className="user-id-value">{user.id}</p>
+              <p className="user-id-value">{username}</p>
             </div>
 
             <div className="panel" style={{ marginTop: '24px', padding: '20px' }}>

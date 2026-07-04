@@ -7,7 +7,7 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
 const initialForm = {
-  id: '',
+  username: '',
   password: '',
 }
 
@@ -18,7 +18,6 @@ function SignupPage() {
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle')
 
-  // 이미 로그인되어 있으면 signup 페이지 접근 막기
   useEffect(() => {
     if (accessToken) {
       navigate('/', { replace: true })
@@ -45,13 +44,13 @@ function SignupPage() {
       )
 
       setStatus('success')
-      const signedUpId = response.data?.user?.id ?? form.id
+      const signedUpUsername = response.data?.user?.username ?? form.username
       setMessage(response.data?.message ?? 'signup success')
       setForm(initialForm)
       navigate('/login', {
         replace: true,
         state: {
-          signedUpId,
+          signedUpUsername,
         },
       })
     } catch (error) {
@@ -74,10 +73,10 @@ function SignupPage() {
       <section className="page-content">
         <form className="auth-card panel" onSubmit={handleSubmit}>
           <label className="form-field">
-            <span>ID</span>
+            <span>Username</span>
             <input
-              name="id"
-              value={form.id}
+              name="username"
+              value={form.username}
               onChange={handleChange}
               placeholder="example01"
               autoComplete="username"

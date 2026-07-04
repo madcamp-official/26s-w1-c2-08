@@ -292,8 +292,8 @@ def item_star_detail(request, item_id):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def user_star_list(request, userid):
-    user = get_object_or_404(User, id=userid)
+def user_star_list(request, user_id):
+    user = get_object_or_404(User, id=user_id)
 
     starred_items = Star.objects.filter(user=user).select_related("item")
 

@@ -31,5 +31,5 @@ urlpatterns = [
     path("<int:item_id>/star/", ItemStar, name="item-start"),
     path("star-summary/", item_star_summary, name="item-star-summary"),
     path("<int:item_id>/star-summary/", item_star_detail, name="item-star-detail"),
-    path("users/<str:userid>/stars/", user_star_list, name="user-star-list"),
+    path("users/<int:user_id>/stars/", user_star_list, name="user-star-list"),
 ]

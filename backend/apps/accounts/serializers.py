@@ -9,11 +9,11 @@ class SignupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "password"]
+        fields = ["username", "password"]
 
-    def validate_id(self, value):
-        if User.objects.filter(id=value).exists():
-            raise serializers.ValidationError("이미 존재하는 id입니다.")
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("이미 존재하는 username입니다.")
         return value
 
     def create(self, validated_data):
@@ -22,5 +22,5 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    id = serializers.CharField()
+    username = serializers.CharField()
     password = serializers.CharField(write_only=True)
