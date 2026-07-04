@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
 import './ranking.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
@@ -232,7 +231,7 @@ function RankingPage() {
                       <div className="item-meta">
                         {item.categoryLabel && <span>{item.categoryLabel}</span>}
                         {item.brandOrShopName && <span>{item.brandOrShopName}</span>}
-                        {item.priceText && <span>{item.priceText}</span>}
+                        {item.priceText && <span className="item-price">{item.priceText}</span>}
                         {item.externalReviewCount !== null &&
                           item.externalReviewCount !== undefined && (
                             <span>리뷰 {item.externalReviewCount}</span>
@@ -292,20 +291,7 @@ function RankingPage() {
 }
 
 function RankingPageApp() {
-  return (
-    <>
-      <nav className="top-nav">
-        <Link className="brand-link" to="/">
-          꿀템
-        </Link>
-        <div className="nav-links">
-          <NavLink to="/">홈</NavLink>
-          <NavLink to="/ranking">랭킹</NavLink>
-        </div>
-      </nav>
-      <RankingPage />
-    </>
-  )
+  return <RankingPage />
 }
 
 export default RankingPageApp

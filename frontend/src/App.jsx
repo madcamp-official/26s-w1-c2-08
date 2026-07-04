@@ -34,20 +34,24 @@ function App() {
     <>
       <nav className="site-nav">
         <NavLink className="site-brand" to="/">
-          꿀템
+          wishlist
         </NavLink>
         <div className="site-links">
           <NavLink to="/" end>
-            홈
+            Main
           </NavLink>
-          <NavLink to="/ranking">랭킹</NavLink>
-          <NavLink to="/itemreg">등록</NavLink>
+          <NavLink to="/ranking">Ranking</NavLink>
+          <NavLink to="/itemreg">Add item</NavLink>
+        </div>
+        <div className="site-utility">
           {accessToken ? (
             <button className="nav-logout-button" type="button" onClick={handleLogout}>
-              로그아웃
+              Logout
             </button>
           ) : (
-            <NavLink to="/login">로그인</NavLink>
+            <NavLink className="site-utility-item" to="/login">
+              Login
+            </NavLink>
           )}
         </div>
       </nav>
