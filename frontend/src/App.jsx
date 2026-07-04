@@ -12,6 +12,7 @@ import ReviewPage from './reviewpage/ReviewPage.jsx'
 import ReviewCreatePage from './reviewcreate/ReviewCreatePage.jsx'
 import RankingPage from './rank/ranking.jsx'
 import MyPage from './pages/MyPage.jsx'
+import UserlistPage from './pages/UserlistPage.jsx'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
@@ -106,7 +107,7 @@ function App() {
           )}
           <NavLink
             className="nav-user-icon"
-            to={accessToken && userId ? `/user/me` : '/login'}
+            to={accessToken && userId ? `/me` : '/login'}
             aria-label="내 프로필"
             title="내 프로필"
           >
@@ -130,8 +131,9 @@ function App() {
         <Route path="/items/:itemId" element={<ItemPage />} />
         <Route path="/items/:itemId/reviews/new" element={<ReviewCreatePage />} />
         <Route path="/items/:itemId/reviews/:reviewId" element={<ReviewPage />} />
-        <Route path="/user/me" element={<MyPage />} />
+        <Route path="/me" element={<MyPage />} />
         <Route path="/user/:username" element={<UserPage />} />
+        <Route path="/users" element={<UserlistPage />} />
       </Routes>
     </>
   )

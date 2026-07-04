@@ -266,6 +266,16 @@ function ItemRegPage() {
     setMessage(emptyMessage)
     setCreatedReview(null)
 
+    if (!accessToken || !userId) {
+      setMessage({
+        type: 'error',
+        text: '아이템을 등록하려면 먼저 로그인해 주세요.',
+      })
+      return
+    }
+
+  setIsSubmitting(true)
+
     setIsSubmitting(true)
 
     try {
@@ -316,6 +326,9 @@ function ItemRegPage() {
 
       const itemResponse = await fetch(`${API_BASE_URL}/items/`, {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: formData,
       })
 
