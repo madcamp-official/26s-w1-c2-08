@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from django.db.models import Count, Exists, OuterRef, BooleanField, Value
 
-from .models import Item, ItemReaction, Star
+from .models import Item, ItemReaction, Star, User
 from .serializers import (
     ItemRankingSerializer,
     ItemReactionSerializer,
@@ -271,3 +271,38 @@ def item_star_summary(request):
 
     data = stars.values("id", "starCount", "isStarred")
     return Response({"results": list(data)})
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def item_star_detail(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    user = request.user
+
+    star_count = Star.objects.filter(item=item).count()
+    is_starred = (
+        user.is_authenticated
+        and Star.objects.filter(user=user, item=item).exists()
+    )
+
+    return Response({
+        "id": item.id,
+        "starCount": star_count,
+        "isStarred": is_starred,
+    })
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def user_star_list(request, userid):
+    user = get_object_or_404(User, id=userid)
+
+    starred_items = Star.objects.filter(user=user).select_related("item")
+
+    data = [
+        {
+            "itemId": star.item.id,
+            "itemName": star.item.name,  # 실제 Item 필드명에 맞게 조정
+        }
+        for star in starred_items
+    ]
+
+    return Response({"results": data})

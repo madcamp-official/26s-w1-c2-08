@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import axios from 'axios'
 
 const API_BASE_URL =
@@ -9,6 +9,9 @@ function UserPage() {
   const { userId } = useParams()
   const [user, setUser] = useState(null)
   const [status, setStatus] = useState('loading') // loading | success | not-found | error
+
+  const [starredItems, setStarredItems] = useState([])
+  const [starStatus, setStarStatus] = useState('loading') // loading | success | error
 
   useEffect(() => {
     let ignore = false
@@ -36,7 +39,27 @@ function UserPage() {
       }
     }
 
+    const fetchStarredItems = async () => {
+    setStarStatus('loading')
+
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/items/users/${encodeURIComponent(userId)}/stars/`,
+      )
+
+      if (!ignore) {
+        setStarredItems(response.data?.results ?? [])
+        setStarStatus('success')
+      }
+    } catch (error) {
+      if (!ignore) {
+        setStarStatus('error')
+      }
+    }
+  }
+
     fetchUser()
+    fetchStarredItems()
 
     return () => {
       ignore = true
@@ -64,10 +87,48 @@ function UserPage() {
         )}
 
         {status === 'success' && user && (
-          <div className="panel user-card">
-            <p className="user-id-label">user id</p>
-            <p className="user-id-value">{user.id}</p>
-          </div>
+          <>
+            <div className="panel user-card">
+              <p className="user-id-label">user id</p>
+              <p className="user-id-value">{user.id}</p>
+            </div>
+
+            <div className="panel" style={{ marginTop: '24px', padding: '20px' }}>
+              <h2 style={{ marginTop: 0 }}>별표한 아이템</h2>
+
+              {starStatus === 'loading' && (
+                <p className="state-text">불러오는 중...</p>
+              )}
+
+              {starStatus === 'error' && (
+                <p className="feedback feedback-error">
+                  별표 목록을 불러오는 중 오류가 발생했습니다.
+                </p>
+              )}
+
+              {starStatus === 'success' && starredItems.length === 0 && (
+                <p className="state-text">아직 별표한 아이템이 없습니다.</p>
+              )}
+
+              {starStatus === 'success' && starredItems.length > 0 && (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {starredItems.map((item) => (
+                    <li
+                      key={item.itemId}
+                      style={{
+                        padding: '12px 0',
+                        borderBottom: '1px solid var(--border)',
+                      }}
+                    >
+                      <Link to={`/items/${item.itemId}`} className="text-link">
+                        {item.itemName}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </>
         )}
       </section>
     </main>
