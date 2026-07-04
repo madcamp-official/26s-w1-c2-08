@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
+import { useAuth } from '../context/AuthContext'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
 function UserListPage() {
+  const { accessToken } = useAuth()
+
   const [users, setUsers] = useState([])
   const [status, setStatus] = useState('loading') // loading | success | error
 
@@ -16,7 +19,11 @@ function UserListPage() {
       setStatus('loading')
 
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/user/`)
+        const response = await axios.get(`${API_BASE_URL}/api/user/`, {
+          headers: accessToken
+            ? { Authorization: `Bearer ${accessToken}` }
+            : {},
+        })
 
         if (!ignore) {
           setUsers(response.data?.users ?? [])
@@ -34,7 +41,7 @@ function UserListPage() {
     return () => {
       ignore = true
     }
-  }, [])
+  }, [accessToken])
 
   return (
     <main className="page-shell page-shell-narrow">

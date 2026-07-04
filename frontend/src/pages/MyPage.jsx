@@ -15,6 +15,9 @@ function UserPage() {
   const [starredItems, setStarredItems] = useState([])
   const [starStatus, setStarStatus] = useState('loading')
 
+  const [reviews, setReviews] = useState([])
+  const [reviewStatus, setReviewStatus] = useState('loading')
+
   useEffect(() => {
     let ignore = false
 
@@ -33,6 +36,26 @@ function UserPage() {
       } catch {
         if (!ignore) {
           setStarStatus('error')
+        }
+      }
+    }
+
+    const fetchUserReviews = async (userId) => {
+      setReviewStatus('loading')
+
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/api/reviews/`,
+          { params: { author_id: userId } },
+        )
+
+        if (ignore) return
+
+        setReviews(response.data?.results ?? response.data ?? [])
+        setReviewStatus('success')
+      } catch {
+        if (!ignore) {
+          setReviewStatus('error')
         }
       }
     }
@@ -56,6 +79,7 @@ function UserPage() {
         setStatus('success')
 
         fetchStarredItems(response.data.id)
+        fetchUserReviews(response.data.id)
       } catch {
         if (!ignore) {
           setStatus('error')
@@ -124,6 +148,45 @@ function UserPage() {
                         className="text-link"
                       >
                         {item.itemName}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div
+              className="panel"
+              style={{ marginTop: '24px', padding: '20px' }}
+            >
+              <h2 style={{ marginTop: 0 }}>작성한 리뷰</h2>
+
+              {reviewStatus === 'loading' && (
+                <p className="state-text">불러오는 중...</p>
+              )}
+
+              {reviewStatus === 'error' && (
+                <p className="feedback feedback-error">
+                  리뷰 목록을 불러오는 중 오류가 발생했습니다.
+                </p>
+              )}
+
+              {reviewStatus === 'success' && reviews.length === 0 && (
+                <p className="state-text">아직 작성한 리뷰가 없습니다.</p>
+              )}
+
+              {reviewStatus === 'success' && reviews.length > 0 && (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {reviews.map((review) => (
+                    <li
+                      key={review.id}
+                      style={{
+                        padding: '12px 0',
+                        borderBottom: '1px solid var(--border)',
+                      }}
+                    >
+                      <Link to={`/items/${review.item}/reviews/${review.id}`} className="text-link">
+                        {review.title}
                       </Link>
                     </li>
                   ))}
