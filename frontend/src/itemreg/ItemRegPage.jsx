@@ -1,17 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './itemreg.css'
-import { buildApiUrl } from '../lib/api'
-
-const aiSeed = {
-  name: '라벤더 세라마이드 수분크림 80ml',
-  imageUrl:
-    'https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=900&q=80',
-  price: '28000',
-  shopOrBrandName: 'MORU BEAUTY',
-  originalUrl: 'https://shop.example.com/products/lavender-ceramide-cream',
-}
+import { apiFetch, buildApiUrl } from '../lib/api'
 
 const emptyMessage = {
   type: '',
@@ -24,6 +15,24 @@ const emptyAiFields = {
   price: '',
   shopOrBrandName: '',
   originalUrl: '',
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function stripLeadingBrandFromProductName(name, brand) {
+  const trimmedName = name.trim()
+  const trimmedBrand = brand.trim()
+
+  if (!trimmedName || !trimmedBrand) {
+    return trimmedName
+  }
+
+  const brandPrefixPattern = new RegExp(`^${escapeRegExp(trimmedBrand)}(?:\\s+|\\s*[-_/|]\\s*)?`, 'i')
+  const normalizedName = trimmedName.replace(brandPrefixPattern, '').trim()
+
+  return normalizedName || trimmedName
 }
 
 function formatPrice(value) {
@@ -69,26 +78,29 @@ function toCandidate(item) {
 function ItemRegPage() {
   const navigate = useNavigate()
   const { accessToken, userId, logout } = useAuth()
+  const aiFileInputRef = useRef(null)
+  const imageFileInputRef = useRef(null)
   const [selectedType, setSelectedType] = useState('new')
   const [selectedCandidate, setSelectedCandidate] = useState('')
-  const [screenshotName, setScreenshotName] = useState('')
   const [selectedImageFile, setSelectedImageFile] = useState(null)
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState('')
   const [imageFileName, setImageFileName] = useState('')
+  const [hasAiGeneratedImage, setHasAiGeneratedImage] = useState(false)
   const [aiFields, setAiFields] = useState(emptyAiFields)
   const [aiPreview, setAiPreview] = useState(null)
   const [review, setReview] = useState({
-    title: '민감성 피부에도 부담 없었던 수분크림',
-    content:
-      '구매 사이트 스크린샷 기준으로 성분/용량/가격이 명확해서 등록에 적합해 보입니다. 첫 사용감은 가볍지만 수분막이 오래 남는 편이었고, 향은 약한 라벤더 계열이라 호불호가 크게 갈리진 않을 것 같습니다.',
+    title: '',
+    content: '',
   })
   const [duplicateCandidates, setDuplicateCandidates] = useState([])
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(true)
+  const [isAiFilling, setIsAiFilling] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState(emptyMessage)
   const [createdItem, setCreatedItem] = useState(null)
   const [createdReview, setCreatedReview] = useState(null)
   const isExistingItemMode = selectedType === 'existing'
+  const representativeImageSrc = selectedImagePreviewUrl || aiPreview?.imageUrl || ''
 
   const submitLabel = useMemo(() => {
     if (selectedType === 'existing') {
@@ -154,15 +166,7 @@ function ItemRegPage() {
     }
   }, [selectedImagePreviewUrl])
 
-  function handleScreenshotChange(event) {
-    const file = event.target.files?.[0]
-    if (file) {
-      setScreenshotName(file.name)
-    }
-  }
-
-  function handleImageFileChange(event) {
-    const file = event.target.files?.[0]
+  function applySelectedImageFile(file) {
     if (selectedImagePreviewUrl) {
       URL.revokeObjectURL(selectedImagePreviewUrl)
     }
@@ -171,23 +175,114 @@ function ItemRegPage() {
       setSelectedImageFile(null)
       setSelectedImagePreviewUrl('')
       setImageFileName('')
+      setHasAiGeneratedImage(false)
       return
     }
 
     setSelectedImageFile(file)
     setSelectedImagePreviewUrl(URL.createObjectURL(file))
     setImageFileName(file.name)
+    setHasAiGeneratedImage(false)
   }
 
-  function handleAiFill() {
-    const seededFields = {
-      ...aiSeed,
-      originalUrl: aiFields.originalUrl.trim() || aiSeed.originalUrl,
+  function handleImageFileChange(event) {
+    const file = event.target.files?.[0]
+    applySelectedImageFile(file ?? null)
+  }
+
+  function handleImageUploadClick() {
+    imageFileInputRef.current?.click()
+  }
+
+  async function runAiFill(sourceFile) {
+    setIsAiFilling(true)
+    setMessage(emptyMessage)
+
+    try {
+      const formData = new FormData()
+      formData.append('screenshot', sourceFile)
+
+      const response = await apiFetch('/items/extract-from-screenshot/', {
+        method: 'POST',
+        body: formData,
+        timeoutMs: 120000,
+      })
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(normalizeError(data))
+      }
+
+      const extractedBrand = data.shop_or_brand_name?.trim() || aiFields.shopOrBrandName
+      const extractedName = stripLeadingBrandFromProductName(data.name?.trim() || '', extractedBrand)
+      const extractedPrice =
+        typeof data.price === 'number' && Number.isFinite(data.price) && data.price > 0
+          ? String(data.price)
+          : aiFields.price
+
+      const nextFields = {
+        ...aiFields,
+        name: extractedName || aiFields.name,
+        price: extractedPrice,
+        shopOrBrandName: extractedBrand,
+      }
+
+      setAiFields(nextFields)
+      setAiPreview({
+        ...nextFields,
+        imageUrl: data.cropped_image_url ?? '',
+      })
+
+      if (data.cropped_image_url) {
+        try {
+          const imageResponse = await fetch(data.cropped_image_url)
+          if (imageResponse.ok) {
+            const imageBlob = await imageResponse.blob()
+            const extension = imageBlob.type === 'image/jpeg' ? 'jpg' : 'png'
+            const croppedImageFile = new File([imageBlob], `ai-cropped-product.${extension}`, {
+              type: imageBlob.type || `image/${extension}`,
+            })
+            applySelectedImageFile(croppedImageFile)
+            setImageFileName('AI가 추출한 대표 이미지')
+            setHasAiGeneratedImage(true)
+          }
+        } catch {
+          setImageFileName('AI가 추출한 대표 이미지')
+          setHasAiGeneratedImage(true)
+        }
+      } else {
+        setHasAiGeneratedImage(false)
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text:
+          error instanceof Error
+            ? error.message
+            : '스크린샷 기반 상품 정보 추출 중 오류가 발생했습니다.',
+      })
+    } finally {
+      setIsAiFilling(false)
+    }
+  }
+
+  function handleAiFillClick() {
+    if (isAiFilling) {
+      return
     }
 
-    setAiFields(seededFields)
-    setAiPreview(seededFields)
-    setMessage(emptyMessage)
+    aiFileInputRef.current?.click()
+  }
+
+  function handleAiSourceFileChange(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+
+    if (!file) {
+      return
+    }
+
+    runAiFill(file)
   }
 
   function handleFieldChange(field, value) {
@@ -310,6 +405,8 @@ function ItemRegPage() {
 
       if (selectedImageFile) {
         formData.append('image', selectedImageFile)
+      } else if (aiPreview?.imageUrl) {
+        formData.append('image_url', aiPreview.imageUrl)
       }
 
       const itemResponse = await fetch(buildApiUrl('/items/'), {
@@ -393,15 +490,6 @@ function ItemRegPage() {
                 />
               </label>
               <label className="form-field">
-                <span>대표 이미지 첨부</span>
-                <input type="file" accept="image/*" onChange={handleImageFileChange} />
-                <small>
-                  {imageFileName
-                    ? `선택된 파일: ${imageFileName}`
-                    : '아직 첨부한 대표 이미지가 없습니다.'}
-                </small>
-              </label>
-              <label className="form-field">
                 <span>원본 URL</span>
                 <input
                   type="url"
@@ -419,44 +507,65 @@ function ItemRegPage() {
                   placeholder="28000"
                 />
               </label>
-            </div>
-
-            <div className="itemreg-ai-box">
-              <label className="form-field">
-                <span>구매 사이트 스크린샷</span>
-                <input type="file" accept="image/*" onChange={handleScreenshotChange} />
-                <small>
-                  {screenshotName
-                    ? `선택된 파일: ${screenshotName}`
-                    : '아직 업로드한 파일이 없습니다.'}
-                </small>
-              </label>
-
-              <button type="button" className="secondary-button" onClick={handleAiFill}>
-                스크린샷 기준으로 AI 채우기
-              </button>
-            </div>
-          </fieldset>
-
-          {aiPreview ? (
-            <div className="itemreg-preview-card">
-              {selectedImagePreviewUrl ? (
-                <img src={selectedImagePreviewUrl} alt="" />
-              ) : aiPreview.imageUrl ? (
-                <img src={aiPreview.imageUrl} alt="" />
-              ) : (
-                <div className="itemreg-image-placeholder" />
-              )}
-              <div>
-                <strong>{aiPreview.name}</strong>
-                <p>{aiPreview.shopOrBrandName}</p>
-                <div className="itemreg-chip-row">
-                  <span>{formatPrice(aiPreview.price)}</span>
-                  <span>{aiPreview.originalUrl ? 'AI 입력 완료' : '원본 URL 미입력'}</span>
+              <div className="form-field itemreg-image-field">
+                <span>대표 이미지 첨부</span>
+                <input
+                  ref={imageFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileChange}
+                  hidden
+                />
+                <div className="itemreg-image-panel">
+                  <div className="itemreg-image-preview-shell">
+                    {representativeImageSrc ? (
+                      <img src={representativeImageSrc} alt="대표 이미지 미리보기" />
+                    ) : (
+                      <div className="itemreg-image-placeholder">No Image</div>
+                    )}
+                  </div>
+                  <div className="itemreg-image-meta">
+                    <strong>
+                      {imageFileName
+                        ? hasAiGeneratedImage
+                          ? 'AI가 추출한 대표 이미지'
+                          : imageFileName
+                        : '아직 대표 이미지가 없습니다'}
+                    </strong>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={handleImageUploadClick}
+                    >
+                      {imageFileName ? '대표 이미지 변경' : '대표 이미지 직접 첨부'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          ) : null}
+
+            <div className="itemreg-ai-box">
+              <div className="itemreg-ai-copy">
+                <strong>AI 자동 입력</strong>
+                <p>버튼을 누르면 구매 사이트 스크린샷을 선택할 수 있고, 그 이미지 기준으로 상품명, 쇼핑몰명 또는 브랜드명, 대표 이미지를 자동으로 채웁니다.</p>
+              </div>
+              <input
+                ref={aiFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAiSourceFileChange}
+                hidden
+              />
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleAiFillClick}
+                disabled={isAiFilling}
+              >
+                {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
+              </button>
+            </div>
+          </fieldset>
         </article>
 
         <article className="panel itemreg-panel">

@@ -8,7 +8,7 @@ backend/venv/
 # Django
 *.sqlite3
 db.sqlite3
-backend/media/items/
+backend/media
 
 # Node
 node_modules/
@@ -27,3 +27,6 @@ deploy/
 # OS/editor
 .DS_Store
 .vscode/
+
+# codex 
+vision/.codex-home
