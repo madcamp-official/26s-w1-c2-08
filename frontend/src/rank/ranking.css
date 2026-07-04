@@ -145,6 +145,11 @@
     max-width: 100%;
     overflow-wrap: anywhere;
   }
+
+  .item-price {
+    color: var(--price);
+    font-weight: 700;
+  }
   
   .item-actions {
     display: flex;

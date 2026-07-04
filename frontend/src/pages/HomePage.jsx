@@ -2,20 +2,23 @@ import { Link } from 'react-router-dom'
 
 const FEATURES = [
   {
-    index: '01',
     title: '사용자 추천수 랭킹',
     description: '사용자 추천 반응을 집계해 진짜 쓸만한 아이템만 상위에 노출해요.',
   },
   {
-    index: '02',
     title: '카테고리별 탐색',
     description: '패션, 뷰티, 전자제품 등 카테고리로 필터링해 원하는 꿀템만 빠르게 찾아요.',
   },
   {
-    index: '03',
     title: '간편한 아이템 등록',
     description: '구매 사이트 스크린샷을 올리면 추천하고 싶은 아이템을 등록할 수 있어요.',
   },
+]
+
+const GALLERY = [
+  'https://images.unsplash.com/photo-1567016432779-094069958ea5?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
 ]
 
 function HomePage() {
@@ -35,12 +38,26 @@ function HomePage() {
             추천템 등록하기 <span aria-hidden="true">→</span>
           </Link>
         </div>
+
+        <ul className="home-gallery">
+          {GALLERY.map((src) => (
+            <li className="home-gallery-item" key={src}>
+              <img src={src} alt="" />
+            </li>
+          ))}
+        </ul>
       </section>
+
+      <div className="home-section-header">
+        <div>
+          <span className="home-eyebrow">Why wishlist</span>
+          <h2>사람들의 추천템을 한 눈에</h2>
+        </div>
+      </div>
 
       <ul className="home-features">
         {FEATURES.map((feature) => (
           <li className="home-feature-card" key={feature.title}>
-            <span className="home-feature-index">{feature.index}</span>
             <h3>{feature.title}</h3>
             <p>{feature.description}</p>
           </li>
