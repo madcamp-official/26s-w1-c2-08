@@ -58,7 +58,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/itemreg" element={<ItemRegPage />} />
         <Route path="/ranking" element={<RankingPageApp />} />
-        <Route path="/:userId" element={<UserPage />} />
+        <Route path="/user/:userId" element={<UserPage />} />
       </Routes>
     </>
   )
