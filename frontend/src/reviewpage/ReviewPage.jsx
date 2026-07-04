@@ -6,8 +6,7 @@ import ConfirmPopup from '../components/ConfirmPopup'
 import '../rank/ranking.css'
 import '../itempage/itempage.css'
 import './reviewpage.css'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
+import { apiFetch, buildApiUrl } from '../lib/api'
 
 function readJson(response) {
   return response.json().catch(() => null)
@@ -94,21 +93,21 @@ function ReviewPageContent() {
       const userQuery = currentUserId ? `?user_id=${encodeURIComponent(currentUserId)}` : ''
 
       try {
-        const itemResponse = await fetch(`${API_BASE_URL}/items/${itemId}/`)
+        const itemResponse = await apiFetch(`/items/${itemId}/`)
 
         if (!itemResponse.ok) {
           const errorData = await readJson(itemResponse)
           throw new Error(normalizeError(errorData, '아이템 정보를 불러오지 못했습니다.'))
         }
 
-        let reviewResponse = await fetch(`${API_BASE_URL}/reviews/${reviewId}/${userQuery}`)
-        let commentsResponse = await fetch(`${API_BASE_URL}/reviews/${reviewId}/comments/${userQuery}`)
+        let reviewResponse = await apiFetch(`${buildApiUrl(`/reviews/${reviewId}/`)}${userQuery}`)
+        let commentsResponse = await apiFetch(`${buildApiUrl(`/reviews/${reviewId}/comments/`)}${userQuery}`)
         let fallbackUsed = false
 
         if ((!reviewResponse.ok || !commentsResponse.ok) && userQuery) {
           const [fallbackReviewResponse, fallbackCommentsResponse] = await Promise.all([
-            fetch(`${API_BASE_URL}/reviews/${reviewId}/`),
-            fetch(`${API_BASE_URL}/reviews/${reviewId}/comments/`),
+            apiFetch(`/reviews/${reviewId}/`),
+            apiFetch(`/reviews/${reviewId}/comments/`),
           ])
 
           if (fallbackReviewResponse.ok && fallbackCommentsResponse.ok) {
@@ -201,7 +200,7 @@ function ReviewPageContent() {
     setNotice('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}/reaction/`, {
+      const response = await apiFetch(`/reviews/${reviewId}/reaction/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: currentUserId, reaction }),
@@ -248,7 +247,7 @@ function ReviewPageContent() {
     setNotice('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}/comments/`, {
+      const response = await apiFetch(`/reviews/${reviewId}/comments/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: currentUserId, content }),
@@ -294,7 +293,7 @@ function ReviewPageContent() {
     setNotice('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/reviews/comments/${commentId}/`, {
+      const response = await apiFetch(`/reviews/comments/${commentId}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: currentUserId, content }),
@@ -331,7 +330,7 @@ function ReviewPageContent() {
     setNotice('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/reviews/comments/${commentId}/`, {
+      const response = await apiFetch(`/reviews/comments/${commentId}/`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: currentUserId }),
@@ -374,7 +373,7 @@ function ReviewPageContent() {
     setNotice('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/reviews/comments/${commentId}/reaction/`, {
+      const response = await apiFetch(`/reviews/comments/${commentId}/reaction/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: currentUserId, reaction }),

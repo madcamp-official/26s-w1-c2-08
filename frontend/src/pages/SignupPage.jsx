@@ -2,9 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
+import { buildApiUrl } from '../lib/api'
 
 const initialForm = {
   username: '',
@@ -39,7 +37,7 @@ function SignupPage() {
 
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/signup/`,
+        buildApiUrl('/accounts/signup/'),
         form,
       )
 
