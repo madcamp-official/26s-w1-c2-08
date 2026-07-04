@@ -7,11 +7,26 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
 export function AuthProvider({ children }) {
+  const rawAccessToken = localStorage.getItem('access_token')
+  const tokenPayload = decodeTokenPayload(rawAccessToken)
+  const isTokenExpired =
+    typeof tokenPayload?.exp === 'number' && tokenPayload.exp * 1000 <= Date.now()
+  const storedAccessToken = isTokenExpired ? null : rawAccessToken
+  const storedRefreshToken = isTokenExpired ? null : localStorage.getItem('refresh_token')
+  const storedUserId =
+    isTokenExpired ? null : localStorage.getItem('user_id') ?? (tokenPayload?.user_id ? String(tokenPayload.user_id) : null)
+
+  if (isTokenExpired) {
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user_id')
+  }
+
   const [accessToken, setAccessToken] = useState(
-    localStorage.getItem('access_token'),
+    storedAccessToken,
   )
   const [refreshToken, setRefreshToken] = useState(
-    localStorage.getItem('refresh_token'),
+    storedRefreshToken,
   )
   const [userId, setUserId] = useState(localStorage.getItem('user_id'))
 
@@ -43,6 +58,7 @@ export function AuthProvider({ children }) {
   const login = (access, refresh, id) => {
     localStorage.setItem('access_token', access)
     localStorage.setItem('refresh_token', refresh)
+    localStorage.setItem('user_id', nextUserId)
     setAccessToken(access)
     setRefreshToken(refresh)
 
@@ -56,12 +72,17 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_id')
+    localStorage.removeItem('user_id')
     setAccessToken(null)
     setRefreshToken(null)
+    setUserId(null)
     setUserId(null)
   }
 
   return (
+    <AuthContext.Provider
+      value={{ accessToken, refreshToken, userId, login, logout }}
+    >
     <AuthContext.Provider
       value={{ accessToken, refreshToken, userId, login, logout }}
     >

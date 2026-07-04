@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useParams } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import '../rank/ranking.css'
 import '../itempage/itempage.css'
 import './reviewpage.css'
@@ -37,16 +38,6 @@ function normalizeError(data, fallbackMessage) {
   return fallbackMessage
 }
 
-function getStoredUserId() {
-  if (typeof window === 'undefined') {
-    return ''
-  }
-
-  // 추후 localStorage에 숫자형 user id가 저장되면 아래 구현으로 되돌립니다.
-  // return window.localStorage.getItem('ggultem-user-id')?.trim() ?? ''
-  return 1
-}
-
 function formatDateTime(value) {
   const date = new Date(value)
 
@@ -63,10 +54,6 @@ function formatDateTime(value) {
   }).format(date)
 }
 
-function getReviewScore(review) {
-  return review.like_count - review.dislike_count
-}
-
 function sortComments(comments) {
   return [...comments].sort(
     (left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
@@ -79,7 +66,7 @@ const initialCommentForm = {
 
 function ReviewPageContent() {
   const { itemId, reviewId } = useParams()
-  const currentUserId = getStoredUserId()
+  const { accessToken, userId: currentUserId } = useAuth()
   const [item, setItem] = useState(null)
   const [review, setReview] = useState(null)
   const [comments, setComments] = useState([])
@@ -90,6 +77,7 @@ function ReviewPageContent() {
   const [errorMessage, setErrorMessage] = useState('')
   const [notice, setNotice] = useState('')
   const [pendingTarget, setPendingTarget] = useState('')
+  const [brokenImage, setBrokenImage] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -99,8 +87,7 @@ function ReviewPageContent() {
       setErrorMessage('')
       setNotice('')
 
-      const userId = getStoredUserId()
-      const userQuery = userId ? `?user_id=${encodeURIComponent(userId)}` : ''
+      const userQuery = currentUserId ? `?user_id=${encodeURIComponent(currentUserId)}` : ''
 
       try {
         const itemResponse = await fetch(`${API_BASE_URL}/items/${itemId}/`)
@@ -148,6 +135,7 @@ function ReviewPageContent() {
         }
 
         setItem(itemData)
+        setBrokenImage(false)
         setReview(reviewData)
         setComments(sortComments(Array.isArray(commentsData) ? commentsData : []))
         if (String(reviewData.item) !== String(itemId)) {
@@ -181,7 +169,7 @@ function ReviewPageContent() {
     return () => {
       isMounted = false
     }
-  }, [itemId, reviewId])
+  }, [currentUserId, itemId, reviewId])
 
   function handleCommentFormChange(event) {
     const { value } = event.target
@@ -200,9 +188,7 @@ function ReviewPageContent() {
   }
 
   async function handleReviewReaction(reaction) {
-    const userId = getStoredUserId()
-
-    if (!userId) {
+    if (!accessToken || !currentUserId) {
       setNotice('리뷰 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -214,7 +200,7 @@ function ReviewPageContent() {
       const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}/reaction/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, reaction }),
+        body: JSON.stringify({ user_id: currentUserId, reaction }),
       })
 
       if (!response.ok) {
@@ -236,8 +222,7 @@ function ReviewPageContent() {
   async function handleCreateComment(event) {
     event.preventDefault()
 
-    const userId = getStoredUserId()
-    if (!userId) {
+    if (!accessToken || !currentUserId) {
       setNotice('댓글 작성은 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -255,7 +240,7 @@ function ReviewPageContent() {
       const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}/comments/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, content }),
+        body: JSON.stringify({ user_id: currentUserId, content }),
       })
 
       if (!response.ok) {
@@ -282,10 +267,9 @@ function ReviewPageContent() {
   }
 
   async function handleUpdateComment(commentId) {
-    const userId = getStoredUserId()
     const content = editingContent.trim()
 
-    if (!userId) {
+    if (!accessToken || !currentUserId) {
       setNotice('댓글 수정은 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -302,7 +286,7 @@ function ReviewPageContent() {
       const response = await fetch(`${API_BASE_URL}/reviews/comments/${commentId}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, content }),
+        body: JSON.stringify({ user_id: currentUserId, content }),
       })
 
       if (!response.ok) {
@@ -327,9 +311,7 @@ function ReviewPageContent() {
   }
 
   async function handleDeleteComment(commentId) {
-    const userId = getStoredUserId()
-
-    if (!userId) {
+    if (!accessToken || !currentUserId) {
       setNotice('댓글 삭제는 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -341,7 +323,7 @@ function ReviewPageContent() {
       const response = await fetch(`${API_BASE_URL}/reviews/comments/${commentId}/`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
+        body: JSON.stringify({ user_id: currentUserId }),
       })
 
       if (!response.ok) {
@@ -372,9 +354,7 @@ function ReviewPageContent() {
   }
 
   async function handleCommentReaction(commentId, reaction) {
-    const userId = getStoredUserId()
-
-    if (!userId) {
+    if (!accessToken || !currentUserId) {
       setNotice('댓글 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -386,7 +366,7 @@ function ReviewPageContent() {
       const response = await fetch(`${API_BASE_URL}/reviews/comments/${commentId}/reaction/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, reaction }),
+        body: JSON.stringify({ user_id: currentUserId, reaction }),
       })
 
       if (!response.ok) {
@@ -412,16 +392,12 @@ function ReviewPageContent() {
   }
 
   return (
-    <main className="app-shell">
-      <header className="app-header review-page-header">
-        <div>
-          <p className="eyebrow">리뷰 댓글</p>
-          <h1>리뷰 상세 및 댓글</h1>
-        </div>
+    <main className="page-shell">
+      <div className="review-page-topbar">
         <Link className="review-back-link" to={`/items/${itemId}`}>
           아이템으로 돌아가기
         </Link>
-      </header>
+      </div>
 
       {notice && <p className="notice">{notice}</p>}
 
@@ -438,9 +414,18 @@ function ReviewPageContent() {
         {!isLoading && !errorMessage && review && (
           <>
             <section className="review-context-bar">
-              <div>
-                <p className="review-context-label">대상 아이템</p>
-                <strong>{item?.name ?? `아이템 #${itemId}`}</strong>
+              <div className="review-context-main">
+                <div className="review-context-thumb" aria-hidden="true">
+                  {item?.image_url && !brokenImage ? (
+                    <img src={item.image_url} alt="" onError={() => setBrokenImage(true)} />
+                  ) : (
+                    <span>{(item?.name ?? `아이템 ${itemId}`).slice(0, 1)}</span>
+                  )}
+                </div>
+                <div>
+                  <p className="review-context-label">대상 아이템</p>
+                  <strong>{item?.name ?? `아이템 #${itemId}`}</strong>
+                </div>
               </div>
               <div className="review-context-meta">
                 <span>리뷰 #{review.id}</span>
@@ -455,10 +440,6 @@ function ReviewPageContent() {
                     작성자 #{review.author} · {formatDateTime(review.created_at)}
                   </p>
                   <h4>{review.title}</h4>
-                </div>
-                <div className="review-score">
-                  <strong>{getReviewScore(review)}</strong>
-                  <span>점수</span>
                 </div>
               </div>
 
@@ -652,16 +633,6 @@ function ReviewPageContent() {
 function ReviewPage() {
   return (
     <>
-      <nav className="top-nav">
-        <Link className="brand-link" to="/">
-          꿀템
-        </Link>
-        <div className="nav-links">
-          <NavLink to="/">홈</NavLink>
-          <NavLink to="/ranking">랭킹</NavLink>
-          <NavLink to="/itemreg">등록</NavLink>
-        </div>
-      </nav>
       <ReviewPageContent />
     </>
   )

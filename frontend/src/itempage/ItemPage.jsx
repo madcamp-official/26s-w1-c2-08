@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import '../rank/ranking.css'
 import './itempage.css'
 
@@ -64,6 +65,15 @@ function normalizeReviewListPayload(payload) {
   return []
 }
 
+async function readErrorMessage(response) {
+  try {
+    const data = await response.json()
+    return data.detail ?? '요청을 처리하지 못했습니다.'
+  } catch {
+    return '요청을 처리하지 못했습니다.'
+  }
+}
+
 function normalizeError(data, fallbackMessage) {
   if (!data) {
     return fallbackMessage
@@ -91,16 +101,6 @@ function normalizeError(data, fallbackMessage) {
   return fallbackMessage
 }
 
-function getStoredUserId() {
-  if (typeof window === 'undefined') {
-    return ''
-  }
-
-  // 추후 localStorage에 숫자형 user id가 저장되면 아래 구현으로 되돌립니다.
-  // return window.localStorage.getItem('ggultem-user-id')?.trim() ?? ''
-  return 1
-}
-
 function formatDate(value) {
   const date = new Date(value)
 
@@ -121,9 +121,9 @@ function getCategoryLabel(category) {
 
 function ItemPage() {
   const { itemId } = useParams()
+  const { accessToken, userId } = useAuth()
   const [item, setItem] = useState(null)
   const [reviews, setReviews] = useState([])
-  const [isItemRecommended, setIsItemRecommended] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [reviewsError, setReviewsError] = useState('')
@@ -141,9 +141,12 @@ function ItemPage() {
       setNotice('')
 
       try {
-        const userId = getStoredUserId()
         const [itemResponse, initialReviewsResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/items/${itemId}/`),
+          fetch(`${API_BASE_URL}/items/${itemId}/`, {
+            headers: accessToken
+              ? { Authorization: `Bearer ${accessToken}` }
+              : {},
+          }),
           fetch(
             `${API_BASE_URL}/reviews/?item_id=${encodeURIComponent(itemId)}${
               userId ? `&user_id=${encodeURIComponent(userId)}` : ''
@@ -184,33 +187,6 @@ function ItemPage() {
           setReviews([])
           setReviewsError('리뷰 목록을 불러오지 못했습니다.')
         }
-
-        if (userId) {
-          try {
-            const itemReactionResponse = await fetch(
-              `${API_BASE_URL}/items/${itemId}/reactions/${encodeURIComponent(userId)}/`,
-            )
-
-            if (!isMounted) {
-              return
-            }
-
-            if (itemReactionResponse.ok) {
-              const reactionData = await itemReactionResponse.json()
-              setIsItemRecommended(Boolean(reactionData.is_recommended))
-            } else if (itemReactionResponse.status === 404) {
-              setIsItemRecommended(false)
-            } else {
-              setNotice('내 아이템 반응 상태를 불러오지 못했습니다.')
-            }
-          } catch {
-            if (isMounted) {
-              setNotice('내 아이템 반응 상태를 불러오지 못했습니다.')
-            }
-          }
-        } else {
-          setIsItemRecommended(false)
-        }
       } catch (error) {
         if (!isMounted) {
           return
@@ -233,41 +209,25 @@ function ItemPage() {
     return () => {
       isMounted = false
     }
-  }, [itemId])
+  }, [itemId, accessToken, userId])
 
-  async function refreshItemAndReaction() {
-    const userId = getStoredUserId()
-    const [itemResponse, reactionResponse] = await Promise.all([
-      fetch(`${API_BASE_URL}/items/${itemId}/`),
-      userId
-        ? fetch(`${API_BASE_URL}/items/${itemId}/reactions/${encodeURIComponent(userId)}/`)
-        : Promise.resolve(null),
-    ])
+  async function refreshItem() {
+    const itemResponse = await fetch(`${API_BASE_URL}/items/${itemId}/`, {
+      headers: accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : {},
+    })
 
     if (!itemResponse.ok) {
       throw new Error('아이템 정보를 새로고침하지 못했습니다.')
     }
 
     const itemData = await itemResponse.json()
-    let recommended = false
-
-    if (reactionResponse) {
-      if (reactionResponse.ok) {
-        const reactionData = await reactionResponse.json()
-        recommended = Boolean(reactionData.is_recommended)
-      } else if (reactionResponse.status !== 404) {
-        throw new Error('내 아이템 반응 상태를 새로고침하지 못했습니다.')
-      }
-    }
-
     setItem(itemData)
-    setIsItemRecommended(recommended)
   }
 
-  async function handleItemReaction() {
-    const userId = getStoredUserId()
-
-    if (!userId) {
+  async function handleItemStarToggle() {
+    if (!accessToken) {
       setNotice('아이템 추천은 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -276,30 +236,37 @@ function ItemPage() {
     setNotice('')
 
     try {
-      let response
+      const response = await fetch(`${API_BASE_URL}/items/${itemId}/star/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
 
-      if (isItemRecommended) {
-        response = await fetch(
-          `${API_BASE_URL}/items/${itemId}/reactions/${encodeURIComponent(userId)}/`,
-          { method: 'DELETE' },
-        )
-      } else {
-        response = await fetch(`${API_BASE_URL}/items/${itemId}/reactions/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, is_recommended: true }),
-        })
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('로그인이 필요합니다.')
       }
 
       if (!response.ok) {
-        const errorData = await readJson(response)
-        throw new Error(normalizeError(errorData, '아이템 반응을 저장하지 못했습니다.'))
+        throw new Error(await readErrorMessage(response))
       }
 
-      await refreshItemAndReaction()
+      const wasAdded = response.status === 201
+      setItem((currentItem) =>
+        currentItem
+          ? {
+              ...currentItem,
+              starCount: wasAdded
+                ? (currentItem.starCount ?? 0) + 1
+                : Math.max((currentItem.starCount ?? 1) - 1, 0),
+              isStarred: wasAdded,
+            }
+          : currentItem,
+      )
+      await refreshItem()
     } catch (error) {
       setNotice(
-        error instanceof Error ? error.message : '아이템 반응을 저장하지 못했습니다.',
+        error instanceof Error ? error.message : '별표를 저장하지 못했습니다.',
       )
     } finally {
       setPendingTarget('')
@@ -307,9 +274,7 @@ function ItemPage() {
   }
 
   async function handleReviewReaction(reviewId, reaction) {
-    const userId = getStoredUserId()
-
-    if (!userId) {
+    if (!accessToken || !userId) {
       setNotice('리뷰 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
       return
     }
@@ -349,14 +314,10 @@ function ItemPage() {
     }
   }
 
+  const showReviewCreateButton = Boolean(accessToken && userId)
+
   return (
     <main className="page-shell">
-      <header className="page-header item-page-header">
-        <div>
-          <h2>아이템 상세</h2>
-        </div>
-      </header>
-
       {notice && <p className="notice">{notice}</p>}
 
       <section className="item-page-section">
@@ -404,6 +365,10 @@ function ItemPage() {
                     <strong>{item.recommend_count}</strong>
                     <span>추천</span>
                   </button>
+                  <div className="item-score-panel">
+                    <strong>{item.starCount ?? 0}</strong>
+                    <span>추천 수</span>
+                  </div>
                 </div>
 
                 <dl className="item-detail-grid">
@@ -415,9 +380,25 @@ function ItemPage() {
                     <dt>가격</dt>
                     <dd>{formatPrice(item.price)}</dd>
                   </div>
+                  <div>
+                    <dt>리뷰 수</dt>
+                    <dd>{reviews.length}</dd>
+                  </div>
                 </dl>
 
                 <div className="item-hero-actions">
+                  <button
+                    className={
+                      item.isStarred
+                        ? 'reaction-button active-positive'
+                        : 'reaction-button'
+                    }
+                    type="button"
+                    disabled={pendingTarget === 'item-recommend'}
+                    onClick={() => handleItemStarToggle()}
+                  >
+                    추천 {item.starCount ?? 0}
+                  </button>
                   {item.original_url && (
                     <a
                       className="product-link"
@@ -434,7 +415,18 @@ function ItemPage() {
 
             <section className="review-section">
               <div className="review-section-header">
-                <h3>리뷰 목록 ({reviews.length})</h3>
+                <div>
+                  <h3>리뷰 목록</h3>
+                  <p>좋아요와 싫어요 반응을 기준으로 리뷰가 정렬됩니다.</p>
+                </div>
+                <div className="review-section-utility">
+                  {showReviewCreateButton && (
+                    <Link className="primary-button" to={`/items/${itemId}/reviews/new`}>
+                      리뷰 작성
+                    </Link>
+                  )}
+                  <span className="review-count-chip">{reviews.length}개 리뷰</span>
+                </div>
               </div>
 
               {reviewsError ? (
@@ -463,10 +455,6 @@ function ItemPage() {
                             </p>
                             <h4>{review.title}</h4>
                           </div>
-                          <div className="review-score">
-                            <strong>{getReviewScore(review)}</strong>
-                            <span>점수</span>
-                          </div>
                         </div>
 
                         <p className="review-content">{review.content}</p>
@@ -481,35 +469,38 @@ function ItemPage() {
 
                         <div className="review-actions">
                           <Link
-                            className="review-detail-link"
+                            className="review-comment-link"
                             to={`/items/${itemId}/reviews/${review.id}`}
                           >
-                            댓글 보기
+                            <span>댓글 보기</span>
+                            <strong>{review.comments_count}</strong>
                           </Link>
-                          <button
-                            className={
-                              review.user_reaction === 'like'
-                                ? 'reaction-button active-positive'
-                                : 'reaction-button'
-                            }
-                            type="button"
-                            disabled={pendingTarget === `review-${review.id}-like`}
-                            onClick={() => handleReviewReaction(review.id, 'like')}
-                          >
-                            좋아요
-                          </button>
-                          <button
-                            className={
-                              review.user_reaction === 'dislike'
-                                ? 'reaction-button active-negative'
-                                : 'reaction-button'
-                            }
-                            type="button"
-                            disabled={pendingTarget === `review-${review.id}-dislike`}
-                            onClick={() => handleReviewReaction(review.id, 'dislike')}
-                          >
-                            싫어요
-                          </button>
+                          <div className="review-reaction-group">
+                            <button
+                              className={
+                                review.user_reaction === 'like'
+                                  ? 'reaction-button active-positive'
+                                  : 'reaction-button'
+                              }
+                              type="button"
+                              disabled={pendingTarget === `review-${review.id}-like`}
+                              onClick={() => handleReviewReaction(review.id, 'like')}
+                            >
+                              좋아요
+                            </button>
+                            <button
+                              className={
+                                review.user_reaction === 'dislike'
+                                  ? 'reaction-button active-negative'
+                                  : 'reaction-button'
+                              }
+                              type="button"
+                              disabled={pendingTarget === `review-${review.id}-dislike`}
+                              onClick={() => handleReviewReaction(review.id, 'dislike')}
+                            >
+                              싫어요
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </li>
@@ -521,6 +512,14 @@ function ItemPage() {
         )}
       </section>
     </main>
+  )
+}
+
+function ItemPage() {
+  return (
+    <>
+      <ItemPageContent />
+    </>
   )
 }
 

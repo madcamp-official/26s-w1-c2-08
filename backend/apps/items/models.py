@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import Count
 
 from apps.accounts.models import User
 
@@ -30,7 +29,6 @@ class Item(models.Model):
     price = models.PositiveIntegerField()
     shop_or_brand_name = models.CharField(max_length=255)
     original_url = models.URLField(unique=True)
-    recommend_count = models.PositiveIntegerField(default=0)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -44,48 +42,11 @@ class Item(models.Model):
     class Meta:
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["-recommend_count", "-created_at"]),
-            models.Index(fields=["category", "-recommend_count", "-created_at"]),
             models.Index(fields=["name"]),
         ]
 
     def __str__(self):
         return self.name
-
-    def refresh_reaction_counts(self, save=True):
-        counts = self.reactions.aggregate(recommend_total=Count("id"))
-        self.recommend_count = counts["recommend_total"] or 0
-        if save:
-            self.save(update_fields=["recommend_count", "updated_at"])
-
-
-class ItemReaction(models.Model):
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="reactions")
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="item_reactions",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["item", "user"], name="unique_item_reaction_per_user")
-        ]
-        ordering = ["-updated_at", "-created_at"]
-
-    def __str__(self):
-        return f"{self.item_id}:{self.user_id}:recommend"
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.item.refresh_reaction_counts()
-
-    def delete(self, *args, **kwargs):
-        item = self.item
-        super().delete(*args, **kwargs)
-        item.refresh_reaction_counts()
 
 class Star(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
