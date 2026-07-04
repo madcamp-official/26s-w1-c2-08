@@ -62,7 +62,7 @@ function App() {
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/items/:itemId" element={<ItemPage />} />
         <Route path="/items/:itemId/reviews/:reviewId" element={<ReviewPage />} />
-        <Route path="/:userId" element={<UserPage />} />
+        <Route path="/user/:userId" element={<UserPage />} />
       </Routes>
     </>
   )
