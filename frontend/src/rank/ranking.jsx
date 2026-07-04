@@ -1,8 +1,4 @@
 import { useEffect, useState } from 'react'
-<<<<<<< HEAD
-=======
-import { Link, NavLink } from 'react-router-dom'
->>>>>>> fbd6ebd3b5afd882150707b9e79ee3cf74ce7c88
 import './ranking.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
@@ -294,25 +290,4 @@ function RankingPage() {
   )
 }
 
-<<<<<<< HEAD
 export default RankingPage
-=======
-function RankingPageApp() {
-  return (
-    <>
-      <nav className="top-nav">
-        <Link className="brand-link" to="/">
-          꿀템
-        </Link>
-        <div className="nav-links">
-          <NavLink to="/">홈</NavLink>
-          <NavLink to="/ranking">랭킹</NavLink>
-        </div>
-      </nav>
-      <RankingPage />
-    </>
-  )
-}
-
-export default RankingPageApp
->>>>>>> fbd6ebd3b5afd882150707b9e79ee3cf74ce7c88
