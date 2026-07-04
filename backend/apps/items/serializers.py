@@ -5,6 +5,8 @@ from .models import Item, ItemReaction
 
 class ItemSerializer(serializers.ModelSerializer):
     created_by_id = serializers.IntegerField(source="created_by.id", read_only=True)
+    image = serializers.ImageField(source="image_file", write_only=True, required=False, allow_null=True)
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Item
@@ -12,6 +14,7 @@ class ItemSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "category",
+            "image",
             "image_url",
             "price",
             "shop_or_brand_name",
@@ -32,6 +35,15 @@ class ItemSerializer(serializers.ModelSerializer):
             "created_by_id",
         )
 
+    def get_image_url(self, obj):
+        request = self.context.get("request")
+
+        if obj.image_file:
+            url = obj.image_file.url
+            return request.build_absolute_uri(url) if request else url
+
+        return obj.image_url or ""
+
 
 class ItemRankingSerializer(serializers.ModelSerializer):
     rankingScore = serializers.SerializerMethodField()
@@ -40,7 +52,7 @@ class ItemRankingSerializer(serializers.ModelSerializer):
     disrecommendCount = serializers.IntegerField(source="not_recommend_count", read_only=True)
     brandOrShopName = serializers.CharField(source="shop_or_brand_name", read_only=True)
     productUrl = serializers.URLField(source="original_url", read_only=True)
-    imageUrl = serializers.URLField(source="image_url", read_only=True)
+    imageUrl = serializers.SerializerMethodField()
     priceText = serializers.SerializerMethodField()
     externalReviewCount = serializers.SerializerMethodField()
     userReaction = serializers.SerializerMethodField()
@@ -85,6 +97,15 @@ class ItemRankingSerializer(serializers.ModelSerializer):
 
     def get_externalReviewCount(self, _obj):
         return None
+
+    def get_imageUrl(self, obj):
+        request = self.context.get("request")
+
+        if obj.image_file:
+            url = obj.image_file.url
+            return request.build_absolute_uri(url) if request else url
+
+        return obj.image_url or ""
 
 
 class ItemReactionSerializer(serializers.ModelSerializer):

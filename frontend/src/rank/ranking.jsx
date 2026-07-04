@@ -206,7 +206,7 @@ function RankingPage() {
                 <li className="ranking-item" key={item.id}>
                   <div className="rank-badge">{index + 1}</div>
 
-                  <div className="item-image" aria-hidden="true">
+                  <Link className="item-image" to={`/items/${item.id}`} aria-label={item.name}>
                     {hasImage ? (
                       <img
                         src={item.imageUrl}
@@ -221,11 +221,15 @@ function RankingPage() {
                     ) : (
                       <span>{item.name.slice(0, 1)}</span>
                     )}
-                  </div>
+                  </Link>
 
                   <div className="item-body">
                     <div className="item-heading">
-                      <h2>{item.name}</h2>
+                      <h2>
+                        <Link className="ranking-item-link" to={`/items/${item.id}`}>
+                          {item.name}
+                        </Link>
+                      </h2>
                     </div>
 
                     {hasMeta && (

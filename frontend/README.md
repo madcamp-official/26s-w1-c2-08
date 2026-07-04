@@ -1,16 +1,45 @@
-# React + Vite
+# Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Vite + React 기반 프론트엔드입니다.
 
-Currently, two official plugins are available:
+## 요구 사항
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 20 이상 권장
+- npm
 
-## React Compiler
+## 개발 서버 실행
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Expanding the Oxlint configuration
+기본 개발 서버:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```text
+http://127.0.0.1:5173
+```
+
+## 프로덕션 빌드
+
+```bash
+cd frontend
+cp .env.production.example .env.production
+npm install
+npm run build
+```
+
+`.env.production` 예시:
+
+```bash
+VITE_API_BASE_URL=/api
+```
+
+빌드 결과물은 `frontend/dist`에 생성됩니다.
+
+## Nginx 배포
+
+프론트는 `Nginx`가 `dist`를 정적 서빙하고, `/api/`, `/media/`는 Django 백엔드로 프록시하는 구성을 기준으로 합니다.
+
+상세 절차는 [DEPLOY_NGINX.md](/root/workspace/ggultem/DEPLOY_NGINX.md:1)를 참고합니다.

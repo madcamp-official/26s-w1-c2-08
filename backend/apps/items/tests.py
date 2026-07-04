@@ -1,9 +1,19 @@
+from io import BytesIO
+
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .models import Item, ItemReaction
+
+
+def make_test_image_file(name="item.png"):
+    buffer = BytesIO()
+    Image.new("RGB", (1, 1), color="white").save(buffer, format="PNG")
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type="image/png")
 
 
 class ItemApiTests(APITestCase):
@@ -45,20 +55,23 @@ class ItemApiTests(APITestCase):
     def test_create_item(self):
         payload = {
             "name": "세라마이드 진정 크림",
-            "image_url": "https://example.com/new-item.jpg",
+            "image": make_test_image_file(),
             "price": 26500,
             "shop_or_brand_name": "MORU",
             "original_url": "https://shop.example.com/products/ceramide-cream",
             "created_by": self.user.id,
         }
 
-        response = self.client.post(reverse("items-list-create"), payload, format="json")
+        response = self.client.post(reverse("items-list-create"), payload, format="multipart")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Item.objects.count(), 2)
-        self.assertEqual(Item.objects.get(original_url=payload["original_url"]).name, payload["name"])
+        created_item = Item.objects.get(original_url=payload["original_url"])
+        self.assertEqual(created_item.name, payload["name"])
+        self.assertTrue(created_item.image_file.name.startswith("items/"))
         self.assertEqual(response.data["recommend_count"], 0)
         self.assertEqual(response.data["not_recommend_count"], 0)
+        self.assertIn("/media/items/", response.data["image_url"])
 
     def test_update_item(self):
         response = self.client.patch(
