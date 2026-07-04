@@ -267,21 +267,7 @@ function RankingPage() {
                           {item.name}
                         </Link>
                       </h2>
-                    </div>
 
-                    {hasMeta && (
-                      <div className="item-meta">
-                        {item.categoryLabel && <span>{item.categoryLabel}</span>}
-                        {item.brandOrShopName && <span>{item.brandOrShopName}</span>}
-                        {item.priceText && <span>{item.priceText}</span>}
-                        {item.externalReviewCount !== null &&
-                          item.externalReviewCount !== undefined && (
-                            <span>리뷰 {item.externalReviewCount}</span>
-                          )}
-                      </div>
-                    )}
-
-                    <div className="item-actions">
                       {accessToken ? (
                         <button
                           className={
@@ -296,7 +282,7 @@ function RankingPage() {
                           aria-label={item.isStarred ? '별표 취소' : '별표 추가'}
                         >
                           <span className="star-icon">★</span>
-                          {item.starCount ?? 0}
+                          <span className="star-count">{item.starCount ?? 0}</span>
                         </button>
                       ) : (
                         <span className="reaction-count-text">
@@ -305,6 +291,18 @@ function RankingPage() {
                         </span>
                       )}
                     </div>
+
+                    {hasMeta && (
+                      <div className="item-meta">
+                        {item.categoryLabel && <span>{item.categoryLabel}</span>}
+                        {item.brandOrShopName && <span>{item.brandOrShopName}</span>}
+                        {item.priceText && <span>{item.priceText}</span>}
+                        {item.externalReviewCount !== null &&
+                          item.externalReviewCount !== undefined && (
+                            <span>리뷰 {item.externalReviewCount}</span>
+                          )}
+                      </div>
+                    )}
                   </div>
                 </li>
               )

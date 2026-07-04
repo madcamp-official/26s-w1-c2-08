@@ -158,10 +158,13 @@
   
   .item-heading {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
-  
+
   .item-heading h2 {
+    flex: 1;
     min-width: 0;
     margin: 0;
     color: var(--text-strong);
@@ -169,6 +172,78 @@
     font-weight: 700;
     line-height: 1.4;
     overflow-wrap: anywhere;
+  }
+
+  .star-button {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease,
+      color 0.2s ease,
+      transform 0.15s ease;
+  }
+
+  .star-button:hover {
+    border-color: #f2b100;
+    transform: translateY(-1px) scale(1.05);
+  }
+
+  .star-button:active {
+    transform: scale(0.95);
+  }
+
+  .star-button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+    transform: none;
+  }
+
+  .star-button .star-icon {
+    font-size: 14px;
+    color: #d7d7d7;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .star-button-active {
+    border-color: #f2b100;
+    background: linear-gradient(145deg, #fff4d6, #ffe9ad);
+    color: #8a5c00;
+  }
+
+  .star-button-active .star-icon {
+    color: #f2b100;
+    transform: scale(1.15);
+  }
+
+  .reaction-count-text {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--soft-bg);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .reaction-count-text .star-icon {
+    font-size: 14px;
+    color: #f2b100;
   }
   
   .item-meta {
@@ -188,15 +263,6 @@
   .item-price {
     color: var(--price);
     font-weight: 700;
-  }
-  
-  .item-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin-top: auto;
-    padding-top: 16px;
   }
   
   .reaction-button,
@@ -242,20 +308,98 @@
     flex-basis: 100%;
     color: var(--accent);
   }
-  
+
+  .like-button,
+  .dislike-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease,
+      color 0.2s ease,
+      transform 0.15s ease;
+  }
+
+  .like-button:hover,
+  .dislike-button:hover {
+    transform: translateY(-1px) scale(1.05);
+  }
+
+  .like-button:active,
+  .dislike-button:active {
+    transform: scale(0.95);
+  }
+
+  .like-button:disabled,
+  .dislike-button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+    transform: none;
+  }
+
+  .like-icon,
+  .dislike-icon {
+    font-size: 15px;
+    line-height: 1;
+    filter: grayscale(1);
+    opacity: 0.5;
+    transition: filter 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .like-button:hover .like-icon,
+  .dislike-button:hover .dislike-icon {
+    transform: scale(1.15);
+  }
+
+  .like-button-active {
+    border-color: #ff6b8a;
+    background: linear-gradient(145deg, #ffe3ea, #ffc9d6);
+    color: #c62255;
+  }
+
+  .like-button-active .like-icon {
+    filter: none;
+    opacity: 1;
+    color: #ff3b5c;
+    transform: scale(1.15);
+  }
+
+  .dislike-button-active {
+    border-color: var(--negative);
+    background: var(--negative-bg);
+    color: var(--negative);
+  }
+
+  .dislike-button-active .dislike-icon {
+    filter: none;
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
   @media (max-width: 720px) {
     .ranking-list {
       grid-template-columns: 1fr;
     }
-  
+
     .rank-badge {
       width: 40px;
       height: 40px;
       font-size: 17px;
     }
-  
+
     .item-heading {
-      display: block;
+      flex-wrap: wrap;
     }
   }
   

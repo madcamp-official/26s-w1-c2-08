@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import LoginPopup from '../components/LoginPopup'
 import '../rank/ranking.css'
 import './itempage.css'
 
@@ -128,6 +129,7 @@ function ItemPage() {
   const [errorMessage, setErrorMessage] = useState('')
   const [reviewsError, setReviewsError] = useState('')
   const [notice, setNotice] = useState('')
+  const [loginPopupMessage, setLoginPopupMessage] = useState('')
   const [pendingTarget, setPendingTarget] = useState('')
   const [brokenImage, setBrokenImage] = useState(false)
 
@@ -228,7 +230,7 @@ function ItemPage() {
 
   async function handleItemStarToggle() {
     if (!accessToken) {
-      setNotice('아이템 추천은 로그인 후 사용할 수 있습니다.')
+      setLoginPopupMessage('아이템 추천은 로그인 후 사용할 수 있습니다.')
       return
     }
 
@@ -275,7 +277,7 @@ function ItemPage() {
 
   async function handleReviewReaction(reviewId, reaction) {
     if (!accessToken || !userId) {
-      setNotice('리뷰 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
+      setLoginPopupMessage('리뷰 좋아요와 싫어요는 로그인 후 사용할 수 있습니다.')
       return
     }
 
@@ -319,6 +321,7 @@ function ItemPage() {
   return (
     <main className="page-shell">
       {notice && <p className="notice">{notice}</p>}
+      <LoginPopup message={loginPopupMessage} onClose={() => setLoginPopupMessage('')} />
 
       <section className="item-page-section">
         {isLoading && <p className="state-text">상세 정보를 불러오는 중입니다.</p>}
@@ -423,9 +426,8 @@ function ItemPage() {
                 </div>
               ) : (
                 <ol className="review-list">
-                  {reviews.map((review, index) => (
+                  {reviews.map((review) => (
                     <li className="review-card" key={review.id}>
-                      <div className="review-rank-badge">{index + 1}</div>
                       <Link
                         className="review-card-link"
                         to={`/items/${itemId}/reviews/${review.id}`}
@@ -444,45 +446,40 @@ function ItemPage() {
 
                       <div className="review-footer">
                         <div className="review-stats">
-                          <span>좋아요 {review.like_count}</span>
-                          <span>싫어요 {review.dislike_count}</span>
-                          <span>댓글 {review.comments_count}</span>
-                        </div>
-
-                        <div className="review-actions">
+                          <button
+                            className={
+                              review.user_reaction === 'like'
+                                ? 'like-button like-button-active'
+                                : 'like-button'
+                            }
+                            type="button"
+                            disabled={pendingTarget === `review-${review.id}-like`}
+                            onClick={() => handleReviewReaction(review.id, 'like')}
+                            aria-pressed={review.user_reaction === 'like'}
+                          >
+                            <span className="like-icon">♥</span>
+                            {review.like_count}
+                          </button>
+                          <button
+                            className={
+                              review.user_reaction === 'dislike'
+                                ? 'dislike-button dislike-button-active'
+                                : 'dislike-button'
+                            }
+                            type="button"
+                            disabled={pendingTarget === `review-${review.id}-dislike`}
+                            onClick={() => handleReviewReaction(review.id, 'dislike')}
+                            aria-pressed={review.user_reaction === 'dislike'}
+                          >
+                            <span className="dislike-icon">👎</span>
+                            {review.dislike_count}
+                          </button>
                           <Link
                             className="review-comment-link"
                             to={`/items/${itemId}/reviews/${review.id}`}
                           >
-                            <span>댓글 보기</span>
-                            <strong>{review.comments_count}</strong>
+                            댓글 보기 {review.comments_count}
                           </Link>
-                          <div className="review-reaction-group">
-                            <button
-                              className={
-                                review.user_reaction === 'like'
-                                  ? 'reaction-button active-positive'
-                                  : 'reaction-button'
-                              }
-                              type="button"
-                              disabled={pendingTarget === `review-${review.id}-like`}
-                              onClick={() => handleReviewReaction(review.id, 'like')}
-                            >
-                              좋아요
-                            </button>
-                            <button
-                              className={
-                                review.user_reaction === 'dislike'
-                                  ? 'reaction-button active-negative'
-                                  : 'reaction-button'
-                              }
-                              type="button"
-                              disabled={pendingTarget === `review-${review.id}-dislike`}
-                              onClick={() => handleReviewReaction(review.id, 'dislike')}
-                            >
-                              싫어요
-                            </button>
-                          </div>
                         </div>
                       </div>
                     </li>
