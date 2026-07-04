@@ -8,6 +8,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 from django.db.models import Count, Exists, OuterRef, BooleanField, Value
 
 from .models import Item, ItemReaction, Star
@@ -249,6 +250,7 @@ def ItemStar(request, item_id):
     )
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def item_star_summary(request):
     user = request.user
 
