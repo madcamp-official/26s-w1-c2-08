@@ -15,8 +15,10 @@ node_modules/
 frontend/node_modules/
 
 # Build outputs
+deploy.sh
 dist/
 build/
+deploy/
 
 # Environment files
 .env

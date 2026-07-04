@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
+import { buildApiUrl } from '../lib/api'
 
 function UserPage() {
   const { accessToken } = useAuth()
@@ -23,7 +21,7 @@ function UserPage() {
 
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/items/users/${userId}/stars/`,
+          buildApiUrl(`/items/users/${userId}/stars/`),
         )
 
         if (ignore) return
@@ -42,7 +40,7 @@ function UserPage() {
 
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/accounts/me/`,
+          buildApiUrl('/accounts/me/'),
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

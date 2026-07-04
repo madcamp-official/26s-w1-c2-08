@@ -5,8 +5,7 @@ import '../rank/ranking.css'
 import '../itempage/itempage.css'
 import '../reviewpage/reviewpage.css'
 import './reviewcreate.css'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
+import { apiFetch, buildApiUrl } from '../lib/api'
 
 const initialReviewForm = {
   title: '',
@@ -97,7 +96,7 @@ function ReviewCreatePage() {
       setErrorMessage('')
 
       try {
-        const response = await fetch(`${API_BASE_URL}/items/${itemId}/`)
+        const response = await apiFetch(`/items/${itemId}/`)
 
         if (!response.ok) {
           const errorData = await readJson(response)
@@ -166,7 +165,7 @@ function ReviewCreatePage() {
     setNotice('')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/reviews/`, {
+      const response = await apiFetch('/reviews/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

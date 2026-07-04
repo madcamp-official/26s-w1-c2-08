@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './itemreg.css'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api'
+import { buildApiUrl } from '../lib/api'
 
 const aiSeed = {
   name: '라벤더 세라마이드 수분크림 80ml',
@@ -107,7 +105,7 @@ function ItemRegPage() {
       setIsLoadingCandidates(true)
 
       try {
-        const response = await fetch(`${API_BASE_URL}/items/`)
+        const response = await fetch(buildApiUrl('/items/'))
 
         if (!response.ok) {
           throw new Error('아이템 목록을 불러오지 못했습니다.')
@@ -207,7 +205,7 @@ function ItemRegPage() {
   }
 
   async function refreshItems(selectedItemId) {
-    const response = await fetch(`${API_BASE_URL}/items/`)
+    const response = await fetch(buildApiUrl('/items/'))
 
     if (!response.ok) {
       throw new Error('등록 후 아이템 목록을 새로고침하지 못했습니다.')
@@ -232,7 +230,7 @@ function ItemRegPage() {
       throw new Error('리뷰 본문을 입력해 주세요.')
     }
 
-    const response = await fetch(`${API_BASE_URL}/reviews/`, {
+    const response = await fetch(buildApiUrl('/reviews/'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -314,7 +312,7 @@ function ItemRegPage() {
         formData.append('image', selectedImageFile)
       }
 
-      const itemResponse = await fetch(`${API_BASE_URL}/items/`, {
+      const itemResponse = await fetch(buildApiUrl('/items/'), {
         method: 'POST',
         body: formData,
       })
