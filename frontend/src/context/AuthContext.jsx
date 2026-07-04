@@ -6,6 +6,25 @@ const AuthContext = createContext(null)
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
+function decodeTokenPayload(token) {
+  if (!token) {
+    return null
+  }
+
+  const [, payload] = token.split('.')
+  if (!payload) {
+    return null
+  }
+
+  try {
+    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const decodedPayload = atob(normalizedPayload)
+    return JSON.parse(decodedPayload)
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }) {
   const rawAccessToken = localStorage.getItem('access_token')
   const tokenPayload = decodeTokenPayload(rawAccessToken)
@@ -28,7 +47,7 @@ export function AuthProvider({ children }) {
   const [refreshToken, setRefreshToken] = useState(
     storedRefreshToken,
   )
-  const [userId, setUserId] = useState(localStorage.getItem('user_id'))
+  const [userId, setUserId] = useState(storedUserId)
 
   // 코드 업데이트 이전에 로그인한 세션은 user_id가 저장되어 있지 않으므로 보충 조회한다.
   useEffect(() => {
@@ -56,15 +75,24 @@ export function AuthProvider({ children }) {
   }, [accessToken, userId])
 
   const login = (access, refresh, id) => {
+    const nextUserId =
+      id !== undefined && id !== null
+        ? String(id)
+        : decodeTokenPayload(access)?.user_id
+          ? String(decodeTokenPayload(access).user_id)
+          : null
+
     localStorage.setItem('access_token', access)
     localStorage.setItem('refresh_token', refresh)
-    localStorage.setItem('user_id', nextUserId)
     setAccessToken(access)
     setRefreshToken(refresh)
 
-    if (id !== undefined && id !== null) {
-      localStorage.setItem('user_id', id)
-      setUserId(id)
+    if (nextUserId !== null) {
+      localStorage.setItem('user_id', nextUserId)
+      setUserId(nextUserId)
+    } else {
+      localStorage.removeItem('user_id')
+      setUserId(null)
     }
   }
 
@@ -72,17 +100,12 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_id')
-    localStorage.removeItem('user_id')
     setAccessToken(null)
     setRefreshToken(null)
-    setUserId(null)
     setUserId(null)
   }
 
   return (
-    <AuthContext.Provider
-      value={{ accessToken, refreshToken, userId, login, logout }}
-    >
     <AuthContext.Provider
       value={{ accessToken, refreshToken, userId, login, logout }}
     >

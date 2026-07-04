@@ -41,13 +41,18 @@ function LoginPage() {
     setMessage('')
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/accounts/login/`, form)
-      const username = response.data?.user?.username ?? form.username
+      const response = await axios.post(
+        `${API_BASE_URL}/api/accounts/login/`,
+        form,
+      )
+
+      const username = response.data.user.username
+      const userId = response.data.user.id
 
       login(response.data.access, response.data.refresh, userId)
 
       setStatus('success')
-      navigate(`/user/${encodeURIComponent(userId)}`)
+      navigate(`/user/${encodeURIComponent(username)}`)
     } catch (error) {
       setStatus('error')
       setMessage(

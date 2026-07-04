@@ -8,6 +8,7 @@ backend/venv/
 # Django
 *.sqlite3
 db.sqlite3
+backend/media/items/
 
 # Node
 node_modules/

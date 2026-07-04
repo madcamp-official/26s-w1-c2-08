@@ -341,30 +341,12 @@ function ItemPage() {
                 )}
               </div>
 
-              <div className="item-hero-body">
-                <div className="item-hero-heading">
-                  <div>
-                    <p className="item-category-badge">{getCategoryLabel(item.category)}</p>
-                    <h2>{item.name}</h2>
-                  </div>
-                  <button
-                    type="button"
-                    className={
-                      isItemRecommended
-                        ? 'item-score-panel is-recommended'
-                        : 'item-score-panel'
-                    }
-                    disabled={pendingTarget === 'item-recommend'}
-                    onClick={() => {
-                      if (window.confirm('이 아이템을 추천하시겠습니까?')) {
-                        handleItemReaction()
-                      }
-                    }}
-                    aria-pressed={isItemRecommended}
-                  >
-                    <strong>{item.recommend_count}</strong>
-                    <span>추천</span>
-                  </button>
+                <div className="item-hero-body">
+                  <div className="item-hero-heading">
+                    <div>
+                      <p className="item-category-badge">{getCategoryLabel(item.category)}</p>
+                      <h2>{item.name}</h2>
+                    </div>
                   <div className="item-score-panel">
                     <strong>{item.starCount ?? 0}</strong>
                     <span>추천 수</span>
@@ -512,14 +494,6 @@ function ItemPage() {
         )}
       </section>
     </main>
-  )
-}
-
-function ItemPage() {
-  return (
-    <>
-      <ItemPageContent />
-    </>
   )
 }
 
