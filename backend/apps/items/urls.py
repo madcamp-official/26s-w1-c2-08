@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     item_categories,
+    item_duplicate_candidates,
     item_ranking,
     item_ranking_detail,
     ItemDetailView,
@@ -15,6 +16,7 @@ from .views import (
 
 urlpatterns = [
     path("", ItemListCreateView.as_view(), name="items-list-create"),
+    path("duplicate-candidates/", item_duplicate_candidates, name="item-duplicate-candidates"),
     path("extract-from-screenshot/", ItemScreenshotExtractView.as_view(), name="items-extract-from-screenshot"),
     path("ranking/", item_ranking, name="item-ranking"),
     path("categories/", item_categories, name="item-categories"),

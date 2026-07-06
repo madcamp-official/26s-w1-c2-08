@@ -7,7 +7,7 @@ import '../rank/ranking.css'
 import '../itempage/itempage.css'
 import '../reviewpage/reviewpage.css'
 import './reviewcreate.css'
-import { apiFetch, buildApiUrl } from '../lib/api'
+import { apiFetch } from '../lib/api'
 
 const initialReviewForm = {
   title: '',
@@ -71,6 +71,10 @@ function formatPrice(value) {
 
 function getCategoryLabel(category) {
   return CATEGORY_LABELS[category] ?? category ?? '기타'
+}
+
+function getOriginalUrlLabel(url) {
+  return url ? '원본 URL로 이동하기' : '링크 없음'
 }
 
 function ReviewCreatePage() {
@@ -204,7 +208,7 @@ function ReviewCreatePage() {
   }
 
   return (
-    <main className="app-shell">
+    <main className="page-shell">
       <div className="review-page-topbar">
         <Link className="review-back-link" to={`/items/${itemId}`}>
           아이템으로 돌아가기
@@ -247,44 +251,40 @@ function ReviewCreatePage() {
                     <p className="item-category-badge">{getCategoryLabel(item.category)}</p>
                     <h2>{item.name}</h2>
                   </div>
-                  <div className="item-score-panel">
-                    <strong>{item.starCount ?? 0}</strong>
-                    <span>추천 수</span>
+                  <div className="item-score-block">
+                    <div className="item-score-panel">
+                      <span className="star-icon">★</span>
+                      <strong>{item.starCount ?? 0}</strong>
+                    </div>
                   </div>
                 </div>
 
-                <dl className="item-detail-grid">
-                  <div>
-                    <dt>브랜드/쇼핑몰</dt>
-                    <dd>{item.shop_or_brand_name}</dd>
-                  </div>
-                  <div>
-                    <dt>가격</dt>
-                    <dd>{formatPrice(item.price)}</dd>
-                  </div>
-                  <div>
-                    <dt>추천</dt>
-                    <dd>{item.starCount ?? 0}</dd>
-                  </div>
-                  <div>
-                    <dt>아이템 ID</dt>
-                    <dd>#{item.id}</dd>
-                  </div>
-                </dl>
+                <div className="item-detail-box">
+                  <dl className="item-detail-grid">
+                    <div>
+                      <dt>브랜드/쇼핑몰</dt>
+                      <dd>{item.shop_or_brand_name}</dd>
+                    </div>
+                    <div>
+                      <dt>가격</dt>
+                      <dd>{formatPrice(item.price)}</dd>
+                    </div>
+                  </dl>
 
-                <div className="item-hero-actions">
-                  {item.original_url ? (
-                    <a
-                      className="product-link"
-                      href={item.original_url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      원본 URL 이동
-                    </a>
-                  ) : (
-                    <span className="product-link">링크 없음</span>
-                  )}
+                  <div className="item-url-row">
+                    {item.original_url ? (
+                      <a
+                        className="product-link"
+                        href={item.original_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {getOriginalUrlLabel(item.original_url)}
+                      </a>
+                    ) : (
+                      <span className="item-url-missing">{getOriginalUrlLabel(item.original_url)}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </article>

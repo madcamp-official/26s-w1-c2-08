@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .duplicate_detection import find_duplicate_candidates
 from .models import Item, Star, User
 from .serializers import (
     ItemRankingSerializer,
@@ -155,6 +156,37 @@ class ItemScreenshotExtractView(APIView):
                 "warnings": result["warnings"],
             }
         )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def item_duplicate_candidates(request):
+    name = str(request.data.get("name", "")).strip()
+    if not name:
+        return Response(
+            {"detail": "상품명을 입력해 주세요."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    candidates = find_duplicate_candidates(
+        name=name,
+        brand=str(request.data.get("shop_or_brand_name", "")).strip(),
+        original_url=str(request.data.get("original_url", "")).strip(),
+        price=request.data.get("price"),
+    )
+    has_duplicates = len(candidates) > 0
+
+    return Response(
+        {
+            "has_duplicates": has_duplicates,
+            "message": (
+                "이미 비슷한 아이템이 존재합니다. 아래의 품목들 중 하나에 리뷰를 추가하시겠습니까?"
+                if has_duplicates
+                else ""
+            ),
+            "candidates": candidates,
+        }
+    )
 
 
 @api_view(["GET"])

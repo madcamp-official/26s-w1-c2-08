@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
-  margin-top: 4px;
+  margin-top: 16px;
 }
 
 .itemreg-panel {
@@ -197,11 +197,26 @@
   gap: 10px;
 }
 
+.itemreg-duplicate-popup {
+  max-width: 560px;
+  text-align: left;
+}
+
+.itemreg-duplicate-popup-list {
+  max-height: min(50vh, 420px);
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
 .itemreg-candidate {
   display: flex;
   gap: 12px;
   flex-direction: row;
   cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
 }
 
 .itemreg-candidate:hover {

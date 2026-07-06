@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ConfirmPopup from '../components/ConfirmPopup'
 import LoginPopup from '../components/LoginPopup'
 import './itemreg.css'
-import { apiFetch, buildApiUrl } from '../lib/api'
+import { apiFetch } from '../lib/api'
 
 const emptyMessage = {
   type: '',
@@ -68,25 +68,11 @@ function normalizeError(error) {
   return '요청 처리 중 오류가 발생했습니다.'
 }
 
-function toCandidate(item) {
-  return {
-    id: String(item.id),
-    itemId: item.id,
-    name: item.name,
-    brand: item.shop_or_brand_name,
-    price: formatPrice(item.price),
-    starCount: item.starCount ?? 0,
-    reason: '현재 DB에 저장된 아이템입니다. 중복 여부를 직접 확인해 주세요.',
-  }
-}
-
 function ItemRegPage() {
   const navigate = useNavigate()
-  const { accessToken, userId } = useAuth()
+  const { accessToken, userId, logout } = useAuth()
   const aiFileInputRef = useRef(null)
   const imageFileInputRef = useRef(null)
-  const [selectedType, setSelectedType] = useState('new')
-  const [selectedCandidate, setSelectedCandidate] = useState('')
   const [selectedImageFile, setSelectedImageFile] = useState(null)
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState('')
   const [imageFileName, setImageFileName] = useState('')
@@ -94,20 +80,28 @@ function ItemRegPage() {
   const [isRepresentativeImageBroken, setIsRepresentativeImageBroken] = useState(false)
   const [aiFields, setAiFields] = useState(emptyAiFields)
   const [aiPreview, setAiPreview] = useState(null)
-  const [duplicateCandidates, setDuplicateCandidates] = useState([])
-  const [isLoadingCandidates, setIsLoadingCandidates] = useState(true)
+  const [duplicateCheckResult, setDuplicateCheckResult] = useState(null)
   const [isAiFilling, setIsAiFilling] = useState(false)
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState(emptyMessage)
-  const [createdItem, setCreatedItem] = useState(null)
-  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   const [loginPopupMessage, setLoginPopupMessage] = useState('')
-  const [reviewNavCandidate, setReviewNavCandidate] = useState(null)
-  const isExistingItemMode = selectedType === 'existing'
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
+  const [showCreatedConfirm, setShowCreatedConfirm] = useState(false)
   const representativeImageSrc = selectedImagePreviewUrl || aiPreview?.imageUrl || ''
   const isAuthenticated = Boolean(accessToken && userId)
 
-  const submitLabel = isSubmitting ? '등록 중...' : '새 아이템 DB 등록'
+  const submitLabel = useMemo(() => {
+    if (isCheckingDuplicates) {
+      return '유사 아이템 확인 중...'
+    }
+
+    if (isSubmitting) {
+      return '아이템 등록 중...'
+    }
+
+    return '아이템 등록'
+  }, [isCheckingDuplicates, isSubmitting])
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -119,65 +113,16 @@ function ItemRegPage() {
   }, [isAuthenticated])
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setIsLoadingCandidates(false)
-      return
-    }
-
-    let isMounted = true
-
-    async function loadItems() {
-      setIsLoadingCandidates(true)
-
-      try {
-        const response = await fetch(buildApiUrl('/items/'))
-
-        if (!response.ok) {
-          throw new Error('아이템 목록을 불러오지 못했습니다.')
-        }
-
-        const data = await response.json()
-
-        if (!isMounted) {
-          return
-        }
-
-        const candidates = data.map(toCandidate)
-        setDuplicateCandidates(candidates)
-        setSelectedCandidate(candidates[0]?.id ?? '')
-      } catch (error) {
-        if (!isMounted) {
-          return
-        }
-
-        setMessage({
-          type: 'error',
-          text:
-            error instanceof Error
-              ? error.message
-              : '아이템 목록을 불러오는 중 오류가 발생했습니다.',
-        })
-      } finally {
-        if (isMounted) {
-          setIsLoadingCandidates(false)
-        }
-      }
-    }
-
-    loadItems()
-
-    return () => {
-      isMounted = false
-    }
-  }, [isAuthenticated])
-
-  useEffect(() => {
     return () => {
       if (selectedImagePreviewUrl) {
         URL.revokeObjectURL(selectedImagePreviewUrl)
       }
     }
   }, [selectedImagePreviewUrl])
+
+  function resetDuplicateCheckState() {
+    setDuplicateCheckResult(null)
+  }
 
   function applySelectedImageFile(file) {
     if (selectedImagePreviewUrl) {
@@ -191,6 +136,7 @@ function ItemRegPage() {
       setSelectedImagePreviewUrl('')
       setImageFileName('')
       setHasAiGeneratedImage(false)
+      resetDuplicateCheckState()
       return
     }
 
@@ -198,6 +144,7 @@ function ItemRegPage() {
     setSelectedImagePreviewUrl(URL.createObjectURL(file))
     setImageFileName(file.name)
     setHasAiGeneratedImage(false)
+    resetDuplicateCheckState()
   }
 
   function handleImageFileChange(event) {
@@ -248,6 +195,7 @@ function ItemRegPage() {
         imageUrl: data.cropped_image_url ?? '',
       })
       setIsRepresentativeImageBroken(false)
+      resetDuplicateCheckState()
 
       if (data.cropped_image_url) {
         try {
@@ -329,81 +277,31 @@ function ItemRegPage() {
       ...current,
       [field]: value,
     }))
+    resetDuplicateCheckState()
   }
 
-  async function refreshItems(selectedItemId) {
-    const response = await fetch(buildApiUrl('/items/'))
-
-    if (!response.ok) {
-      throw new Error('등록 후 아이템 목록을 새로고침하지 못했습니다.')
-    }
-
-    const data = await response.json()
-    const candidates = data.map(toCandidate)
-    setDuplicateCandidates(candidates)
-    setSelectedCandidate(selectedItemId ? String(selectedItemId) : candidates[0]?.id ?? '')
-  }
-
-  function handleCandidateSelect(candidate) {
-    setSelectedCandidate(candidate.id)
-    setReviewNavCandidate(candidate)
-  }
-
-  function handleReviewNavConfirm() {
-    const target = reviewNavCandidate
-    setReviewNavCandidate(null)
-
-    if (target) {
-      navigate(`/items/${target.itemId}/reviews/new`)
-    }
-  }
-
-  function handleSubmitClick() {
-    setShowSubmitConfirm(true)
-  }
-
-  async function handleSubmit() {
-    setShowSubmitConfirm(false)
-    setMessage(emptyMessage)
-
-    if (!accessToken || !userId) {
+  async function createItem() {
+    if (!accessToken) {
       setLoginPopupMessage('아이템 등록은 로그인 후 사용할 수 있습니다.')
       return
+    }
+
+    const numericPrice = Number(aiFields.price.replaceAll(',', '').replaceAll('₩', '').trim())
+    const formData = new FormData()
+    formData.append('name', aiFields.name.trim())
+    formData.append('description', aiFields.description.trim())
+    formData.append('price', String(numericPrice))
+    formData.append('shop_or_brand_name', aiFields.shopOrBrandName.trim())
+    formData.append('original_url', aiFields.originalUrl.trim())
+
+    if (selectedImageFile) {
+      formData.append('image', selectedImageFile)
     }
 
     setIsSubmitting(true)
 
     try {
-      if (!aiFields.name.trim()) {
-        throw new Error('상품명을 입력해 주세요.')
-      }
-
-      if (!aiFields.shopOrBrandName.trim()) {
-        throw new Error('쇼핑몰명 또는 브랜드명을 입력해 주세요.')
-      }
-
-      if (!aiFields.description.trim()) {
-        throw new Error('상품 설명을 입력해 주세요.')
-      }
-
-      const numericPrice = Number(aiFields.price.replaceAll(',', '').replaceAll('₩', '').trim())
-
-      if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-        throw new Error('가격은 0보다 큰 숫자로 입력해 주세요.')
-      }
-
-      const formData = new FormData()
-      formData.append('name', aiFields.name.trim())
-      formData.append('price', String(numericPrice))
-      formData.append('shop_or_brand_name', aiFields.shopOrBrandName.trim())
-      formData.append('original_url', aiFields.originalUrl.trim())
-      formData.append('description', aiFields.description.trim())
-
-      if (selectedImageFile) {
-        formData.append('image', selectedImageFile)
-      }
-
-      const itemResponse = await fetch(buildApiUrl('/items/'), {
+      const itemResponse = await apiFetch('/items/', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -413,17 +311,22 @@ function ItemRegPage() {
 
       const itemData = await itemResponse.json().catch(() => null)
 
+      if (itemResponse.status === 401 || itemResponse.status === 403) {
+        logout()
+        navigate('/login', { replace: true })
+        return
+      }
+
       if (!itemResponse.ok) {
         throw new Error(normalizeError(itemData))
       }
 
-      setCreatedItem(itemData)
-      await refreshItems(itemData.id)
-
-      setMessage({
-        type: 'success',
-        text: `아이템 #${itemData.id} "${itemData.name}" 이(가) DB에 저장되었습니다.`,
+      setDuplicateCheckResult({
+        has_duplicates: false,
+        message: '',
+        candidates: [],
       })
+      setShowCreatedConfirm(true)
     } catch (error) {
       setMessage({
         type: 'error',
@@ -435,6 +338,97 @@ function ItemRegPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  async function runSubmit() {
+    setMessage(emptyMessage)
+
+    if (!accessToken || !userId) {
+      setLoginPopupMessage('아이템 등록은 로그인 후 사용할 수 있습니다.')
+      return
+    }
+
+    if (!aiFields.name.trim()) {
+      setMessage({ type: 'error', text: '상품명을 입력해 주세요.' })
+      return
+    }
+
+    if (!aiFields.shopOrBrandName.trim()) {
+      setMessage({ type: 'error', text: '쇼핑몰명 또는 브랜드명을 입력해 주세요.' })
+      return
+    }
+
+    if (!aiFields.description.trim()) {
+      setMessage({ type: 'error', text: '상품 설명을 입력해 주세요.' })
+      return
+    }
+
+    const numericPrice = Number(aiFields.price.replaceAll(',', '').replaceAll('₩', '').trim())
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      setMessage({ type: 'error', text: '가격은 0보다 큰 숫자로 입력해 주세요.' })
+      return
+    }
+
+    setIsCheckingDuplicates(true)
+
+    try {
+      const response = await apiFetch('/items/duplicate-candidates/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: aiFields.name.trim(),
+          shop_or_brand_name: aiFields.shopOrBrandName.trim(),
+          original_url: aiFields.originalUrl.trim(),
+          price: numericPrice,
+        }),
+      })
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(normalizeError(data))
+      }
+
+      if (data.has_duplicates) {
+        setDuplicateCheckResult(data)
+        setMessage({
+          type: 'info',
+          text: data.message,
+        })
+        return
+      }
+
+      setDuplicateCheckResult({
+        has_duplicates: false,
+        message: '',
+        candidates: [],
+      })
+      await createItem()
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text:
+          error instanceof Error
+            ? error.message
+            : '유사 아이템 탐색 중 오류가 발생했습니다.',
+      })
+    } finally {
+      setIsCheckingDuplicates(false)
+    }
+  }
+
+  function handleSubmitClick() {
+    setShowSubmitConfirm(true)
+  }
+
+  function handleCandidateClick(itemId) {
+    navigate(`/items/${itemId}/reviews/new`)
+  }
+
+  function closeDuplicatePopup() {
+    setDuplicateCheckResult(null)
+    setMessage(emptyMessage)
   }
 
   return (
@@ -457,19 +451,64 @@ function ItemRegPage() {
         }}
       />
       <ConfirmPopup
-        message={showSubmitConfirm ? '새 아이템을 등록하시겠습니까?' : ''}
-        onConfirm={handleSubmit}
+        message={showSubmitConfirm ? '입력한 정보로 아이템을 등록하시겠습니까?' : ''}
+        onConfirm={() => {
+          setShowSubmitConfirm(false)
+          runSubmit()
+        }}
         onCancel={() => setShowSubmitConfirm(false)}
       />
       <ConfirmPopup
-        message={
-          reviewNavCandidate
-            ? `${reviewNavCandidate.name} 페이지로 이동해서 리뷰를 작성하시겠어요?`
-            : ''
-        }
-        onConfirm={handleReviewNavConfirm}
-        onCancel={() => setReviewNavCandidate(null)}
+        message={showCreatedConfirm ? '등록 완료되었습니다.' : ''}
+        onConfirm={() => {
+          setShowCreatedConfirm(false)
+          navigate('/', { replace: true })
+        }}
       />
+
+      {duplicateCheckResult?.has_duplicates ? (
+        <div
+          className="login-popup-overlay"
+          role="presentation"
+          onClick={closeDuplicatePopup}
+        >
+          <div
+            className="login-popup-card itemreg-duplicate-popup"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="duplicate-popup-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p id="duplicate-popup-title" className="login-popup-message">
+              {duplicateCheckResult.message}
+            </p>
+            <div className="itemreg-candidate-list itemreg-duplicate-popup-list">
+              {duplicateCheckResult.candidates.map((candidate) => (
+                <button
+                  key={candidate.id}
+                  type="button"
+                  className="itemreg-candidate"
+                  onClick={() => handleCandidateClick(candidate.id)}
+                >
+                  <div>
+                    <strong>{candidate.name}</strong>
+                    <p>
+                      {candidate.shop_or_brand_name} · {formatPrice(candidate.price)}
+                    </p>
+                    <small>추천 {candidate.starCount ?? 0}</small>
+                    <small>{candidate.reason}</small>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="login-popup-actions">
+              <button type="button" className="secondary-button" onClick={closeDuplicatePopup}>
+                계속 입력하기
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {!isAuthenticated ? (
         <section className="itemreg-stack">
@@ -485,221 +524,128 @@ function ItemRegPage() {
           <section className="itemreg-stack">
             <article className="panel itemreg-panel">
               <div className="itemreg-panel-heading">
-                <span>1</span>
                 <div>
                   <h2>상품 정보 입력</h2>
                   <p>상품 기본 정보는 직접 입력할 수 있고, 스크린샷을 넣으면 같은 칸을 AI 예시값으로 채울 수 있습니다.</p>
                 </div>
               </div>
 
-              {isExistingItemMode ? (
-                <p className="feedback feedback-info">
-                  기존 아이템에 리뷰를 연결하는 중입니다. 아래에서 후보를 선택하면 해당 아이템 페이지로 이동해 리뷰를 작성할 수 있습니다.
-                </p>
-              ) : null}
-
-              <fieldset className={isExistingItemMode ? 'itemreg-disabled-block' : 'itemreg-active-block'} disabled={isExistingItemMode}>
-                <div className="itemreg-field-grid">
-                  <label className="form-field">
-                    <span>상품명</span>
-                    <input
-                      type="text"
-                      value={aiFields.name}
-                      onChange={(event) => handleFieldChange('name', event.target.value)}
-                    />
-                  </label>
-                  <label className="form-field">
-                    <span>쇼핑몰명 또는 브랜드명</span>
-                    <input
-                      type="text"
-                      value={aiFields.shopOrBrandName}
-                      onChange={(event) =>
-                        handleFieldChange('shopOrBrandName', event.target.value)
-                      }
-                    />
-                  </label>
-                  <label className="form-field">
-                    <span>원본 URL</span>
-                    <input
-                      type="url"
-                      value={aiFields.originalUrl}
-                      onChange={(event) => handleFieldChange('originalUrl', event.target.value)}
-                      placeholder={fallbackLinkLabel}
-                    />
-                  </label>
-                  <label className="form-field">
-                    <span>가격</span>
-                    <input
-                      type="text"
-                      value={aiFields.price}
-                      onChange={(event) => handleFieldChange('price', event.target.value)}
-                      placeholder="28000"
-                    />
-                  </label>
-                  <div className="form-field itemreg-image-field">
-                    <span>대표 이미지 첨부</span>
-                    <input
-                      ref={imageFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageFileChange}
-                      hidden
-                    />
-                    <div className="itemreg-image-panel">
-                      <div className="itemreg-image-preview-shell">
-                        {representativeImageSrc && !isRepresentativeImageBroken ? (
-                          <img
-                            src={representativeImageSrc}
-                            alt="대표 이미지 미리보기"
-                            onError={() => setIsRepresentativeImageBroken(true)}
-                          />
-                        ) : (
-                          <div className="itemreg-image-placeholder">No Image</div>
-                        )}
-                      </div>
-                      <div className="itemreg-image-meta">
-                        <strong>
-                          {imageFileName
-                            ? hasAiGeneratedImage
-                              ? 'AI가 추출한 대표 이미지'
-                              : imageFileName
-                            : '아직 대표 이미지가 없습니다'}
-                        </strong>
-                        <button
-                          type="button"
-                          className="secondary-button"
-                          onClick={handleImageUploadClick}
-                        >
-                          {imageFileName ? '대표 이미지 변경' : '대표 이미지 직접 첨부'}
-                        </button>
-                      </div>
+              <div className="itemreg-field-grid">
+                <label className="form-field">
+                  <span>상품명</span>
+                  <input
+                    type="text"
+                    value={aiFields.name}
+                    onChange={(event) => handleFieldChange('name', event.target.value)}
+                  />
+                </label>
+                <label className="form-field">
+                  <span>쇼핑몰명 또는 브랜드명</span>
+                  <input
+                    type="text"
+                    value={aiFields.shopOrBrandName}
+                    onChange={(event) => handleFieldChange('shopOrBrandName', event.target.value)}
+                  />
+                </label>
+                <label className="form-field">
+                  <span>원본 URL</span>
+                  <input
+                    type="url"
+                    value={aiFields.originalUrl}
+                    onChange={(event) => handleFieldChange('originalUrl', event.target.value)}
+                    placeholder={fallbackLinkLabel}
+                  />
+                </label>
+                <label className="form-field">
+                  <span>가격</span>
+                  <input
+                    type="text"
+                    value={aiFields.price}
+                    onChange={(event) => handleFieldChange('price', event.target.value)}
+                    placeholder="28000"
+                  />
+                </label>
+                <div className="form-field itemreg-image-field">
+                  <span>대표 이미지 첨부</span>
+                  <input
+                    ref={imageFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    hidden
+                  />
+                  <div className="itemreg-image-panel">
+                    <div className="itemreg-image-preview-shell">
+                      {representativeImageSrc && !isRepresentativeImageBroken ? (
+                        <img
+                          src={representativeImageSrc}
+                          alt="대표 이미지 미리보기"
+                          onError={() => setIsRepresentativeImageBroken(true)}
+                        />
+                      ) : (
+                        <div className="itemreg-image-placeholder">No Image</div>
+                      )}
+                    </div>
+                    <div className="itemreg-image-meta">
+                      <strong>
+                        {imageFileName
+                          ? hasAiGeneratedImage
+                            ? 'AI가 추출한 대표 이미지'
+                            : imageFileName
+                          : '아직 대표 이미지가 없습니다'}
+                      </strong>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={handleImageUploadClick}
+                      >
+                        {imageFileName ? '대표 이미지 변경' : '대표 이미지 직접 첨부'}
+                      </button>
                     </div>
                   </div>
                 </div>
-                <div className="itemreg-ai-box">
-                  <div className="itemreg-ai-copy">
-                    <strong>AI 자동 입력</strong>
-                    <p>버튼을 누르면 구매 사이트 스크린샷을 선택할 수 있고, 그 이미지 기준으로 상품명, 쇼핑몰명 또는 브랜드명, 대표 이미지를 자동으로 채웁니다.</p>
-                  </div>
-                  <input
-                    ref={aiFileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAiSourceFileChange}
-                    hidden
-                  />
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={handleAiFillClick}
-                    disabled={isAiFilling}
-                  >
-                    {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
-                  </button>
-                </div>
-              </fieldset>
-            </article>
-
-            <article className="panel itemreg-panel">
-              <div className="itemreg-panel-heading">
-                <span>2</span>
-                <div>
-                  <h2>중복 아이템 후보 확인</h2>
-                  <p>현재는 DB의 아이템 목록을 불러와 중복 여부를 직접 확인하도록 연결했습니다.</p>
-                </div>
               </div>
 
-              <div className="itemreg-choice-row">
-                <label className={selectedType === 'new' ? 'is-selected' : ''}>
-                  <input
-                    type="radio"
-                    name="item-type"
-                    value="new"
-                    checked={selectedType === 'new'}
-                    onChange={(event) => setSelectedType(event.target.value)}
-                  />
-                  새 아이템으로 등록
-                </label>
-                <label className={selectedType === 'existing' ? 'is-selected' : ''}>
-                  <input
-                    type="radio"
-                    name="item-type"
-                    value="existing"
-                    checked={selectedType === 'existing'}
-                    onChange={(event) => setSelectedType(event.target.value)}
-                  />
-                  이미 비슷한 아이템이 DB에 존재하는 경우
-                </label>
-              </div>
-
-              <div className="itemreg-candidate-list">
-                {selectedType === 'new' ? (
-                  <p className="itemreg-muted">새 아이템으로 등록을 선택했으므로 기존 아이템 목록은 숨깁니다.</p>
-                ) : isLoadingCandidates ? (
-                  <p className="itemreg-muted">DB의 아이템 목록을 불러오는 중입니다.</p>
-                ) : duplicateCandidates.length === 0 ? (
-                  <p className="itemreg-muted">현재 등록된 아이템이 없습니다. 첫 아이템을 바로 등록할 수 있습니다.</p>
-                ) : (
-                  duplicateCandidates.map((candidate) => (
-                    <label
-                      key={candidate.id}
-                      className={`itemreg-candidate ${
-                        selectedCandidate === candidate.id ? 'is-selected' : ''
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="candidate"
-                        value={candidate.id}
-                        checked={selectedCandidate === candidate.id}
-                        onChange={() => handleCandidateSelect(candidate)}
-                      />
-                      <div>
-                        <strong>{candidate.name}</strong>
-                        <p>
-                          {candidate.brand} · {candidate.price}
-                        </p>
-                        <small>추천 {candidate.starCount}</small>
-                        <small>{candidate.reason}</small>
-                      </div>
-                    </label>
-                  ))
-                )}
+              <div className="itemreg-ai-box">
+                <div className="itemreg-ai-copy">
+                  <strong>AI 자동 입력</strong>
+                  <p>버튼을 누르면 구매 사이트 스크린샷을 선택할 수 있고, 그 이미지 기준으로 상품명, 쇼핑몰명 또는 브랜드명, 대표 이미지를 자동으로 채웁니다.</p>
+                </div>
+                <input
+                  ref={aiFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAiSourceFileChange}
+                  hidden
+                />
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleAiFillClick}
+                  disabled={isAiFilling}
+                >
+                  {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
+                </button>
               </div>
             </article>
 
             <article className="panel itemreg-panel">
               <div className="itemreg-panel-heading">
-                <span>3</span>
                 <div>
                   <h2>상품 설명</h2>
-                  <p>이 아이템에 대한 설명을 입력하면 아이템 등록 시 함께 저장됩니다.</p>
+                  <p>상품 특징, 사용 경험, 추천 포인트를 아이템 설명으로 저장합니다.</p>
                 </div>
               </div>
 
-              {isExistingItemMode ? (
-                <p className="feedback feedback-info">
-                  후보를 선택하면 해당 아이템 페이지로 이동해 리뷰를 작성할 수 있습니다.
-                </p>
-              ) : null}
-
-              <fieldset className={isExistingItemMode ? 'itemreg-disabled-block' : 'itemreg-active-block'} disabled={isExistingItemMode}>
-                <label className="form-field">
-                  <span>상품 설명</span>
-                  <textarea
-                    rows="8"
-                    value={aiFields.description}
-                    onChange={(event) => handleFieldChange('description', event.target.value)}
-                    placeholder="실사용 경험, 장단점, 추천 대상 등을 작성"
-                  />
-                </label>
-              </fieldset>
-
-              {createdItem ? (
-                <p className="itemreg-created">
-                  최근 등록: #{createdItem.id} {createdItem.name}
-                </p>
-              ) : null}
+              <label className="form-field">
+                <span>상품 설명</span>
+                <textarea
+                  rows="8"
+                  value={aiFields.description}
+                  onChange={(event) => handleFieldChange('description', event.target.value)}
+                  placeholder="실사용 경험, 장단점, 추천 대상 등을 작성"
+                />
+              </label>
             </article>
           </section>
 
@@ -715,7 +661,7 @@ function ItemRegPage() {
               type="button"
               className="primary-button"
               onClick={handleSubmitClick}
-              disabled={isSubmitting || isExistingItemMode}
+              disabled={isSubmitting || isCheckingDuplicates}
             >
               {submitLabel}
             </button>

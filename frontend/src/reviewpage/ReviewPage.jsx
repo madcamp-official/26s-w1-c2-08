@@ -545,7 +545,7 @@ function ReviewPageContent() {
               <div className="review-card-header">
                 <div>
                   <p className="review-meta">
-                    작성자 #{review.author} · {formatDateTime(review.created_at)}
+                    작성자 {review.author_username ?? review.author} · {formatDateTime(review.created_at)}
                   </p>
                   {!isEditingReview && <h4>{review.title}</h4>}
                 </div>
@@ -682,7 +682,7 @@ function ReviewPageContent() {
                         <div className="comment-card-top">
                           <div>
                             <p className="review-meta">
-                              작성자 #{comment.author} · {formatDateTime(comment.created_at)}
+                              작성자 {comment.author_username ?? comment.author} · {formatDateTime(comment.created_at)}
                             </p>
                             {comment.updated_at !== comment.created_at && (
                               <p className="comment-edited-label">수정됨</p>
