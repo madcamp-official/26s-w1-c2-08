@@ -28,7 +28,7 @@ class Item(models.Model):
     image_file = models.ImageField(upload_to="items/", blank=True, null=True)
     price = models.PositiveIntegerField()
     shop_or_brand_name = models.CharField(max_length=255)
-    original_url = models.URLField(unique=True)
+    original_url = models.URLField(unique=True, blank=True, null=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

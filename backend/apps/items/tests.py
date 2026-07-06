@@ -22,11 +22,13 @@ def make_test_image_file(name="item.png"):
 class ItemApiTests(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
-            id="tester",
+            id=1,
+            username="tester",
             password="secret1234",
         )
         self.other_user = get_user_model().objects.create_user(
-            id="tester2",
+            id=2,
+            username="tester2",
             password="secret1234",
         )
         self.item = Item.objects.create(
@@ -50,6 +52,8 @@ class ItemApiTests(APITestCase):
         self.assertFalse(response.data[0]["isStarred"])
 
     def test_create_item(self):
+        self.client.force_authenticate(user=self.user)
+
         payload = {
             "name": "세라마이드 진정 크림",
             "image": make_test_image_file(),
@@ -67,7 +71,57 @@ class ItemApiTests(APITestCase):
         self.assertEqual(created_item.name, payload["name"])
         self.assertTrue(created_item.image_file.name.startswith("items/"))
         self.assertEqual(response.data["starCount"], 0)
-        self.assertIn("/media/items/", response.data["image_url"])
+        self.assertTrue(response.data["image_url"].startswith("/media/items/"))
+
+    def test_create_item_without_original_url(self):
+        self.client.force_authenticate(user=self.user)
+
+        payload = {
+            "name": "링크 없는 텀블러",
+            "price": 19900,
+            "shop_or_brand_name": "DAYMATE",
+            "original_url": "",
+        }
+
+        response = self.client.post(reverse("items-list-create"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created_item = Item.objects.get(name=payload["name"])
+        self.assertIsNone(created_item.original_url)
+        self.assertEqual(response.data["original_url"], "")
+
+    def test_create_items_with_same_uploaded_filename_get_unique_image_paths(self):
+        self.client.force_authenticate(user=self.user)
+
+        first_response = self.client.post(
+            reverse("items-list-create"),
+            {
+                "name": "첫 번째 아이템",
+                "image": make_test_image_file("duplicate-name.png"),
+                "price": 1000,
+                "shop_or_brand_name": "A",
+                "original_url": "",
+            },
+            format="multipart",
+        )
+        second_response = self.client.post(
+            reverse("items-list-create"),
+            {
+                "name": "두 번째 아이템",
+                "image": make_test_image_file("duplicate-name.png"),
+                "price": 2000,
+                "shop_or_brand_name": "B",
+                "original_url": "",
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second_response.status_code, status.HTTP_201_CREATED)
+
+        first_item = Item.objects.get(id=first_response.data["id"])
+        second_item = Item.objects.get(id=second_response.data["id"])
+        self.assertNotEqual(first_item.image_file.name, second_item.image_file.name)
 
     @patch("apps.items.views.extract_item_info_from_screenshot")
     def test_extract_item_info_from_screenshot(self, mock_extract):
@@ -90,7 +144,7 @@ class ItemApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "이지엔 위생 롤백")
         self.assertEqual(response.data["shop_or_brand_name"], "EZn이지엔")
-        self.assertEqual(response.data["cropped_image_url"], "http://testserver/media/ai-item-crops/test.png")
+        self.assertEqual(response.data["cropped_image_url"], "/media/ai-item-crops/test.png")
         self.assertEqual(response.data["price"], 9900)
         mock_extract.assert_called_once()
 

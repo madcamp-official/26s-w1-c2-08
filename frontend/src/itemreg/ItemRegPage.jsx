@@ -18,6 +18,8 @@ const emptyAiFields = {
   originalUrl: '',
 }
 
+const fallbackLinkLabel = '링크 없음'
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -87,6 +89,7 @@ function ItemRegPage() {
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState('')
   const [imageFileName, setImageFileName] = useState('')
   const [hasAiGeneratedImage, setHasAiGeneratedImage] = useState(false)
+  const [isRepresentativeImageBroken, setIsRepresentativeImageBroken] = useState(false)
   const [aiFields, setAiFields] = useState(emptyAiFields)
   const [aiPreview, setAiPreview] = useState(null)
   const [review, setReview] = useState({
@@ -173,6 +176,8 @@ function ItemRegPage() {
       URL.revokeObjectURL(selectedImagePreviewUrl)
     }
 
+    setIsRepresentativeImageBroken(false)
+
     if (!file) {
       setSelectedImageFile(null)
       setSelectedImagePreviewUrl('')
@@ -234,23 +239,47 @@ function ItemRegPage() {
         ...nextFields,
         imageUrl: data.cropped_image_url ?? '',
       })
+      setIsRepresentativeImageBroken(false)
 
       if (data.cropped_image_url) {
         try {
           const imageResponse = await fetch(data.cropped_image_url)
           if (imageResponse.ok) {
             const imageBlob = await imageResponse.blob()
-            const extension = imageBlob.type === 'image/jpeg' ? 'jpg' : 'png'
-            const croppedImageFile = new File([imageBlob], `ai-cropped-product.${extension}`, {
-              type: imageBlob.type || `image/${extension}`,
+            const isImageBlob =
+              imageBlob.size > 0 && (!imageBlob.type || imageBlob.type.startsWith('image/'))
+
+            if (isImageBlob) {
+              const extension = imageBlob.type === 'image/jpeg' ? 'jpg' : 'png'
+              const croppedImageFile = new File([imageBlob], `ai-cropped-product.${extension}`, {
+                type: imageBlob.type || `image/${extension}`,
+              })
+              applySelectedImageFile(croppedImageFile)
+              setImageFileName('AI가 추출한 대표 이미지')
+              setHasAiGeneratedImage(true)
+            } else {
+              setHasAiGeneratedImage(false)
+              setImageFileName('')
+              setMessage({
+                type: 'info',
+                text: '상품 정보는 채웠지만 대표 이미지는 자동 첨부하지 않았습니다. 이미지를 확인하거나 직접 첨부해 주세요.',
+              })
+            }
+          } else {
+            setHasAiGeneratedImage(false)
+            setImageFileName('')
+            setMessage({
+              type: 'info',
+              text: '상품 정보는 채웠지만 대표 이미지는 자동 첨부하지 않았습니다. 이미지를 확인하거나 직접 첨부해 주세요.',
             })
-            applySelectedImageFile(croppedImageFile)
-            setImageFileName('AI가 추출한 대표 이미지')
-            setHasAiGeneratedImage(true)
           }
         } catch {
-          setImageFileName('AI가 추출한 대표 이미지')
-          setHasAiGeneratedImage(true)
+          setHasAiGeneratedImage(false)
+          setImageFileName('')
+          setMessage({
+            type: 'info',
+            text: '상품 정보는 채웠지만 대표 이미지는 자동 첨부하지 않았습니다. 이미지를 확인하거나 직접 첨부해 주세요.',
+          })
         }
       } else {
         setHasAiGeneratedImage(false)
@@ -379,8 +408,6 @@ function ItemRegPage() {
       return
     }
 
-  setIsSubmitting(true)
-
     setIsSubmitting(true)
 
     try {
@@ -409,10 +436,6 @@ function ItemRegPage() {
         throw new Error('쇼핑몰명 또는 브랜드명을 입력해 주세요.')
       }
 
-      if (!aiFields.originalUrl.trim()) {
-        throw new Error('원본 URL을 입력해 주세요.')
-      }
-
       const numericPrice = Number(aiFields.price.replaceAll(',', '').replaceAll('₩', '').trim())
 
       if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
@@ -427,8 +450,6 @@ function ItemRegPage() {
 
       if (selectedImageFile) {
         formData.append('image', selectedImageFile)
-      } else if (aiPreview?.imageUrl) {
-        formData.append('image_url', aiPreview.imageUrl)
       }
 
       const itemResponse = await fetch(buildApiUrl('/items/'), {
@@ -526,7 +547,7 @@ function ItemRegPage() {
                   type="url"
                   value={aiFields.originalUrl}
                   onChange={(event) => handleFieldChange('originalUrl', event.target.value)}
-                  placeholder="https://..."
+                  placeholder={fallbackLinkLabel}
                 />
               </label>
               <label className="form-field">
@@ -549,8 +570,12 @@ function ItemRegPage() {
                 />
                 <div className="itemreg-image-panel">
                   <div className="itemreg-image-preview-shell">
-                    {representativeImageSrc ? (
-                      <img src={representativeImageSrc} alt="대표 이미지 미리보기" />
+                    {representativeImageSrc && !isRepresentativeImageBroken ? (
+                      <img
+                        src={representativeImageSrc}
+                        alt="대표 이미지 미리보기"
+                        onError={() => setIsRepresentativeImageBroken(true)}
+                      />
                     ) : (
                       <div className="itemreg-image-placeholder">No Image</div>
                     )}

@@ -1,3 +1,6 @@
+from pathlib import Path
+from uuid import uuid4
+
 from rest_framework import serializers
 
 from .models import Item, Star
@@ -37,16 +40,37 @@ class ItemSerializer(serializers.ModelSerializer):
             "created_by",
             "created_by_id",
         )
+        extra_kwargs = {
+            "original_url": {
+                "required": False,
+                "allow_blank": True,
+                "allow_null": True,
+            }
+        }
+
+    def to_internal_value(self, data):
+        mutable_data = data.copy()
+        original_url = mutable_data.get("original_url")
+        if original_url == "":
+            mutable_data["original_url"] = None
+        validated = super().to_internal_value(mutable_data)
+        image_file = validated.get("image_file")
+        if image_file is not None:
+            extension = Path(image_file.name or "").suffix.lower() or ".png"
+            image_file.name = f"{uuid4().hex}{extension}"
+        return validated
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["original_url"] = instance.original_url or ""
+        return data
 
     def get_created_by_id(self, obj):
         return obj.created_by_id
 
     def get_image_url(self, obj):
-        request = self.context.get("request")
-
         if obj.image_file:
-            url = obj.image_file.url
-            return request.build_absolute_uri(url) if request else url
+            return obj.image_file.url
 
         return obj.image_url or ""
 
@@ -71,7 +95,7 @@ class ItemRankingSerializer(serializers.ModelSerializer):
     starCount = serializers.IntegerField(read_only=True)
     rankingScore = serializers.IntegerField(source="starCount", read_only=True)
     brandOrShopName = serializers.CharField(source="shop_or_brand_name", read_only=True)
-    productUrl = serializers.URLField(source="original_url", read_only=True)
+    productUrl = serializers.SerializerMethodField()
     imageUrl = serializers.SerializerMethodField()
     priceText = serializers.SerializerMethodField()
     externalReviewCount = serializers.SerializerMethodField()
@@ -115,10 +139,10 @@ class ItemRankingSerializer(serializers.ModelSerializer):
         return None
 
     def get_imageUrl(self, obj):
-        request = self.context.get("request")
-
         if obj.image_file:
-            url = obj.image_file.url
-            return request.build_absolute_uri(url) if request else url
+            return obj.image_file.url
 
         return obj.image_url or ""
+
+    def get_productUrl(self, obj):
+        return obj.original_url or ""

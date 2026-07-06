@@ -120,6 +120,10 @@ function getCategoryLabel(category) {
   return CATEGORY_LABELS[category] ?? category ?? '기타'
 }
 
+function getOriginalUrlLabel(url) {
+  return url ? '원본 URL로 이동하기' : '링크 없음'
+}
+
 function ItemPage() {
   const { itemId } = useParams()
   const { accessToken, userId } = useAuth()
@@ -399,18 +403,20 @@ function ItemPage() {
                     </div>
                   </dl>
 
-                  {item.original_url && (
-                    <div className="item-url-row">
+                  <div className="item-url-row">
+                    {item.original_url ? (
                       <a
                         className="product-link"
                         href={item.original_url}
                         target="_blank"
                         rel="noreferrer"
                       >
-                        원본 URL로 이동하기
+                        {getOriginalUrlLabel(item.original_url)}
                       </a>
-                    </div>
-                  )}
+                    ) : (
+                      <span className="item-url-missing">{getOriginalUrlLabel(item.original_url)}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </article>

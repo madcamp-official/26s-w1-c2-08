@@ -273,7 +273,7 @@ function ReviewCreatePage() {
                 </dl>
 
                 <div className="item-hero-actions">
-                  {item.original_url && (
+                  {item.original_url ? (
                     <a
                       className="product-link"
                       href={item.original_url}
@@ -282,6 +282,8 @@ function ReviewCreatePage() {
                     >
                       원본 URL 이동
                     </a>
+                  ) : (
+                    <span className="product-link">링크 없음</span>
                   )}
                 </div>
               </div>

@@ -3,9 +3,9 @@ from django.db.models import BooleanField, Count, Exists, OuterRef, Q, Value
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
 
 from .models import Item, Star, User
 from .serializers import (
@@ -150,7 +150,7 @@ class ItemScreenshotExtractView(APIView):
                 "shop_or_brand_name": result["shop_name"],
                 "price": result["price_value"],
                 "price_text": result["price_text"],
-                "cropped_image_url": request.build_absolute_uri(result["cropped_image_url"]),
+                "cropped_image_url": result["cropped_image_url"],
                 "confidence": result["confidence"],
                 "warnings": result["warnings"],
             }
