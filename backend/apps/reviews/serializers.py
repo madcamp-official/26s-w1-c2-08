@@ -90,6 +90,24 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         model = Review
         fields = ("item", "user_id", "title", "content")
 
+    def validate(self, attrs):
+        if self.instance is None:
+            item = attrs.get("item")
+            author = self._resolve_author(attrs.get("user_id"))
+
+            if item is not None:
+                if item.created_by_id == author.id:
+                    raise serializers.ValidationError(
+                        {"detail": "본인이 등록한 아이템에는 리뷰를 작성할 수 없습니다."}
+                    )
+
+                if Review.objects.filter(item=item, author=author).exists():
+                    raise serializers.ValidationError(
+                        {"detail": "이미 이 아이템에 리뷰를 작성했습니다."}
+                    )
+
+        return attrs
+
     def create(self, validated_data):
         validated_data["author"] = self._resolve_author(validated_data.pop("user_id", None))
         return super().create(validated_data)

@@ -18,6 +18,7 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "name",
+            "description",
             "category",
             "image",
             "image_url",
@@ -45,7 +46,11 @@ class ItemSerializer(serializers.ModelSerializer):
                 "required": False,
                 "allow_blank": True,
                 "allow_null": True,
-            }
+            },
+            "description": {
+                "required": True,
+                "allow_blank": False,
+            },
         }
 
     def to_internal_value(self, data):
