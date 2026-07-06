@@ -10,6 +10,7 @@ from uuid import uuid4
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
+from .models import Item
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 VISION_DIR = REPO_ROOT / "vision"
@@ -19,6 +20,13 @@ RUN_CROP_SCRIPT = VISION_DIR / "run_crop.sh"
 
 class VisionExtractionError(Exception):
     pass
+
+
+def _normalize_extracted_category(category):
+    normalized = str(category or "").strip()
+    if normalized in Item.Category.values:
+        return normalized
+    return Item.Category.ETC
 
 
 def _find_codex_bin(env):
@@ -122,6 +130,7 @@ def extract_item_info_from_screenshot(uploaded_file):
 
     return {
         "product_name": payload.get("product_name", "").strip(),
+        "category": _normalize_extracted_category(payload.get("category")),
         "shop_name": payload.get("shop_name", "").strip(),
         "price_text": payload.get("price_text", "").strip(),
         "price_value": payload.get("price_value"),

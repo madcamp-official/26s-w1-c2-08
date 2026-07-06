@@ -1,5 +1,4 @@
-export const FALLBACK_CATEGORIES = [
-  { value: 'all', label: '전체' },
+export const ITEM_CATEGORIES = [
   { value: 'fashion', label: '의류/패션' },
   { value: 'food', label: '식품' },
   { value: 'beauty', label: '뷰티' },
@@ -12,3 +11,9 @@ export const FALLBACK_CATEGORIES = [
   { value: 'kids_pets', label: '유아/반려동물' },
   { value: 'etc', label: '기타' },
 ]
+
+export const FALLBACK_CATEGORIES = [{ value: 'all', label: '전체' }, ...ITEM_CATEGORIES]
+
+export const CATEGORY_LABELS = Object.fromEntries(
+  ITEM_CATEGORIES.map((category) => [category.value, category.label]),
+)

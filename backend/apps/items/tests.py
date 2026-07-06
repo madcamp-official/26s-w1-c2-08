@@ -14,7 +14,7 @@ from .duplicate_detection import (
     trigram_similarity,
 )
 from .models import Item, Star
-from .vision_service import _build_vision_environment
+from .vision_service import _build_vision_environment, _normalize_extracted_category
 
 
 def make_test_image_file(name="item.png"):
@@ -80,6 +80,7 @@ class ItemApiTests(APITestCase):
         payload = {
             "name": "세라마이드 진정 크림",
             "description": "제가 쓴 것 중에 가장 자극이 없이 진정되는 크림입니다",
+            "category": Item.Category.BEAUTY,
             "image": make_test_image_file(),
             "price": 26500,
             "shop_or_brand_name": "MORU",
@@ -93,6 +94,7 @@ class ItemApiTests(APITestCase):
         self.assertEqual(Item.objects.count(), 2)
         created_item = Item.objects.get(original_url=payload["original_url"])
         self.assertEqual(created_item.name, payload["name"])
+        self.assertEqual(created_item.category, payload["category"])
         self.assertTrue(created_item.image_file.name.startswith("items/"))
         self.assertEqual(response.data["starCount"], 0)
         self.assertTrue(response.data["image_url"].startswith("/media/items/"))
@@ -154,6 +156,7 @@ class ItemApiTests(APITestCase):
     def test_extract_item_info_from_screenshot(self, mock_extract):
         mock_extract.return_value = {
             "product_name": "이지엔 위생 롤백",
+            "category": Item.Category.LIVING,
             "shop_name": "EZn이지엔",
             "price_text": "9,900원",
             "price_value": 9900,
@@ -170,6 +173,7 @@ class ItemApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "이지엔 위생 롤백")
+        self.assertEqual(response.data["category"], Item.Category.LIVING)
         self.assertEqual(response.data["shop_or_brand_name"], "EZn이지엔")
         self.assertEqual(response.data["cropped_image_url"], "/media/ai-item-crops/test.png")
         self.assertEqual(response.data["price"], 9900)
@@ -348,3 +352,7 @@ class VisionEnvironmentTests(APITestCase):
         self.assertEqual(env["VISION_CODEX_BIN"], "/root/.nvm/versions/node/v26.4.0/bin/codex")
         self.assertEqual(env["PATH"].split(os.pathsep)[0], codex_bin_dir)
         self.assertIn("/usr/bin", env["PATH"].split(os.pathsep))
+
+    def test_normalize_extracted_category_falls_back_to_etc(self):
+        self.assertEqual(_normalize_extracted_category("not-a-category"), Item.Category.ETC)
+        self.assertEqual(_normalize_extracted_category(Item.Category.FOOD), Item.Category.FOOD)
