@@ -157,6 +157,8 @@ function ItemPage() {
   const [changeRequestReason, setChangeRequestReason] = useState('')
   const [changeRequestMessage, setChangeRequestMessage] = useState('')
   const [isSubmittingChangeRequest, setIsSubmittingChangeRequest] = useState(false)
+  const [changeRequestDoneMessage, setChangeRequestDoneMessage] = useState('')
+  const [showChangeRequestCancelConfirm, setShowChangeRequestCancelConfirm] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -239,7 +241,7 @@ function ItemPage() {
   }, [itemId, accessToken, userId])
 
   useEffect(() => {
-    if (!item || !accessToken || !userId || String(item.created_by_id) !== userId) {
+    if (!item || !accessToken || !userId) {
       setMyChangeRequest(null)
       return
     }
@@ -563,6 +565,9 @@ function ItemPage() {
 
       setMyChangeRequest(data)
       setIsChangeRequestPanelOpen(false)
+      setChangeRequestDoneMessage(
+        changeRequestType === 'delete' ? '삭제 요청이 완료되었습니다.' : '수정 요청이 완료되었습니다.',
+      )
     } catch (error) {
       setChangeRequestMessage(error instanceof Error ? error.message : '요청을 보내지 못했습니다.')
     } finally {
@@ -570,9 +575,38 @@ function ItemPage() {
     }
   }
 
+  function handleCancelChangeRequestClick() {
+    setShowChangeRequestCancelConfirm(true)
+  }
+
+  async function handleCancelChangeRequest() {
+    setShowChangeRequestCancelConfirm(false)
+
+    if (!myChangeRequest) {
+      return
+    }
+
+    try {
+      const response = await apiFetch(`/items/change-requests/${myChangeRequest.id}/`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+
+      if (!response.ok && response.status !== 404) {
+        const errorData = await readJson(response)
+        throw new Error(normalizeError(errorData, '요청을 취소하지 못했습니다.'))
+      }
+
+      setMyChangeRequest(null)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '요청을 취소하지 못했습니다.')
+    }
+  }
+
   const isItemOwner = Boolean(item && userId && String(item.created_by_id) === userId)
   const myReview = reviews.find((review) => String(review.author) === userId)
   const showReviewButton = Boolean(accessToken && userId && !isItemOwner)
+  const canRequestItemChange = Boolean(accessToken && userId)
 
   return (
     <main className="page-shell">
@@ -583,7 +617,7 @@ function ItemPage() {
           showRecommendConfirm
             ? item?.isStarred
               ? '추천을 취소하시겠습니까?'
-              : '이 아이템을 추천하겠습니까?'
+              : '이 아이템을 추천하시겠습니까?'
             : ''
         }
         onConfirm={handleItemStarToggle}
@@ -593,6 +627,21 @@ function ItemPage() {
         message={reviewDeleteTarget ? '리뷰를 삭제하시겠습니까?' : ''}
         onConfirm={handleDeleteReview}
         onCancel={() => setReviewDeleteTarget(null)}
+      />
+      <ConfirmPopup
+        message={changeRequestDoneMessage}
+        onConfirm={() => setChangeRequestDoneMessage('')}
+      />
+      <ConfirmPopup
+        message={
+          showChangeRequestCancelConfirm
+            ? `${myChangeRequest?.request_type === 'delete' ? '삭제' : '수정'} 요청을 취소하시겠습니까?`
+            : ''
+        }
+        confirmLabel="예"
+        cancelLabel="아니오"
+        onConfirm={handleCancelChangeRequest}
+        onCancel={() => setShowChangeRequestCancelConfirm(false)}
       />
 
       <section className="item-page-section">
@@ -668,32 +717,46 @@ function ItemPage() {
                       <span className="item-url-missing">{getOriginalUrlLabel(item.original_url)}</span>
                     )}
                   </div>
-                </div>
 
-                {item.description ? (
-                  <div className="item-description-box">
-                    <h3>상품 설명</h3>
-                    <p className="item-description-text">{item.description}</p>
-                    {isItemOwner && (
-                      <div className="item-owner-request-row">
-                        {myChangeRequest ? (
-                          <span className="item-owner-request-status">
-                            {myChangeRequest.request_type === 'delete' ? '삭제' : '수정'} 요청이
-                            처리 대기 중입니다.
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="item-owner-request-link"
-                            onClick={toggleChangeRequestPanel}
-                          >
-                            아이템 정보를 수정하거나 삭제하고 싶나요?
-                          </button>
-                        )}
+                  {item.description ? (
+                    <dl className="item-detail-grid">
+                      <div className="item-detail-full-row">
+                        <dt>
+                          상품 설명
+                          {item.created_by_username && (
+                            <span className="uploader-badge">{item.created_by_username}</span>
+                          )}
+                        </dt>
+                        <dd>{item.description}</dd>
                       </div>
-                    )}
-                  </div>
-                ) : null}
+                    </dl>
+                  ) : null}
+
+                  {canRequestItemChange && (
+                    <div className="item-url-row">
+                      {myChangeRequest ? (
+                        <button
+                          type="button"
+                          className="product-link"
+                          onClick={handleCancelChangeRequestClick}
+                        >
+                          {myChangeRequest.request_type === 'delete' ? '삭제' : '수정'} 요청을
+                          취소할까요?
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="product-link"
+                          onClick={toggleChangeRequestPanel}
+                        >
+                          {isItemOwner
+                            ? '아이템 정보를 수정하거나 삭제하고 싶나요?'
+                            : '잘못된 정보가 있나요?'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {isChangeRequestPanelOpen && !myChangeRequest && (
                   <div className="comment-edit-panel item-change-request-panel">
@@ -708,21 +771,25 @@ function ItemPage() {
                         />
                         수정 요청
                       </label>
-                      <label>
-                        <input
-                          type="radio"
-                          name="change-request-type"
-                          value="delete"
-                          checked={changeRequestType === 'delete'}
-                          onChange={() => setChangeRequestType('delete')}
-                        />
-                        삭제 요청
-                      </label>
+                      {isItemOwner && (
+                        <label>
+                          <input
+                            type="radio"
+                            name="change-request-type"
+                            value="delete"
+                            checked={changeRequestType === 'delete'}
+                            onChange={() => setChangeRequestType('delete')}
+                          />
+                          삭제 요청
+                        </label>
+                      )}
                     </div>
 
                     {changeRequestType === 'edit' && (
                       <div className="item-change-request-fields">
-                        {EDITABLE_ITEM_FIELDS.map((field) => {
+                        {EDITABLE_ITEM_FIELDS.filter(
+                          (field) => isItemOwner || field.key !== 'description',
+                        ).map((field) => {
                           const selection = changeRequestFieldSelections[field.key]
                           const enabled = Boolean(selection?.enabled)
 
@@ -788,14 +855,14 @@ function ItemPage() {
 
                     <div className="comment-edit-actions">
                       <button
-                        className="comment-text-button"
+                        className="secondary-button compact-action-button"
                         type="button"
                         onClick={closeChangeRequestPanel}
                       >
                         취소
                       </button>
                       <button
-                        className="reaction-button"
+                        className="primary-button compact-action-button"
                         type="button"
                         disabled={isSubmittingChangeRequest}
                         onClick={handleSubmitChangeRequest}
@@ -817,7 +884,7 @@ function ItemPage() {
                 <div className="review-section-utility">
                   {showReviewButton && (
                     <Link
-                      className="primary-button review-write-button"
+                      className="primary-button compact-action-button"
                       to={
                         myReview
                           ? `/items/${itemId}/reviews/${myReview.id}`

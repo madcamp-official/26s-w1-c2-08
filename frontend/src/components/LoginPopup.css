@@ -38,6 +38,7 @@
 .login-popup-actions .secondary-button {
   min-height: 40px;
   padding: 0 16px;
+  border-radius: 999px;
   font-size: 14px;
 }
 

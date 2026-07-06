@@ -16,12 +16,12 @@ function LoginPopup({ message, onClose }) {
       >
         <p className="login-popup-message">{message}</p>
         <div className="login-popup-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            닫기
-          </button>
           <Link className="primary-button" to="/login" onClick={onClose}>
             로그인하기
           </Link>
+          <button type="button" className="secondary-button" onClick={onClose}>
+            닫기
+          </button>
         </div>
       </div>
     </div>

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { FALLBACK_CATEGORIES } from '../constants/categories'
+import LoginPopup from '../components/LoginPopup'
+import ConfirmPopup from '../components/ConfirmPopup'
 import '../rank/ranking.css'
 import { apiFetch, buildApiUrl } from '../lib/api'
 
@@ -40,6 +42,9 @@ function RankingPage() {
   const [actionMessage, setActionMessage] = useState('')
   const [brokenImages, setBrokenImages] = useState({})
   const [searchTerm, setSearchTerm] = useState('')
+  const [pendingStar, setPendingStar] = useState(null)
+  const [loginPopupMessage, setLoginPopupMessage] = useState('')
+  const [recommendConfirmItemId, setRecommendConfirmItemId] = useState(null)
 
   async function loadCategories() {
     try {
@@ -128,6 +133,24 @@ function RankingPage() {
     setActiveCategory(category)
   }
 
+  function handleStarClick(itemId) {
+    if (!accessToken) {
+      setLoginPopupMessage('아이템 추천은 로그인 후 사용할 수 있습니다.')
+      return
+    }
+
+    setRecommendConfirmItemId(itemId)
+  }
+
+  function handleRecommendConfirm() {
+    const itemId = recommendConfirmItemId
+    setRecommendConfirmItemId(null)
+
+    if (itemId != null) {
+      handleStarToggle(itemId)
+    }
+  }
+
   async function handleStarToggle(itemId) {
     if (!accessToken) return
 
@@ -181,8 +204,23 @@ function RankingPage() {
     ? items.filter((item) => item.name.toLowerCase().includes(normalizedSearchTerm))
     : items
 
+  const recommendConfirmItem = items.find((item) => item.id === recommendConfirmItemId)
+
   return (
     <main className="page-shell ranking-page">
+      <LoginPopup message={loginPopupMessage} onClose={() => setLoginPopupMessage('')} />
+      <ConfirmPopup
+        message={
+          recommendConfirmItem
+            ? recommendConfirmItem.isStarred
+              ? '추천을 취소하시겠습니까?'
+              : '이 아이템을 추천하시겠습니까?'
+            : ''
+        }
+        onConfirm={handleRecommendConfirm}
+        onCancel={() => setRecommendConfirmItemId(null)}
+      />
+
       <div className="category-filter" aria-label="카테고리 필터">
         {categories.map((category) => (
           <button
@@ -285,10 +323,21 @@ function RankingPage() {
                     <div className="item-heading">
                       <h2 className="ranking-item-link">{item.name}</h2>
 
-                      <span className="reaction-count-text">
-                        <span className="star-icon">★</span>
-                        {item.starCount ?? 0}
-                      </span>
+                      <div className="star-column">
+                        <button
+                          type="button"
+                          className={item.isStarred ? 'star-button star-button-active' : 'star-button'}
+                          onClick={() => handleStarClick(item.id)}
+                          disabled={pendingStar === item.id}
+                          aria-pressed={item.isStarred}
+                        >
+                          <span className="star-icon" aria-hidden="true">★</span>
+                          {item.starCount ?? 0}
+                        </button>
+                        {item.createdByUsername && (
+                          <span className="uploader-badge">{item.createdByUsername}</span>
+                        )}
+                      </div>
                     </div>
 
                     {hasMeta && (
