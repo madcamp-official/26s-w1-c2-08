@@ -21,14 +21,14 @@ function ConfirmPopup({
       >
         <p className="login-popup-message">{message}</p>
         <div className="login-popup-actions">
+          <button type="button" className="primary-button" onClick={onConfirm}>
+            {confirmLabel}
+          </button>
           {onCancel && (
             <button type="button" className="secondary-button" onClick={onCancel}>
               {cancelLabel}
             </button>
           )}
-          <button type="button" className="primary-button" onClick={onConfirm}>
-            {confirmLabel}
-          </button>
         </div>
       </div>
     </div>

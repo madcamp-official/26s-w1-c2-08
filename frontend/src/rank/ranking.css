@@ -78,6 +78,27 @@
     box-sizing: border-box;
   }
 
+  .star-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .uploader-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--price);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
   .rank-badge {
     position: absolute;
     top: 12px;

@@ -66,7 +66,7 @@ def _parse_category(request):
 
 
 def _ranked_items_queryset(category=None):
-    queryset = Item.objects.annotate(
+    queryset = Item.objects.select_related("created_by").annotate(
         starCount=Count("star"),
         ranking_score_value=Count("star"),
     ).order_by(
@@ -133,9 +133,10 @@ class ItemChangeRequestCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         item = get_object_or_404(Item, id=self.kwargs["item_id"])
+        is_owner = item.created_by_id == self.request.user.id
 
-        if item.created_by_id != self.request.user.id:
-            raise PermissionDenied("본인이 등록한 아이템만 수정/삭제 요청을 보낼 수 있습니다.")
+        if serializer.validated_data.get("request_type") == ItemChangeRequest.RequestType.DELETE and not is_owner:
+            raise PermissionDenied("본인이 등록한 아이템만 삭제 요청을 보낼 수 있습니다.")
 
         if ItemChangeRequest.objects.filter(
             item=item,
@@ -164,6 +165,16 @@ def item_change_request_mine(request, item_id):
         return Response(None)
 
     return Response(ItemChangeRequestSerializer(change_request).data)
+
+
+class ItemChangeRequestCancelView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ItemChangeRequest.objects.filter(
+            requested_by=self.request.user,
+            status=ItemChangeRequest.Status.PENDING,
+        )
 
 
 class ItemScreenshotExtractView(APIView):

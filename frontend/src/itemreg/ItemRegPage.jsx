@@ -468,6 +468,28 @@ function ItemRegPage() {
               </div>
             </div>
 
+            <div className="itemreg-ai-box">
+              <div className="itemreg-ai-copy">
+                <strong>AI 자동 입력</strong>
+                <p>구매 사이트 스크린샷으로 상품명, 브랜드명, 대표 이미지를 자동으로 채웁니다.</p>
+              </div>
+              <input
+                ref={aiFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAiSourceFileChange}
+                hidden
+              />
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleAiFillClick}
+                disabled={isAiFilling}
+              >
+                {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
+              </button>
+            </div>
+
             <div className="itemreg-field-grid">
               <label className="form-field">
                 <span>상품명</span>
@@ -542,28 +564,6 @@ function ItemRegPage() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="itemreg-ai-box">
-              <div className="itemreg-ai-copy">
-                <strong>AI 자동 입력</strong>
-                <p>구매 사이트 스크린샷으로 상품명, 브랜드명, 대표 이미지를 자동으로 채웁니다.</p>
-              </div>
-              <input
-                ref={aiFileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAiSourceFileChange}
-                hidden
-              />
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={handleAiFillClick}
-                disabled={isAiFilling}
-              >
-                {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
-              </button>
             </div>
           </article>
         </section>

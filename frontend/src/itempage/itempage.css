@@ -173,63 +173,28 @@
   font-weight: 700;
 }
 
+.item-detail-grid dt .uploader-badge {
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
 .item-detail-grid dd {
   margin: 0;
   color: var(--text-strong);
   font-size: 16px;
   font-weight: 800;
-}
-
-.item-description-box {
-  padding: 16px 0 0;
-}
-
-.item-description-box h3 {
-  margin: 0 0 8px;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--text-strong);
-}
-
-.item-description-text {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.6;
   white-space: pre-wrap;
 }
 
-.review-write-button {
-  min-height: 34px;
-  padding: 0 14px;
-  font-size: 13px;
+.item-detail-full-row {
+  grid-column: 1 / -1;
 }
 
-.item-owner-request-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
-}
-
-.item-owner-request-link {
-  border: 0;
-  padding: 0;
-  background: none;
-  color: var(--text-muted);
+.primary-button.compact-action-button,
+.secondary-button.compact-action-button {
+  min-height: 28px;
+  padding: 0 10px;
   font-size: 12px;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-
-.item-owner-request-link:hover {
-  color: var(--accent);
-}
-
-.item-owner-request-status {
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
 }
 
 .item-change-request-panel {

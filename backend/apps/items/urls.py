@@ -6,6 +6,7 @@ from .views import (
     item_change_request_mine,
     item_ranking,
     item_ranking_detail,
+    ItemChangeRequestCancelView,
     ItemChangeRequestCreateView,
     ItemDetailView,
     ItemListCreateView,
@@ -37,5 +38,10 @@ urlpatterns = [
         "<int:item_id>/change-requests/mine/",
         item_change_request_mine,
         name="item-change-request-mine",
+    ),
+    path(
+        "change-requests/<int:pk>/",
+        ItemChangeRequestCancelView.as_view(),
+        name="item-change-request-cancel",
     ),
 ]

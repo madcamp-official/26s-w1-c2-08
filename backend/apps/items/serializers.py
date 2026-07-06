@@ -8,6 +8,7 @@ from .models import Item, ItemChangeRequest, Star
 
 class ItemSerializer(serializers.ModelSerializer):
     created_by_id = serializers.SerializerMethodField()
+    created_by_username = serializers.SerializerMethodField()
     image = serializers.ImageField(source="image_file", write_only=True, required=False, allow_null=True)
     image_url = serializers.SerializerMethodField()
     starCount = serializers.SerializerMethodField()
@@ -29,6 +30,7 @@ class ItemSerializer(serializers.ModelSerializer):
             "isStarred",
             "created_by",
             "created_by_id",
+            "created_by_username",
             "created_at",
             "updated_at",
         )
@@ -40,6 +42,7 @@ class ItemSerializer(serializers.ModelSerializer):
             "updated_at",
             "created_by",
             "created_by_id",
+            "created_by_username",
         )
         extra_kwargs = {
             "original_url": {
@@ -73,6 +76,9 @@ class ItemSerializer(serializers.ModelSerializer):
     def get_created_by_id(self, obj):
         return obj.created_by_id
 
+    def get_created_by_username(self, obj):
+        return obj.created_by.username if obj.created_by_id else None
+
     def get_image_url(self, obj):
         if obj.image_file:
             return obj.image_file.url
@@ -105,6 +111,8 @@ class ItemRankingSerializer(serializers.ModelSerializer):
     priceText = serializers.SerializerMethodField()
     externalReviewCount = serializers.SerializerMethodField()
     isStarred = serializers.SerializerMethodField()
+    createdBy = serializers.IntegerField(source="created_by_id", read_only=True)
+    createdByUsername = serializers.SerializerMethodField()
 
     class Meta:
         model = Item
@@ -121,7 +129,12 @@ class ItemRankingSerializer(serializers.ModelSerializer):
             "starCount",
             "rankingScore",
             "isStarred",
+            "createdBy",
+            "createdByUsername",
         ]
+
+    def get_createdByUsername(self, obj):
+        return obj.created_by.username if obj.created_by_id else None
 
     def get_isStarred(self, obj):
         annotated_value = getattr(obj, "isStarred", None)
