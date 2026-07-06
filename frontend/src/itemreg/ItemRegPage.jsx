@@ -5,6 +5,7 @@ import ConfirmPopup from '../components/ConfirmPopup'
 import LoginPopup from '../components/LoginPopup'
 import './itemreg.css'
 import { apiFetch } from '../lib/api'
+import { ITEM_CATEGORIES, CATEGORY_LABELS } from '../constants/categories'
 
 const emptyMessage = {
   type: '',
@@ -13,6 +14,7 @@ const emptyMessage = {
 
 const emptyAiFields = {
   name: '',
+  category: 'etc',
   imageUrl: '',
   price: '',
   shopOrBrandName: '',
@@ -48,6 +50,10 @@ function formatPrice(value) {
   }
 
   return `₩${numeric.toLocaleString('ko-KR')}`
+}
+
+function getCategoryLabel(category) {
+  return CATEGORY_LABELS[category] ?? '기타'
 }
 
 function normalizeError(error) {
@@ -191,6 +197,8 @@ function ItemRegPage() {
       const nextFields = {
         ...aiFields,
         name: extractedName || aiFields.name,
+        category:
+          ITEM_CATEGORIES.some((category) => category.value === data.category) ? data.category : aiFields.category,
         price: extractedPrice,
         shopOrBrandName: extractedBrand,
       }
@@ -299,6 +307,7 @@ function ItemRegPage() {
     const formData = new FormData()
     formData.append('name', aiFields.name.trim())
     formData.append('description', aiFields.description.trim())
+    formData.append('category', aiFields.category)
     formData.append('price', String(numericPrice))
     formData.append('shop_or_brand_name', aiFields.shopOrBrandName.trim())
     formData.append('original_url', aiFields.originalUrl.trim())
@@ -508,6 +517,19 @@ function ItemRegPage() {
                 />
               </label>
               <label className="form-field">
+                <span>카테고리</span>
+                <select
+                  value={aiFields.category}
+                  onChange={(event) => handleFieldChange('category', event.target.value)}
+                >
+                  {ITEM_CATEGORIES.map((category) => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="form-field">
                 <span>원본 URL</span>
                 <input
                   type="url"
@@ -565,6 +587,28 @@ function ItemRegPage() {
                 </div>
               </div>
             </div>
+
+            <div className="itemreg-ai-box">
+              <div className="itemreg-ai-copy">
+                <strong>AI 자동 입력</strong>
+                <p>구매 사이트 스크린샷으로 상품명, 브랜드명, 카테고리, 대표 이미지를 자동으로 채웁니다.</p>
+              </div>
+              <input
+                ref={aiFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAiSourceFileChange}
+                hidden
+              />
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleAiFillClick}
+                disabled={isAiFilling}
+              >
+                {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
+              </button>
+            </div>
           </article>
         </section>
 
@@ -607,6 +651,7 @@ function ItemRegPage() {
             <div className="itemreg-summary">
               <strong>{aiFields.name || '상품명 미입력'}</strong>
               <p>{aiFields.shopOrBrandName || '브랜드/쇼핑몰명 미입력'}</p>
+              <p>{getCategoryLabel(aiFields.category)}</p>
               <p>{formatPrice(aiFields.price)}</p>
             </div>
 

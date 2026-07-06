@@ -6,6 +6,7 @@
 
 반환 스키마 의미:
 - `product_name`: 실제 판매 상품명. 브랜드명이나 쇼핑몰명이 별도 필드(`shop_name`)에 있으면 앞에 중복해서 붙이지 않는다.
+- `category`: 다음 중 하나만 반환한다. `fashion`, `food`, `beauty`, `electronics`, `appliances`, `living`, `health`, `sports`, `books_hobby`, `kids_pets`, `etc`
 - `shop_name`: 쇼핑몰명 또는 브랜드명
 - `price_text`: 화면에 보이는 대표 가격 원문
 - `price_value`: 가격 숫자 정수값. 불확실하면 null
@@ -19,4 +20,5 @@
 3. 쿠폰가, 회원가, 정가가 섞여 있으면 `warnings`에 기록한다.
 4. 상품 이미지는 주변 UI를 최대한 제외한 대표 상품 사진 기준으로 bbox를 잡는다.
 5. bbox 좌표는 입력 이미지의 실제 픽셀 기준으로 반환한다.
-6. 확신이 낮으면 빈 값 또는 null을 반환하고 `warnings`에 이유를 남긴다.
+6. 카테고리는 반드시 위 허용값 중 하나만 사용한다. 적절한 카테고리가 없으면 `etc`를 반환한다.
+7. 확신이 낮으면 빈 값 또는 null을 반환하고 `warnings`에 이유를 남긴다.

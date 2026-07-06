@@ -5,6 +5,7 @@
   "additionalProperties": false,
   "required": [
     "product_name",
+    "category",
     "shop_name",
     "price_text",
     "price_value",
@@ -15,6 +16,22 @@
   "properties": {
     "product_name": {
       "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "fashion",
+        "food",
+        "beauty",
+        "electronics",
+        "appliances",
+        "living",
+        "health",
+        "sports",
+        "books_hobby",
+        "kids_pets",
+        "etc"
+      ]
     },
     "shop_name": {
       "type": "string"
@@ -65,12 +82,18 @@
       "additionalProperties": false,
       "required": [
         "product_name",
+        "category",
         "shop_name",
         "price",
         "product_image_bbox"
       ],
       "properties": {
         "product_name": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "category": {
           "type": "number",
           "minimum": 0,
           "maximum": 1

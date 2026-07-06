@@ -200,6 +200,7 @@ class ItemScreenshotExtractView(APIView):
         return Response(
             {
                 "name": result["product_name"],
+                "category": result["category"],
                 "shop_or_brand_name": result["shop_name"],
                 "price": result["price_value"],
                 "price_text": result["price_text"],
