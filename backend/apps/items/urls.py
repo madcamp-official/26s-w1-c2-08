@@ -2,8 +2,10 @@ from django.urls import path
 
 from .views import (
     item_categories,
+    item_change_request_mine,
     item_ranking,
     item_ranking_detail,
+    ItemChangeRequestCreateView,
     ItemDetailView,
     ItemListCreateView,
     ItemScreenshotExtractView,
@@ -24,4 +26,14 @@ urlpatterns = [
     path("star-summary/", item_star_summary, name="item-star-summary"),
     path("<int:item_id>/star-summary/", item_star_detail, name="item-star-detail"),
     path("users/<int:user_id>/stars/", user_star_list, name="user-star-list"),
+    path(
+        "<int:item_id>/change-requests/",
+        ItemChangeRequestCreateView.as_view(),
+        name="item-change-request-create",
+    ),
+    path(
+        "<int:item_id>/change-requests/mine/",
+        item_change_request_mine,
+        name="item-change-request-mine",
+    ),
 ]

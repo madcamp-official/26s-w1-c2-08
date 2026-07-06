@@ -22,6 +22,15 @@ const CATEGORY_LABELS = {
   etc: '기타',
 }
 
+const EDITABLE_ITEM_FIELDS = [
+  { key: 'name', label: '상품명', type: 'text' },
+  { key: 'price', label: '가격', type: 'number' },
+  { key: 'shop_or_brand_name', label: '쇼핑몰명 또는 브랜드명', type: 'text' },
+  { key: 'original_url', label: '원본 URL', type: 'text' },
+  { key: 'category', label: '카테고리', type: 'select' },
+  { key: 'description', label: '상품 설명', type: 'textarea' },
+]
+
 function formatPrice(value) {
   const numeric = Number(value)
 
@@ -141,6 +150,13 @@ function ItemPage() {
   const [editingReviewId, setEditingReviewId] = useState(null)
   const [editingReviewForm, setEditingReviewForm] = useState({ title: '', content: '' })
   const [reviewDeleteTarget, setReviewDeleteTarget] = useState(null)
+  const [myChangeRequest, setMyChangeRequest] = useState(null)
+  const [isChangeRequestPanelOpen, setIsChangeRequestPanelOpen] = useState(false)
+  const [changeRequestType, setChangeRequestType] = useState('edit')
+  const [changeRequestFieldSelections, setChangeRequestFieldSelections] = useState({})
+  const [changeRequestReason, setChangeRequestReason] = useState('')
+  const [changeRequestMessage, setChangeRequestMessage] = useState('')
+  const [isSubmittingChangeRequest, setIsSubmittingChangeRequest] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -221,6 +237,40 @@ function ItemPage() {
       isMounted = false
     }
   }, [itemId, accessToken, userId])
+
+  useEffect(() => {
+    if (!item || !accessToken || !userId || String(item.created_by_id) !== userId) {
+      setMyChangeRequest(null)
+      return
+    }
+
+    let isMounted = true
+
+    async function loadMyChangeRequest() {
+      try {
+        const response = await apiFetch(`/items/${itemId}/change-requests/mine/`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+
+        if (!response.ok || !isMounted) {
+          return
+        }
+
+        const data = await response.json()
+        if (isMounted) {
+          setMyChangeRequest(data)
+        }
+      } catch {
+        // 요청 상태 조회 실패는 조용히 무시하고, 링크를 그대로 노출합니다.
+      }
+    }
+
+    loadMyChangeRequest()
+
+    return () => {
+      isMounted = false
+    }
+  }, [item, accessToken, userId, itemId])
 
   async function refreshItem() {
     const itemResponse = await apiFetch(`/items/${itemId}/`, {
@@ -428,6 +478,98 @@ function ItemPage() {
     }
   }
 
+  function toggleChangeRequestPanel() {
+    setIsChangeRequestPanelOpen((current) => {
+      if (current) {
+        return false
+      }
+
+      setChangeRequestType('edit')
+      setChangeRequestFieldSelections({})
+      setChangeRequestReason('')
+      setChangeRequestMessage('')
+      return true
+    })
+  }
+
+  function closeChangeRequestPanel() {
+    setIsChangeRequestPanelOpen(false)
+  }
+
+  function toggleChangeRequestField(key, checked) {
+    setChangeRequestFieldSelections((current) => ({
+      ...current,
+      [key]: {
+        enabled: checked,
+        value: current[key]?.value ?? String(item?.[key] ?? ''),
+      },
+    }))
+  }
+
+  function updateChangeRequestFieldValue(key, value) {
+    setChangeRequestFieldSelections((current) => ({
+      ...current,
+      [key]: { ...current[key], value },
+    }))
+  }
+
+  async function handleSubmitChangeRequest() {
+    if (!accessToken || !userId) {
+      setLoginPopupMessage('요청은 로그인 후 사용할 수 있습니다.')
+      return
+    }
+
+    setChangeRequestMessage('')
+
+    const payload = {
+      request_type: changeRequestType,
+      reason: changeRequestReason.trim(),
+    }
+
+    if (changeRequestType === 'edit') {
+      const requestedFields = {}
+
+      Object.entries(changeRequestFieldSelections).forEach(([key, selection]) => {
+        if (selection?.enabled) {
+          requestedFields[key] = selection.value
+        }
+      })
+
+      if (Object.keys(requestedFields).length === 0) {
+        setChangeRequestMessage('변경할 필드를 하나 이상 선택해 주세요.')
+        return
+      }
+
+      payload.requested_fields = requestedFields
+    }
+
+    setIsSubmittingChangeRequest(true)
+
+    try {
+      const response = await apiFetch(`/items/${itemId}/change-requests/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await readJson(response)
+
+      if (!response.ok) {
+        throw new Error(normalizeError(data, '요청을 보내지 못했습니다.'))
+      }
+
+      setMyChangeRequest(data)
+      setIsChangeRequestPanelOpen(false)
+    } catch (error) {
+      setChangeRequestMessage(error instanceof Error ? error.message : '요청을 보내지 못했습니다.')
+    } finally {
+      setIsSubmittingChangeRequest(false)
+    }
+  }
+
   const isItemOwner = Boolean(item && userId && String(item.created_by_id) === userId)
   const myReview = reviews.find((review) => String(review.author) === userId)
   const showReviewButton = Boolean(accessToken && userId && !isItemOwner)
@@ -532,8 +674,137 @@ function ItemPage() {
                   <div className="item-description-box">
                     <h3>상품 설명</h3>
                     <p className="item-description-text">{item.description}</p>
+                    {isItemOwner && (
+                      <div className="item-owner-request-row">
+                        {myChangeRequest ? (
+                          <span className="item-owner-request-status">
+                            {myChangeRequest.request_type === 'delete' ? '삭제' : '수정'} 요청이
+                            처리 대기 중입니다.
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="item-owner-request-link"
+                            onClick={toggleChangeRequestPanel}
+                          >
+                            아이템 정보를 수정하거나 삭제하고 싶나요?
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : null}
+
+                {isChangeRequestPanelOpen && !myChangeRequest && (
+                  <div className="comment-edit-panel item-change-request-panel">
+                    <div className="item-change-request-type-row">
+                      <label>
+                        <input
+                          type="radio"
+                          name="change-request-type"
+                          value="edit"
+                          checked={changeRequestType === 'edit'}
+                          onChange={() => setChangeRequestType('edit')}
+                        />
+                        수정 요청
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          name="change-request-type"
+                          value="delete"
+                          checked={changeRequestType === 'delete'}
+                          onChange={() => setChangeRequestType('delete')}
+                        />
+                        삭제 요청
+                      </label>
+                    </div>
+
+                    {changeRequestType === 'edit' && (
+                      <div className="item-change-request-fields">
+                        {EDITABLE_ITEM_FIELDS.map((field) => {
+                          const selection = changeRequestFieldSelections[field.key]
+                          const enabled = Boolean(selection?.enabled)
+
+                          return (
+                            <div className="item-change-request-field-row" key={field.key}>
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={enabled}
+                                  onChange={(event) =>
+                                    toggleChangeRequestField(field.key, event.target.checked)
+                                  }
+                                />
+                                {field.label}
+                              </label>
+                              {enabled &&
+                                (field.type === 'textarea' ? (
+                                  <textarea
+                                    value={selection.value}
+                                    onChange={(event) =>
+                                      updateChangeRequestFieldValue(field.key, event.target.value)
+                                    }
+                                    rows={3}
+                                  />
+                                ) : field.type === 'select' ? (
+                                  <select
+                                    value={selection.value}
+                                    onChange={(event) =>
+                                      updateChangeRequestFieldValue(field.key, event.target.value)
+                                    }
+                                  >
+                                    {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                                      <option key={value} value={value}>
+                                        {label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type={field.type === 'number' ? 'number' : 'text'}
+                                    value={selection.value}
+                                    onChange={(event) =>
+                                      updateChangeRequestFieldValue(field.key, event.target.value)
+                                    }
+                                  />
+                                ))}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    <textarea
+                      value={changeRequestReason}
+                      onChange={(event) => setChangeRequestReason(event.target.value)}
+                      placeholder="요청 사유를 입력해 주세요."
+                      rows={3}
+                    />
+
+                    {changeRequestMessage && (
+                      <p className="feedback feedback-error">{changeRequestMessage}</p>
+                    )}
+
+                    <div className="comment-edit-actions">
+                      <button
+                        className="comment-text-button"
+                        type="button"
+                        onClick={closeChangeRequestPanel}
+                      >
+                        취소
+                      </button>
+                      <button
+                        className="reaction-button"
+                        type="button"
+                        disabled={isSubmittingChangeRequest}
+                        onClick={handleSubmitChangeRequest}
+                      >
+                        {isSubmittingChangeRequest ? '요청 중...' : '관리자에게 요청 보내기'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </article>
 
@@ -546,7 +817,7 @@ function ItemPage() {
                 <div className="review-section-utility">
                   {showReviewButton && (
                     <Link
-                      className="primary-button"
+                      className="primary-button review-write-button"
                       to={
                         myReview
                           ? `/items/${itemId}/reviews/${myReview.id}`

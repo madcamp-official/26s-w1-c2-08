@@ -60,3 +60,49 @@ class Star(models.Model):
                 name="unique_user_item_star"
             )
         ]
+
+
+class ItemChangeRequest(models.Model):
+    EDITABLE_FIELDS = (
+        "name",
+        "description",
+        "category",
+        "price",
+        "shop_or_brand_name",
+        "original_url",
+    )
+
+    class RequestType(models.TextChoices):
+        EDIT = "edit", "수정"
+        DELETE = "delete", "삭제"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "대기중"
+        APPROVED = "approved", "승인됨"
+        REJECTED = "rejected", "거절됨"
+
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="change_requests",
+    )
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="item_change_requests",
+    )
+    request_type = models.CharField(max_length=10, choices=RequestType.choices)
+    requested_fields = models.JSONField(blank=True, default=dict)
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    admin_note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_request_type_display()} 요청 - {self.item_id}"
