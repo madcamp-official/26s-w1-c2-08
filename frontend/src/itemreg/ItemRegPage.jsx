@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ConfirmPopup from '../components/ConfirmPopup'
+import LoginPopup from '../components/LoginPopup'
 import './itemreg.css'
 import { apiFetch, buildApiUrl } from '../lib/api'
 
@@ -104,8 +105,10 @@ function ItemRegPage() {
   const [createdItem, setCreatedItem] = useState(null)
   const [createdReview, setCreatedReview] = useState(null)
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
+  const [loginPopupMessage, setLoginPopupMessage] = useState('')
   const isExistingItemMode = selectedType === 'existing'
   const representativeImageSrc = selectedImagePreviewUrl || aiPreview?.imageUrl || ''
+  const isAuthenticated = Boolean(accessToken && userId)
 
   const submitLabel = useMemo(() => {
     if (selectedType === 'existing') {
@@ -116,6 +119,20 @@ function ItemRegPage() {
   }, [isSubmitting, selectedType])
 
   useEffect(() => {
+    if (isAuthenticated) {
+      setLoginPopupMessage('')
+      return
+    }
+
+    setLoginPopupMessage('아이템 등록은 로그인 후 사용할 수 있습니다.')
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoadingCandidates(false)
+      return
+    }
+
     let isMounted = true
 
     async function loadItems() {
@@ -161,7 +178,7 @@ function ItemRegPage() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [isAuthenticated])
 
   useEffect(() => {
     return () => {
@@ -345,6 +362,7 @@ function ItemRegPage() {
 
   async function createReview(itemId) {
     if (!accessToken || !userId) {
+      setLoginPopupMessage('리뷰 작성은 로그인 후 사용할 수 있습니다.')
       throw new Error('리뷰를 저장하려면 먼저 로그인해 주세요.')
     }
 
@@ -401,10 +419,7 @@ function ItemRegPage() {
     setCreatedReview(null)
 
     if (!accessToken || !userId) {
-      setMessage({
-        type: 'error',
-        text: '아이템을 등록하려면 먼저 로그인해 주세요.',
-      })
+      setLoginPopupMessage('아이템 등록은 로그인 후 사용할 수 있습니다.')
       return
     }
 
@@ -499,258 +514,277 @@ function ItemRegPage() {
         <p className={`feedback feedback-${message.type || 'info'}`}>{message.text}</p>
       ) : null}
 
+      <LoginPopup
+        message={loginPopupMessage}
+        onClose={() => {
+          setLoginPopupMessage('')
+          navigate('/login', { replace: true })
+        }}
+      />
       <ConfirmPopup
         message={showSubmitConfirm ? '새 아이템을 등록하시겠습니까?' : ''}
         onConfirm={handleSubmit}
         onCancel={() => setShowSubmitConfirm(false)}
       />
 
-      <section className="itemreg-stack">
-        <article className="panel itemreg-panel">
-          <div className="itemreg-panel-heading">
-            <span>1</span>
-            <div>
-              <h2>상품 정보 입력</h2>
-              <p>상품 기본 정보는 직접 입력할 수 있고, 스크린샷을 넣으면 같은 칸을 AI 예시값으로 채울 수 있습니다.</p>
+      {!isAuthenticated ? (
+        <section className="itemreg-stack">
+          <article className="panel itemreg-panel">
+            <div className="empty-state">
+              <strong>로그인이 필요합니다</strong>
+              <p>아이템 등록과 AI 자동 입력은 로그인 후 사용할 수 있습니다.</p>
             </div>
-          </div>
-
-          {isExistingItemMode ? (
-            <p className="feedback feedback-info">
-              기존 아이템에 리뷰를 연결하는 중입니다. 상품 정보 입력 없이 바로 리뷰만 저장할 수 있습니다.
-            </p>
-          ) : null}
-
-          <fieldset className={isExistingItemMode ? 'itemreg-disabled-block' : 'itemreg-active-block'} disabled={isExistingItemMode}>
-            <div className="itemreg-field-grid">
-              <label className="form-field">
-                <span>상품명</span>
-                <input
-                  type="text"
-                  value={aiFields.name}
-                  onChange={(event) => handleFieldChange('name', event.target.value)}
-                />
-              </label>
-              <label className="form-field">
-                <span>쇼핑몰명 또는 브랜드명</span>
-                <input
-                  type="text"
-                  value={aiFields.shopOrBrandName}
-                  onChange={(event) =>
-                    handleFieldChange('shopOrBrandName', event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>원본 URL</span>
-                <input
-                  type="url"
-                  value={aiFields.originalUrl}
-                  onChange={(event) => handleFieldChange('originalUrl', event.target.value)}
-                  placeholder={fallbackLinkLabel}
-                />
-              </label>
-              <label className="form-field">
-                <span>가격</span>
-                <input
-                  type="text"
-                  value={aiFields.price}
-                  onChange={(event) => handleFieldChange('price', event.target.value)}
-                  placeholder="28000"
-                />
-              </label>
-              <div className="form-field itemreg-image-field">
-                <span>대표 이미지 첨부</span>
-                <input
-                  ref={imageFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageFileChange}
-                  hidden
-                />
-                <div className="itemreg-image-panel">
-                  <div className="itemreg-image-preview-shell">
-                    {representativeImageSrc && !isRepresentativeImageBroken ? (
-                      <img
-                        src={representativeImageSrc}
-                        alt="대표 이미지 미리보기"
-                        onError={() => setIsRepresentativeImageBroken(true)}
-                      />
-                    ) : (
-                      <div className="itemreg-image-placeholder">No Image</div>
-                    )}
-                  </div>
-                  <div className="itemreg-image-meta">
-                    <strong>
-                      {imageFileName
-                        ? hasAiGeneratedImage
-                          ? 'AI가 추출한 대표 이미지'
-                          : imageFileName
-                        : '아직 대표 이미지가 없습니다'}
-                    </strong>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={handleImageUploadClick}
-                    >
-                      {imageFileName ? '대표 이미지 변경' : '대표 이미지 직접 첨부'}
-                    </button>
-                  </div>
+          </article>
+        </section>
+      ) : (
+        <>
+          <section className="itemreg-stack">
+            <article className="panel itemreg-panel">
+              <div className="itemreg-panel-heading">
+                <span>1</span>
+                <div>
+                  <h2>상품 정보 입력</h2>
+                  <p>상품 기본 정보는 직접 입력할 수 있고, 스크린샷을 넣으면 같은 칸을 AI 예시값으로 채울 수 있습니다.</p>
                 </div>
               </div>
-            </div>
 
-            <div className="itemreg-ai-box">
-              <div className="itemreg-ai-copy">
-                <strong>AI 자동 입력</strong>
-                <p>버튼을 누르면 구매 사이트 스크린샷을 선택할 수 있고, 그 이미지 기준으로 상품명, 쇼핑몰명 또는 브랜드명, 대표 이미지를 자동으로 채웁니다.</p>
+              {isExistingItemMode ? (
+                <p className="feedback feedback-info">
+                  기존 아이템에 리뷰를 연결하는 중입니다. 상품 정보 입력 없이 바로 리뷰만 저장할 수 있습니다.
+                </p>
+              ) : null}
+
+              <fieldset className={isExistingItemMode ? 'itemreg-disabled-block' : 'itemreg-active-block'} disabled={isExistingItemMode}>
+                <div className="itemreg-field-grid">
+                  <label className="form-field">
+                    <span>상품명</span>
+                    <input
+                      type="text"
+                      value={aiFields.name}
+                      onChange={(event) => handleFieldChange('name', event.target.value)}
+                    />
+                  </label>
+                  <label className="form-field">
+                    <span>쇼핑몰명 또는 브랜드명</span>
+                    <input
+                      type="text"
+                      value={aiFields.shopOrBrandName}
+                      onChange={(event) =>
+                        handleFieldChange('shopOrBrandName', event.target.value)
+                      }
+                    />
+                  </label>
+                  <label className="form-field">
+                    <span>원본 URL</span>
+                    <input
+                      type="url"
+                      value={aiFields.originalUrl}
+                      onChange={(event) => handleFieldChange('originalUrl', event.target.value)}
+                      placeholder={fallbackLinkLabel}
+                    />
+                  </label>
+                  <label className="form-field">
+                    <span>가격</span>
+                    <input
+                      type="text"
+                      value={aiFields.price}
+                      onChange={(event) => handleFieldChange('price', event.target.value)}
+                      placeholder="28000"
+                    />
+                  </label>
+                  <div className="form-field itemreg-image-field">
+                    <span>대표 이미지 첨부</span>
+                    <input
+                      ref={imageFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFileChange}
+                      hidden
+                    />
+                    <div className="itemreg-image-panel">
+                      <div className="itemreg-image-preview-shell">
+                        {representativeImageSrc && !isRepresentativeImageBroken ? (
+                          <img
+                            src={representativeImageSrc}
+                            alt="대표 이미지 미리보기"
+                            onError={() => setIsRepresentativeImageBroken(true)}
+                          />
+                        ) : (
+                          <div className="itemreg-image-placeholder">No Image</div>
+                        )}
+                      </div>
+                      <div className="itemreg-image-meta">
+                        <strong>
+                          {imageFileName
+                            ? hasAiGeneratedImage
+                              ? 'AI가 추출한 대표 이미지'
+                              : imageFileName
+                            : '아직 대표 이미지가 없습니다'}
+                        </strong>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={handleImageUploadClick}
+                        >
+                          {imageFileName ? '대표 이미지 변경' : '대표 이미지 직접 첨부'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="itemreg-ai-box">
+                  <div className="itemreg-ai-copy">
+                    <strong>AI 자동 입력</strong>
+                    <p>버튼을 누르면 구매 사이트 스크린샷을 선택할 수 있고, 그 이미지 기준으로 상품명, 쇼핑몰명 또는 브랜드명, 대표 이미지를 자동으로 채웁니다.</p>
+                  </div>
+                  <input
+                    ref={aiFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAiSourceFileChange}
+                    hidden
+                  />
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handleAiFillClick}
+                    disabled={isAiFilling}
+                  >
+                    {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
+                  </button>
+                </div>
+              </fieldset>
+            </article>
+
+            <article className="panel itemreg-panel">
+              <div className="itemreg-panel-heading">
+                <span>2</span>
+                <div>
+                  <h2>중복 아이템 후보 확인</h2>
+                  <p>현재는 DB의 아이템 목록을 불러와 중복 여부를 직접 확인하도록 연결했습니다.</p>
+                </div>
               </div>
-              <input
-                ref={aiFileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAiSourceFileChange}
-                hidden
-              />
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={handleAiFillClick}
-                disabled={isAiFilling}
-              >
-                {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
-              </button>
-            </div>
-          </fieldset>
-        </article>
 
-        <article className="panel itemreg-panel">
-          <div className="itemreg-panel-heading">
-            <span>2</span>
-            <div>
-              <h2>중복 아이템 후보 확인</h2>
-              <p>현재는 DB의 아이템 목록을 불러와 중복 여부를 직접 확인하도록 연결했습니다.</p>
-            </div>
-          </div>
-
-          <div className="itemreg-choice-row">
-            <label className={selectedType === 'new' ? 'is-selected' : ''}>
-              <input
-                type="radio"
-                name="item-type"
-                value="new"
-                checked={selectedType === 'new'}
-                onChange={(event) => setSelectedType(event.target.value)}
-              />
-              새 아이템으로 등록
-            </label>
-            <label className={selectedType === 'existing' ? 'is-selected' : ''}>
-              <input
-                type="radio"
-                name="item-type"
-                value="existing"
-                checked={selectedType === 'existing'}
-                onChange={(event) => setSelectedType(event.target.value)}
-              />
-              이미 비슷한 아이템이 DB에 존재하는 경우
-            </label>
-          </div>
-
-          <div className="itemreg-candidate-list">
-            {selectedType === 'new' ? (
-              <p className="itemreg-muted">새 아이템으로 등록을 선택했으므로 기존 아이템 목록은 숨깁니다.</p>
-            ) : isLoadingCandidates ? (
-              <p className="itemreg-muted">DB의 아이템 목록을 불러오는 중입니다.</p>
-            ) : duplicateCandidates.length === 0 ? (
-              <p className="itemreg-muted">현재 등록된 아이템이 없습니다. 첫 아이템을 바로 등록할 수 있습니다.</p>
-            ) : (
-              duplicateCandidates.map((candidate) => (
-                <label
-                  key={candidate.id}
-                  className={`itemreg-candidate ${
-                    selectedCandidate === candidate.id ? 'is-selected' : ''
-                  }`}
-                >
+              <div className="itemreg-choice-row">
+                <label className={selectedType === 'new' ? 'is-selected' : ''}>
                   <input
                     type="radio"
-                    name="candidate"
-                    value={candidate.id}
-                    checked={selectedCandidate === candidate.id}
-                    onChange={(event) => setSelectedCandidate(event.target.value)}
+                    name="item-type"
+                    value="new"
+                    checked={selectedType === 'new'}
+                    onChange={(event) => setSelectedType(event.target.value)}
                   />
-                  <div>
-                    <strong>{candidate.name}</strong>
-                    <p>
-                      {candidate.brand} · {candidate.price}
-                    </p>
-                    <small>추천 {candidate.starCount}</small>
-                    <small>{candidate.reason}</small>
-                  </div>
+                  새 아이템으로 등록
                 </label>
-              ))
-            )}
+                <label className={selectedType === 'existing' ? 'is-selected' : ''}>
+                  <input
+                    type="radio"
+                    name="item-type"
+                    value="existing"
+                    checked={selectedType === 'existing'}
+                    onChange={(event) => setSelectedType(event.target.value)}
+                  />
+                  이미 비슷한 아이템이 DB에 존재하는 경우
+                </label>
+              </div>
+
+              <div className="itemreg-candidate-list">
+                {selectedType === 'new' ? (
+                  <p className="itemreg-muted">새 아이템으로 등록을 선택했으므로 기존 아이템 목록은 숨깁니다.</p>
+                ) : isLoadingCandidates ? (
+                  <p className="itemreg-muted">DB의 아이템 목록을 불러오는 중입니다.</p>
+                ) : duplicateCandidates.length === 0 ? (
+                  <p className="itemreg-muted">현재 등록된 아이템이 없습니다. 첫 아이템을 바로 등록할 수 있습니다.</p>
+                ) : (
+                  duplicateCandidates.map((candidate) => (
+                    <label
+                      key={candidate.id}
+                      className={`itemreg-candidate ${
+                        selectedCandidate === candidate.id ? 'is-selected' : ''
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="candidate"
+                        value={candidate.id}
+                        checked={selectedCandidate === candidate.id}
+                        onChange={(event) => setSelectedCandidate(event.target.value)}
+                      />
+                      <div>
+                        <strong>{candidate.name}</strong>
+                        <p>
+                          {candidate.brand} · {candidate.price}
+                        </p>
+                        <small>추천 {candidate.starCount}</small>
+                        <small>{candidate.reason}</small>
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+            </article>
+
+            <article className="panel itemreg-panel">
+              <div className="itemreg-panel-heading">
+                <span>3</span>
+                <div>
+                  <h2>리뷰 작성</h2>
+                  <p>리뷰 제목과 본문을 입력하면 아이템 등록 또는 기존 아이템 연결 시 함께 저장됩니다.</p>
+                </div>
+              </div>
+
+              <label className="form-field">
+                <span>리뷰 제목</span>
+                <input
+                  type="text"
+                  value={review.title}
+                  onChange={(event) => handleReviewChange('title', event.target.value)}
+                  placeholder="리뷰를 요약하는 제목"
+                />
+              </label>
+
+              <label className="form-field">
+                <span>리뷰 본문</span>
+                <textarea
+                  rows="8"
+                  value={review.content}
+                  onChange={(event) => handleReviewChange('content', event.target.value)}
+                  placeholder="실사용 경험, 장단점, 추천 대상 등을 작성"
+                />
+              </label>
+
+              {createdItem ? (
+                <p className="itemreg-created">
+                  최근 등록: #{createdItem.id} {createdItem.name}
+                </p>
+              ) : null}
+              {createdReview ? (
+                <p className="itemreg-created">
+                  최근 리뷰 등록: #{createdReview.id} {createdReview.title}
+                </p>
+              ) : null}
+            </article>
+          </section>
+
+          <div className="itemreg-action-row">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => navigate(-1)}
+            >
+              뒤로가기
+            </button>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={handleSubmitClick}
+              disabled={isSubmitting}
+            >
+              {submitLabel}
+            </button>
           </div>
-        </article>
-
-        <article className="panel itemreg-panel">
-          <div className="itemreg-panel-heading">
-            <span>3</span>
-            <div>
-              <h2>리뷰 작성</h2>
-              <p>리뷰 제목과 본문을 입력하면 아이템 등록 또는 기존 아이템 연결 시 함께 저장됩니다.</p>
-            </div>
-          </div>
-
-          <label className="form-field">
-            <span>리뷰 제목</span>
-            <input
-              type="text"
-              value={review.title}
-              onChange={(event) => handleReviewChange('title', event.target.value)}
-              placeholder="리뷰를 요약하는 제목"
-            />
-          </label>
-
-          <label className="form-field">
-            <span>리뷰 본문</span>
-            <textarea
-              rows="8"
-              value={review.content}
-              onChange={(event) => handleReviewChange('content', event.target.value)}
-              placeholder="실사용 경험, 장단점, 추천 대상 등을 작성"
-            />
-          </label>
-
-          {createdItem ? (
-            <p className="itemreg-created">
-              최근 등록: #{createdItem.id} {createdItem.name}
-            </p>
-          ) : null}
-          {createdReview ? (
-            <p className="itemreg-created">
-              최근 리뷰 등록: #{createdReview.id} {createdReview.title}
-            </p>
-          ) : null}
-        </article>
-      </section>
-
-      <div className="itemreg-action-row">
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => navigate(-1)}
-        >
-          뒤로가기
-        </button>
-        <button
-          type="button"
-          className="primary-button"
-          onClick={handleSubmitClick}
-          disabled={isSubmitting}
-        >
-          {submitLabel}
-        </button>
-      </div>
+        </>
+      )}
     </main>
   )
 }
