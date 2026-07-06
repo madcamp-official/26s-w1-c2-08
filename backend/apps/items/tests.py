@@ -9,6 +9,10 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from .duplicate_detection import (
+    build_normalized_input,
+    trigram_similarity,
+)
 from .models import Item, Star
 from .vision_service import _build_vision_environment
 
@@ -17,6 +21,25 @@ def make_test_image_file(name="item.png"):
     buffer = BytesIO()
     Image.new("RGB", (1, 1), color="white").save(buffer, format="PNG")
     return SimpleUploadedFile(name, buffer.getvalue(), content_type="image/png")
+
+
+class DuplicateDetectionTests(APITestCase):
+    def test_build_normalized_input_removes_brand_prefix_and_promotional_phrases(self):
+        normalized = build_normalized_input(
+            name="MORU BEAUTY 라벤더 세라마이드 수분크림 [대용량] 무료배송",
+            brand="MORU BEAUTY",
+            price="28,000",
+        )
+
+        self.assertEqual(normalized.brand, "moru beauty")
+        self.assertEqual(normalized.name, "라벤더 세라마이드 수분크림")
+        self.assertEqual(normalized.tokens, ["라벤더", "세라마이드", "수분크림"])
+        self.assertEqual(normalized.price, 28000)
+
+    def test_trigram_similarity_handles_spacing_variants(self):
+        score = trigram_similarity("세라마이드 수분크림", "세라마이드 수분 크림")
+
+        self.assertGreater(score, 0.8)
 
 
 class ItemApiTests(APITestCase):
@@ -189,6 +212,73 @@ class ItemApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
+
+    def test_duplicate_candidates_returns_exact_url_match(self):
+        response = self.client.post(
+            reverse("item-duplicate-candidates"),
+            {
+                "name": "완전히 다른 이름",
+                "shop_or_brand_name": "다른 브랜드",
+                "original_url": self.item.original_url,
+                "price": 99999,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["has_duplicates"])
+        self.assertEqual(response.data["candidates"][0]["id"], self.item.id)
+        self.assertEqual(response.data["candidates"][0]["similarity_score"], 1.0)
+
+    def test_duplicate_candidates_detects_brand_prefixed_name(self):
+        response = self.client.post(
+            reverse("item-duplicate-candidates"),
+            {
+                "name": "MORU BEAUTY 라벤더 세라마이드 수분 크림 [대용량]",
+                "shop_or_brand_name": "MORU BEAUTY",
+                "price": 27500,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["has_duplicates"])
+        self.assertEqual(response.data["candidates"][0]["id"], self.item.id)
+        self.assertGreaterEqual(response.data["candidates"][0]["similarity_score"], 0.85)
+
+    def test_duplicate_candidates_rejects_model_number_mismatch(self):
+        Item.objects.create(
+            name="SOUNDLAB 블루투스 이어폰 S24",
+            category=Item.Category.ELECTRONICS,
+            price=129000,
+            shop_or_brand_name="SOUNDLAB",
+            original_url="https://shop.example.com/products/soundlab-s24",
+        )
+
+        response = self.client.post(
+            reverse("item-duplicate-candidates"),
+            {
+                "name": "SOUNDLAB 블루투스 이어폰 S23",
+                "shop_or_brand_name": "SOUNDLAB",
+                "price": 129000,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            any(candidate["name"] == "SOUNDLAB 블루투스 이어폰 S24" for candidate in response.data["candidates"])
+        )
+
+    def test_duplicate_candidates_requires_name(self):
+        response = self.client.post(
+            reverse("item-duplicate-candidates"),
+            {"name": " "},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["detail"], "상품명을 입력해 주세요.")
 
     def test_ranking_endpoint(self):
         ranked_item = Item.objects.create(

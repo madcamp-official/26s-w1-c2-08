@@ -4,6 +4,7 @@ from .models import Review, ReviewComment, ReviewCommentReaction, ReviewReaction
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    author_username = serializers.CharField(source="author.username", read_only=True)
     comments_count = serializers.SerializerMethodField()
     user_reaction = serializers.SerializerMethodField()
 
@@ -13,6 +14,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             "id",
             "item",
             "author",
+            "author_username",
             "title",
             "content",
             "like_count",
@@ -47,6 +49,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class ReviewCommentSerializer(serializers.ModelSerializer):
+    author_username = serializers.CharField(source="author.username", read_only=True)
     user_reaction = serializers.SerializerMethodField()
 
     class Meta:
@@ -55,6 +58,7 @@ class ReviewCommentSerializer(serializers.ModelSerializer):
             "id",
             "review",
             "author",
+            "author_username",
             "content",
             "like_count",
             "dislike_count",

@@ -457,7 +457,7 @@ function ItemPage() {
                         <div className="review-card-header">
                           <div>
                             <p className="review-meta">
-                              작성자 #{review.author} · {formatDate(review.created_at)}
+                              작성자 {review.author_username ?? review.author} · {formatDate(review.created_at)}
                             </p>
                             <h4>{review.title}</h4>
                           </div>
