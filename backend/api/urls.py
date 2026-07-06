@@ -9,4 +9,5 @@ urlpatterns = [
     path("items/", include("apps.items.urls")),
     path("reviews/", include("apps.reviews.urls")),
     path("user/", include("apps.user.urls")),
+    path("recommend/", include("apps.recommend.urls")),
 ]
