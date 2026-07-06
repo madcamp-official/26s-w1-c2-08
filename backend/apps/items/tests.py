@@ -79,6 +79,7 @@ class ItemApiTests(APITestCase):
 
         payload = {
             "name": "세라마이드 진정 크림",
+            "description": "제가 쓴 것 중에 가장 자극이 없이 진정되는 크림입니다",
             "image": make_test_image_file(),
             "price": 26500,
             "shop_or_brand_name": "MORU",
@@ -101,6 +102,7 @@ class ItemApiTests(APITestCase):
 
         payload = {
             "name": "링크 없는 텀블러",
+            "description": "보온 유지가 잘 되는 텀블러입니다",
             "price": 19900,
             "shop_or_brand_name": "DAYMATE",
             "original_url": "",
@@ -120,6 +122,7 @@ class ItemApiTests(APITestCase):
             reverse("items-list-create"),
             {
                 "name": "첫 번째 아이템",
+                "description": "첫 번째 아이템 설명",
                 "image": make_test_image_file("duplicate-name.png"),
                 "price": 1000,
                 "shop_or_brand_name": "A",
@@ -131,6 +134,7 @@ class ItemApiTests(APITestCase):
             reverse("items-list-create"),
             {
                 "name": "두 번째 아이템",
+                "description": "두 번째 아이템 설명",
                 "image": make_test_image_file("duplicate-name.png"),
                 "price": 2000,
                 "shop_or_brand_name": "B",

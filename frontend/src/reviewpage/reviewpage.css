@@ -126,7 +126,9 @@
 
 .comment-composer textarea,
 .comment-edit-panel textarea,
-.comment-edit-panel input[type='text'] {
+.comment-edit-panel input[type='text'],
+.comment-edit-panel input[type='number'],
+.comment-edit-panel select {
   width: 100%;
   min-height: 64px;
   padding: 10px 14px;
@@ -140,14 +142,18 @@
   box-sizing: border-box;
 }
 
-.comment-edit-panel input[type='text'] {
+.comment-edit-panel input[type='text'],
+.comment-edit-panel input[type='number'],
+.comment-edit-panel select {
   min-height: 0;
   font-weight: 800;
 }
 
 .comment-composer textarea:focus,
 .comment-edit-panel textarea:focus,
-.comment-edit-panel input[type='text']:focus {
+.comment-edit-panel input[type='text']:focus,
+.comment-edit-panel input[type='number']:focus,
+.comment-edit-panel select:focus {
   outline: 2px solid rgba(15, 118, 110, 0.24);
   outline-offset: 0;
 }

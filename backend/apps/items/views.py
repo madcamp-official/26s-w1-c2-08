@@ -1,3 +1,4 @@
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from django.db.models import BooleanField, Count, Exists, OuterRef, Q, Value
 from django.shortcuts import get_object_or_404
@@ -8,8 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .duplicate_detection import find_duplicate_candidates
-from .models import Item, Star, User
+from .models import Item, ItemChangeRequest, Star, User
 from .serializers import (
+    ItemChangeRequestSerializer,
     ItemRankingSerializer,
     ItemSerializer,
 )
@@ -123,6 +125,45 @@ class ItemDetailView(generics.RetrieveUpdateDestroyAPIView):
             )
 
         return queryset.annotate(isStarred=Value(False, output_field=BooleanField()))
+
+
+class ItemChangeRequestCreateView(generics.CreateAPIView):
+    serializer_class = ItemChangeRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        item = get_object_or_404(Item, id=self.kwargs["item_id"])
+
+        if item.created_by_id != self.request.user.id:
+            raise PermissionDenied("본인이 등록한 아이템만 수정/삭제 요청을 보낼 수 있습니다.")
+
+        if ItemChangeRequest.objects.filter(
+            item=item,
+            requested_by=self.request.user,
+            status=ItemChangeRequest.Status.PENDING,
+        ).exists():
+            raise ValidationError({"detail": "이미 처리 대기 중인 요청이 있습니다."})
+
+        serializer.save(item=item, requested_by=self.request.user)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def item_change_request_mine(request, item_id):
+    change_request = (
+        ItemChangeRequest.objects.filter(
+            item_id=item_id,
+            requested_by=request.user,
+            status=ItemChangeRequest.Status.PENDING,
+        )
+        .order_by("-created_at")
+        .first()
+    )
+
+    if change_request is None:
+        return Response(None)
+
+    return Response(ItemChangeRequestSerializer(change_request).data)
 
 
 class ItemScreenshotExtractView(APIView):

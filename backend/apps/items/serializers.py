@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from rest_framework import serializers
 
-from .models import Item, Star
+from .models import Item, ItemChangeRequest, Star
 
 
 class ItemSerializer(serializers.ModelSerializer):
@@ -151,3 +151,70 @@ class ItemRankingSerializer(serializers.ModelSerializer):
 
     def get_productUrl(self, obj):
         return obj.original_url or ""
+
+
+class ItemChangeRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemChangeRequest
+        fields = (
+            "id",
+            "item",
+            "request_type",
+            "requested_fields",
+            "reason",
+            "status",
+            "admin_note",
+            "created_at",
+            "resolved_at",
+        )
+        read_only_fields = ("id", "status", "admin_note", "created_at", "resolved_at")
+
+    def validate(self, attrs):
+        request_type = attrs.get("request_type")
+        requested_fields = attrs.get("requested_fields") or {}
+
+        if request_type == ItemChangeRequest.RequestType.EDIT:
+            if not requested_fields:
+                raise serializers.ValidationError(
+                    {"requested_fields": "변경할 필드를 하나 이상 입력해 주세요."}
+                )
+
+            invalid_keys = set(requested_fields) - set(ItemChangeRequest.EDITABLE_FIELDS)
+            if invalid_keys:
+                raise serializers.ValidationError(
+                    {"requested_fields": f"수정할 수 없는 필드입니다: {', '.join(sorted(invalid_keys))}"}
+                )
+
+            attrs["requested_fields"] = self._normalize_requested_fields(requested_fields)
+        else:
+            attrs["requested_fields"] = {}
+
+        return attrs
+
+    def _normalize_requested_fields(self, requested_fields):
+        normalized = {}
+
+        for field, value in requested_fields.items():
+            if field == "price":
+                try:
+                    price = int(value)
+                except (TypeError, ValueError):
+                    raise serializers.ValidationError({"requested_fields": "가격은 숫자로 입력해 주세요."})
+                if price <= 0:
+                    raise serializers.ValidationError({"requested_fields": "가격은 0보다 커야 합니다."})
+                normalized[field] = price
+            elif field == "category":
+                if value not in Item.Category.values:
+                    raise serializers.ValidationError({"requested_fields": "올바르지 않은 카테고리입니다."})
+                normalized[field] = value
+            elif field in ("name", "shop_or_brand_name"):
+                text = str(value).strip()
+                if not text:
+                    raise serializers.ValidationError({"requested_fields": f"{field}은(는) 비워둘 수 없습니다."})
+                normalized[field] = text
+            elif field == "original_url":
+                normalized[field] = str(value).strip()
+            elif field == "description":
+                normalized[field] = str(value).strip()
+
+        return normalized
