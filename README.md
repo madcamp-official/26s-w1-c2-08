@@ -296,6 +296,7 @@ User - Item - Review - Comment
 > 접속 가능한 링크, 실행 방법, 주요 구현 내용
 
 - **서비스 URL:**
+https://chekonghoon.madcamp-kaist.org/
 - **실행 방법:**
 
 ### Backend
