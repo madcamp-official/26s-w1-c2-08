@@ -5,6 +5,7 @@ import LoginPopup from '../components/LoginPopup'
 import ConfirmPopup from '../components/ConfirmPopup'
 import '../rank/ranking.css'
 import './itempage.css'
+import '../reviewpage/reviewpage.css'
 import { apiFetch, buildApiUrl } from '../lib/api'
 
 const CATEGORY_LABELS = {
@@ -137,6 +138,9 @@ function ItemPage() {
   const [pendingTarget, setPendingTarget] = useState('')
   const [brokenImage, setBrokenImage] = useState(false)
   const [showRecommendConfirm, setShowRecommendConfirm] = useState(false)
+  const [editingReviewId, setEditingReviewId] = useState(null)
+  const [editingReviewForm, setEditingReviewForm] = useState({ title: '', content: '' })
+  const [reviewDeleteTarget, setReviewDeleteTarget] = useState(null)
 
   useEffect(() => {
     let isMounted = true
@@ -326,6 +330,104 @@ function ItemPage() {
     }
   }
 
+  function beginEditingReview(review) {
+    setEditingReviewId(review.id)
+    setEditingReviewForm({ title: review.title, content: review.content })
+    setNotice('')
+  }
+
+  function cancelEditingReview() {
+    setEditingReviewId(null)
+    setEditingReviewForm({ title: '', content: '' })
+  }
+
+  async function handleUpdateReview(reviewId) {
+    const title = editingReviewForm.title.trim()
+    const content = editingReviewForm.content.trim()
+
+    if (!accessToken || !userId) {
+      setLoginPopupMessage('리뷰 수정은 로그인 후 사용할 수 있습니다.')
+      return
+    }
+
+    if (!title || !content) {
+      setNotice('리뷰 제목과 본문을 입력해 주세요.')
+      return
+    }
+
+    setPendingTarget(`review-edit-${reviewId}`)
+    setNotice('')
+
+    try {
+      const response = await apiFetch(`/reviews/${reviewId}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, title, content }),
+      })
+
+      if (!response.ok) {
+        const errorData = await readJson(response)
+        throw new Error(normalizeError(errorData, '리뷰를 수정하지 못했습니다.'))
+      }
+
+      const updatedReview = await response.json()
+      setReviews((currentReviews) =>
+        sortReviews(
+          currentReviews.map((review) => (review.id === updatedReview.id ? updatedReview : review)),
+        ),
+      )
+      cancelEditingReview()
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '리뷰를 수정하지 못했습니다.')
+    } finally {
+      setPendingTarget('')
+    }
+  }
+
+  function handleDeleteReviewClick(reviewId) {
+    if (!accessToken || !userId) {
+      setLoginPopupMessage('리뷰 삭제는 로그인 후 사용할 수 있습니다.')
+      return
+    }
+
+    setReviewDeleteTarget(reviewId)
+  }
+
+  async function handleDeleteReview() {
+    const reviewId = reviewDeleteTarget
+    setReviewDeleteTarget(null)
+
+    if (!reviewId) {
+      return
+    }
+
+    setPendingTarget(`review-delete-${reviewId}`)
+    setNotice('')
+
+    try {
+      const response = await apiFetch(`/reviews/${reviewId}/`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      })
+
+      if (!response.ok) {
+        const errorData = await readJson(response)
+        throw new Error(normalizeError(errorData, '리뷰를 삭제하지 못했습니다.'))
+      }
+
+      setReviews((currentReviews) => currentReviews.filter((review) => review.id !== reviewId))
+
+      if (editingReviewId === reviewId) {
+        cancelEditingReview()
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '리뷰를 삭제하지 못했습니다.')
+    } finally {
+      setPendingTarget('')
+    }
+  }
+
   const showReviewCreateButton = Boolean(accessToken && userId)
 
   return (
@@ -342,6 +444,11 @@ function ItemPage() {
         }
         onConfirm={handleItemStarToggle}
         onCancel={() => setShowRecommendConfirm(false)}
+      />
+      <ConfirmPopup
+        message={reviewDeleteTarget ? '리뷰를 삭제하시겠습니까?' : ''}
+        onConfirm={handleDeleteReview}
+        onCancel={() => setReviewDeleteTarget(null)}
       />
 
       <section className="item-page-section">
@@ -418,6 +525,13 @@ function ItemPage() {
                     )}
                   </div>
                 </div>
+
+                {item.description ? (
+                  <div className="item-description-box">
+                    <h3>상품 설명</h3>
+                    <p className="item-description-text">{item.description}</p>
+                  </div>
+                ) : null}
               </div>
             </article>
 
@@ -448,23 +562,83 @@ function ItemPage() {
                 </div>
               ) : (
                 <ol className="review-list">
-                  {reviews.map((review) => (
+                  {reviews.map((review) => {
+                    const isReviewAuthor = String(review.author) === userId
+                    const isEditingThis = editingReviewId === review.id
+
+                    return (
                     <li className="review-card" key={review.id}>
-                      <Link
-                        className="review-card-link"
-                        to={`/items/${itemId}/reviews/${review.id}`}
-                      >
-                        <div className="review-card-header">
-                          <div>
-                            <p className="review-meta">
-                              작성자 #{review.author} · {formatDate(review.created_at)}
-                            </p>
-                            <h4>{review.title}</h4>
+                      <div className="review-card-header">
+                        <div>
+                          <p className="review-meta">
+                            작성자 #{review.author} · {formatDate(review.created_at)}
+                          </p>
+                          {!isEditingThis && <h4>{review.title}</h4>}
+                        </div>
+                        {isReviewAuthor && (
+                          <div className="comment-owner-actions">
+                            <button
+                              className="comment-text-button"
+                              type="button"
+                              onClick={() =>
+                                isEditingThis ? cancelEditingReview() : beginEditingReview(review)
+                              }
+                            >
+                              {isEditingThis ? '취소' : '수정'}
+                            </button>
+                            <button
+                              className="comment-text-button danger"
+                              type="button"
+                              disabled={pendingTarget === `review-delete-${review.id}`}
+                              onClick={() => handleDeleteReviewClick(review.id)}
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {isEditingThis ? (
+                        <div className="comment-edit-panel">
+                          <input
+                            type="text"
+                            value={editingReviewForm.title}
+                            onChange={(event) =>
+                              setEditingReviewForm((current) => ({
+                                ...current,
+                                title: event.target.value,
+                              }))
+                            }
+                          />
+                          <textarea
+                            value={editingReviewForm.content}
+                            onChange={(event) =>
+                              setEditingReviewForm((current) => ({
+                                ...current,
+                                content: event.target.value,
+                              }))
+                            }
+                            rows={4}
+                          />
+                          <div className="comment-edit-actions">
+                            <button
+                              className="reaction-button"
+                              type="button"
+                              disabled={pendingTarget === `review-edit-${review.id}`}
+                              onClick={() => handleUpdateReview(review.id)}
+                            >
+                              {pendingTarget === `review-edit-${review.id}` ? '저장 중...' : '수정 저장'}
+                            </button>
                           </div>
                         </div>
-
-                        <p className="review-content">{review.content}</p>
-                      </Link>
+                      ) : (
+                        <Link
+                          className="review-card-link"
+                          to={`/items/${itemId}/reviews/${review.id}`}
+                        >
+                          <p className="review-content">{review.content}</p>
+                        </Link>
+                      )}
 
                       <div className="review-footer">
                         <div className="review-stats">
@@ -505,7 +679,8 @@ function ItemPage() {
                         </div>
                       </div>
                     </li>
-                  ))}
+                    )
+                  })}
                 </ol>
               )}
             </section>

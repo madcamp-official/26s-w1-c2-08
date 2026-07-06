@@ -18,6 +18,7 @@ class Item(models.Model):
         ETC = "etc", "기타"
 
     name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default="")
     category = models.CharField(
         max_length=30,
         choices=Category.choices,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useParams } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import LoginPopup from '../components/LoginPopup'
 import ConfirmPopup from '../components/ConfirmPopup'
@@ -67,6 +67,7 @@ const initialCommentForm = {
 
 function ReviewPageContent() {
   const { itemId, reviewId } = useParams()
+  const navigate = useNavigate()
   const { accessToken, userId: currentUserId } = useAuth()
   const [item, setItem] = useState(null)
   const [review, setReview] = useState(null)
@@ -74,6 +75,8 @@ function ReviewPageContent() {
   const [commentForm, setCommentForm] = useState(initialCommentForm)
   const [editingCommentId, setEditingCommentId] = useState(null)
   const [editingContent, setEditingContent] = useState('')
+  const [isEditingReview, setIsEditingReview] = useState(false)
+  const [editingReviewForm, setEditingReviewForm] = useState({ title: '', content: '' })
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [notice, setNotice] = useState('')
@@ -81,6 +84,7 @@ function ReviewPageContent() {
   const [pendingTarget, setPendingTarget] = useState('')
   const [brokenImage, setBrokenImage] = useState(false)
   const [showCommentConfirm, setShowCommentConfirm] = useState(false)
+  const [showReviewDeleteConfirm, setShowReviewDeleteConfirm] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -188,6 +192,89 @@ function ReviewPageContent() {
   function cancelEditing() {
     setEditingCommentId(null)
     setEditingContent('')
+  }
+
+  function beginEditingReview() {
+    setIsEditingReview(true)
+    setEditingReviewForm({ title: review.title, content: review.content })
+    setNotice('')
+  }
+
+  function cancelEditingReview() {
+    setIsEditingReview(false)
+    setEditingReviewForm({ title: '', content: '' })
+  }
+
+  async function handleUpdateReview() {
+    const title = editingReviewForm.title.trim()
+    const content = editingReviewForm.content.trim()
+
+    if (!accessToken || !currentUserId) {
+      setLoginPopupMessage('리뷰 수정은 로그인 후 사용할 수 있습니다.')
+      return
+    }
+
+    if (!title || !content) {
+      setNotice('리뷰 제목과 본문을 입력해 주세요.')
+      return
+    }
+
+    setPendingTarget('review-edit')
+    setNotice('')
+
+    try {
+      const response = await apiFetch(`/reviews/${reviewId}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUserId, title, content }),
+      })
+
+      if (!response.ok) {
+        const errorData = await readJson(response)
+        throw new Error(normalizeError(errorData, '리뷰를 수정하지 못했습니다.'))
+      }
+
+      const updatedReview = await response.json()
+      setReview(updatedReview)
+      cancelEditingReview()
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '리뷰를 수정하지 못했습니다.')
+    } finally {
+      setPendingTarget('')
+    }
+  }
+
+  function handleDeleteReviewClick() {
+    if (!accessToken || !currentUserId) {
+      setLoginPopupMessage('리뷰 삭제는 로그인 후 사용할 수 있습니다.')
+      return
+    }
+
+    setShowReviewDeleteConfirm(true)
+  }
+
+  async function handleDeleteReview() {
+    setShowReviewDeleteConfirm(false)
+    setPendingTarget('review-delete')
+    setNotice('')
+
+    try {
+      const response = await apiFetch(`/reviews/${reviewId}/`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUserId }),
+      })
+
+      if (!response.ok) {
+        const errorData = await readJson(response)
+        throw new Error(normalizeError(errorData, '리뷰를 삭제하지 못했습니다.'))
+      }
+
+      navigate(`/items/${itemId}`, { replace: true })
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '리뷰를 삭제하지 못했습니다.')
+      setPendingTarget('')
+    }
   }
 
   async function handleReviewReaction(reaction) {
@@ -416,6 +503,11 @@ function ReviewPageContent() {
         onConfirm={handleCreateComment}
         onCancel={() => setShowCommentConfirm(false)}
       />
+      <ConfirmPopup
+        message={showReviewDeleteConfirm ? '리뷰를 삭제하시겠습니까?' : ''}
+        onConfirm={handleDeleteReview}
+        onCancel={() => setShowReviewDeleteConfirm(false)}
+      />
 
       <section className="item-page-section">
         {isLoading && <p className="state-text">리뷰와 댓글을 불러오는 중입니다.</p>}
@@ -455,11 +547,59 @@ function ReviewPageContent() {
                   <p className="review-meta">
                     작성자 #{review.author} · {formatDateTime(review.created_at)}
                   </p>
-                  <h4>{review.title}</h4>
+                  {!isEditingReview && <h4>{review.title}</h4>}
                 </div>
+                {String(review.author) === currentUserId && (
+                  <div className="comment-owner-actions">
+                    <button
+                      className="comment-text-button"
+                      type="button"
+                      onClick={() => (isEditingReview ? cancelEditingReview() : beginEditingReview())}
+                    >
+                      {isEditingReview ? '취소' : '수정'}
+                    </button>
+                    <button
+                      className="comment-text-button danger"
+                      type="button"
+                      disabled={pendingTarget === 'review-delete'}
+                      onClick={handleDeleteReviewClick}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <p className="review-content">{review.content}</p>
+              {isEditingReview ? (
+                <div className="comment-edit-panel">
+                  <input
+                    type="text"
+                    value={editingReviewForm.title}
+                    onChange={(event) =>
+                      setEditingReviewForm((current) => ({ ...current, title: event.target.value }))
+                    }
+                  />
+                  <textarea
+                    value={editingReviewForm.content}
+                    onChange={(event) =>
+                      setEditingReviewForm((current) => ({ ...current, content: event.target.value }))
+                    }
+                    rows={4}
+                  />
+                  <div className="comment-edit-actions">
+                    <button
+                      className="reaction-button"
+                      type="button"
+                      disabled={pendingTarget === 'review-edit'}
+                      onClick={handleUpdateReview}
+                    >
+                      {pendingTarget === 'review-edit' ? '저장 중...' : '수정 저장'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="review-content">{review.content}</p>
+              )}
 
               <div className="review-footer">
                 <div className="review-stats">

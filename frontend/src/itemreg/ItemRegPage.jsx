@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ConfirmPopup from '../components/ConfirmPopup'
@@ -17,6 +17,7 @@ const emptyAiFields = {
   price: '',
   shopOrBrandName: '',
   originalUrl: '',
+  description: '',
 }
 
 const fallbackLinkLabel = '링크 없음'
@@ -81,7 +82,7 @@ function toCandidate(item) {
 
 function ItemRegPage() {
   const navigate = useNavigate()
-  const { accessToken, userId, logout } = useAuth()
+  const { accessToken, userId } = useAuth()
   const aiFileInputRef = useRef(null)
   const imageFileInputRef = useRef(null)
   const [selectedType, setSelectedType] = useState('new')
@@ -93,30 +94,20 @@ function ItemRegPage() {
   const [isRepresentativeImageBroken, setIsRepresentativeImageBroken] = useState(false)
   const [aiFields, setAiFields] = useState(emptyAiFields)
   const [aiPreview, setAiPreview] = useState(null)
-  const [review, setReview] = useState({
-    title: '',
-    content: '',
-  })
   const [duplicateCandidates, setDuplicateCandidates] = useState([])
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(true)
   const [isAiFilling, setIsAiFilling] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState(emptyMessage)
   const [createdItem, setCreatedItem] = useState(null)
-  const [createdReview, setCreatedReview] = useState(null)
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   const [loginPopupMessage, setLoginPopupMessage] = useState('')
+  const [reviewNavCandidate, setReviewNavCandidate] = useState(null)
   const isExistingItemMode = selectedType === 'existing'
   const representativeImageSrc = selectedImagePreviewUrl || aiPreview?.imageUrl || ''
   const isAuthenticated = Boolean(accessToken && userId)
 
-  const submitLabel = useMemo(() => {
-    if (selectedType === 'existing') {
-      return isSubmitting ? '등록 중...' : '기존 아이템에 리뷰 연결'
-    }
-
-    return isSubmitting ? '등록 중...' : '새 아이템 DB 등록'
-  }, [isSubmitting, selectedType])
+  const submitLabel = isSubmitting ? '등록 중...' : '새 아이템 DB 등록'
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -340,13 +331,6 @@ function ItemRegPage() {
     }))
   }
 
-  function handleReviewChange(field, value) {
-    setReview((current) => ({
-      ...current,
-      [field]: value,
-    }))
-  }
-
   async function refreshItems(selectedItemId) {
     const response = await fetch(buildApiUrl('/items/'))
 
@@ -360,63 +344,27 @@ function ItemRegPage() {
     setSelectedCandidate(selectedItemId ? String(selectedItemId) : candidates[0]?.id ?? '')
   }
 
-  async function createReview(itemId) {
-    if (!accessToken || !userId) {
-      setLoginPopupMessage('리뷰 작성은 로그인 후 사용할 수 있습니다.')
-      throw new Error('리뷰를 저장하려면 먼저 로그인해 주세요.')
+  function handleCandidateSelect(candidate) {
+    setSelectedCandidate(candidate.id)
+    setReviewNavCandidate(candidate)
+  }
+
+  function handleReviewNavConfirm() {
+    const target = reviewNavCandidate
+    setReviewNavCandidate(null)
+
+    if (target) {
+      navigate(`/items/${target.itemId}/reviews/new`)
     }
-
-    if (!review.title.trim()) {
-      throw new Error('리뷰 제목을 입력해 주세요.')
-    }
-
-    if (!review.content.trim()) {
-      throw new Error('리뷰 본문을 입력해 주세요.')
-    }
-
-    const response = await fetch(buildApiUrl('/reviews/'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        item: itemId,
-        user_id: userId,
-        title: review.title.trim(),
-        content: review.content.trim(),
-      }),
-    })
-
-    const data = await response.json().catch(() => null)
-
-    if (response.status === 401 || response.status === 403) {
-      logout()
-      navigate('/login', { replace: true })
-      throw new Error('로그인이 필요합니다.')
-    }
-
-    if (!response.ok) {
-      throw new Error(normalizeError(data))
-    }
-
-    setCreatedReview(data)
-    return data
   }
 
   function handleSubmitClick() {
-    if (selectedType === 'new') {
-      setShowSubmitConfirm(true)
-      return
-    }
-
-    handleSubmit()
+    setShowSubmitConfirm(true)
   }
 
   async function handleSubmit() {
     setShowSubmitConfirm(false)
     setMessage(emptyMessage)
-    setCreatedReview(null)
 
     if (!accessToken || !userId) {
       setLoginPopupMessage('아이템 등록은 로그인 후 사용할 수 있습니다.')
@@ -426,29 +374,16 @@ function ItemRegPage() {
     setIsSubmitting(true)
 
     try {
-      if (selectedType === 'existing') {
-        if (!selectedCandidate) {
-          throw new Error('리뷰를 연결할 기존 아이템을 선택해 주세요.')
-        }
-
-        const reviewData = await createReview(Number(selectedCandidate))
-        const selectedItemName =
-          duplicateCandidates.find((candidate) => candidate.id === selectedCandidate)?.name ??
-          `아이템 #${selectedCandidate}`
-
-        setMessage({
-          type: 'success',
-          text: `리뷰 #${reviewData.id} 이(가) ${selectedItemName}에 연결되어 저장되었습니다.`,
-        })
-        return
-      }
-
       if (!aiFields.name.trim()) {
         throw new Error('상품명을 입력해 주세요.')
       }
 
       if (!aiFields.shopOrBrandName.trim()) {
         throw new Error('쇼핑몰명 또는 브랜드명을 입력해 주세요.')
+      }
+
+      if (!aiFields.description.trim()) {
+        throw new Error('상품 설명을 입력해 주세요.')
       }
 
       const numericPrice = Number(aiFields.price.replaceAll(',', '').replaceAll('₩', '').trim())
@@ -462,6 +397,7 @@ function ItemRegPage() {
       formData.append('price', String(numericPrice))
       formData.append('shop_or_brand_name', aiFields.shopOrBrandName.trim())
       formData.append('original_url', aiFields.originalUrl.trim())
+      formData.append('description', aiFields.description.trim())
 
       if (selectedImageFile) {
         formData.append('image', selectedImageFile)
@@ -483,11 +419,10 @@ function ItemRegPage() {
 
       setCreatedItem(itemData)
       await refreshItems(itemData.id)
-      const reviewData = await createReview(itemData.id)
 
       setMessage({
         type: 'success',
-        text: `아이템 #${itemData.id} "${itemData.name}" 및 리뷰 #${reviewData.id} 이(가) DB에 저장되었습니다.`,
+        text: `아이템 #${itemData.id} "${itemData.name}" 이(가) DB에 저장되었습니다.`,
       })
     } catch (error) {
       setMessage({
@@ -526,6 +461,15 @@ function ItemRegPage() {
         onConfirm={handleSubmit}
         onCancel={() => setShowSubmitConfirm(false)}
       />
+      <ConfirmPopup
+        message={
+          reviewNavCandidate
+            ? `${reviewNavCandidate.name} 페이지로 이동해서 리뷰를 작성하시겠어요?`
+            : ''
+        }
+        onConfirm={handleReviewNavConfirm}
+        onCancel={() => setReviewNavCandidate(null)}
+      />
 
       {!isAuthenticated ? (
         <section className="itemreg-stack">
@@ -550,7 +494,7 @@ function ItemRegPage() {
 
               {isExistingItemMode ? (
                 <p className="feedback feedback-info">
-                  기존 아이템에 리뷰를 연결하는 중입니다. 상품 정보 입력 없이 바로 리뷰만 저장할 수 있습니다.
+                  기존 아이템에 리뷰를 연결하는 중입니다. 아래에서 후보를 선택하면 해당 아이템 페이지로 이동해 리뷰를 작성할 수 있습니다.
                 </p>
               ) : null}
 
@@ -708,7 +652,7 @@ function ItemRegPage() {
                         name="candidate"
                         value={candidate.id}
                         checked={selectedCandidate === candidate.id}
-                        onChange={(event) => setSelectedCandidate(event.target.value)}
+                        onChange={() => handleCandidateSelect(candidate)}
                       />
                       <div>
                         <strong>{candidate.name}</strong>
@@ -728,39 +672,32 @@ function ItemRegPage() {
               <div className="itemreg-panel-heading">
                 <span>3</span>
                 <div>
-                  <h2>리뷰 작성</h2>
-                  <p>리뷰 제목과 본문을 입력하면 아이템 등록 또는 기존 아이템 연결 시 함께 저장됩니다.</p>
+                  <h2>상품 설명</h2>
+                  <p>이 아이템에 대한 설명을 입력하면 아이템 등록 시 함께 저장됩니다.</p>
                 </div>
               </div>
 
-              <label className="form-field">
-                <span>리뷰 제목</span>
-                <input
-                  type="text"
-                  value={review.title}
-                  onChange={(event) => handleReviewChange('title', event.target.value)}
-                  placeholder="리뷰를 요약하는 제목"
-                />
-              </label>
+              {isExistingItemMode ? (
+                <p className="feedback feedback-info">
+                  후보를 선택하면 해당 아이템 페이지로 이동해 리뷰를 작성할 수 있습니다.
+                </p>
+              ) : null}
 
-              <label className="form-field">
-                <span>리뷰 본문</span>
-                <textarea
-                  rows="8"
-                  value={review.content}
-                  onChange={(event) => handleReviewChange('content', event.target.value)}
-                  placeholder="실사용 경험, 장단점, 추천 대상 등을 작성"
-                />
-              </label>
+              <fieldset className={isExistingItemMode ? 'itemreg-disabled-block' : 'itemreg-active-block'} disabled={isExistingItemMode}>
+                <label className="form-field">
+                  <span>상품 설명</span>
+                  <textarea
+                    rows="8"
+                    value={aiFields.description}
+                    onChange={(event) => handleFieldChange('description', event.target.value)}
+                    placeholder="실사용 경험, 장단점, 추천 대상 등을 작성"
+                  />
+                </label>
+              </fieldset>
 
               {createdItem ? (
                 <p className="itemreg-created">
                   최근 등록: #{createdItem.id} {createdItem.name}
-                </p>
-              ) : null}
-              {createdReview ? (
-                <p className="itemreg-created">
-                  최근 리뷰 등록: #{createdReview.id} {createdReview.title}
                 </p>
               ) : null}
             </article>
@@ -778,7 +715,7 @@ function ItemRegPage() {
               type="button"
               className="primary-button"
               onClick={handleSubmitClick}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isExistingItemMode}
             >
               {submitLabel}
             </button>
