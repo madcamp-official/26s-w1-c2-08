@@ -4,7 +4,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-import traceback
 
 from .models import User
 from .serializers import LoginSerializer, SignupSerializer
@@ -27,18 +26,18 @@ def me(request):
 @permission_classes([IsAuthenticated])
 def logout(request):
     try:
-        print(request.data)
-
         refresh_token = request.data["refresh"]
         token = RefreshToken(refresh_token)
         token.blacklist()
 
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-
+    except KeyError:
         return Response(
-            {"detail": str(e)},
+            {"detail": "refresh 토큰이 필요합니다."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except Exception:
+        return Response(
+            {"detail": "로그아웃 처리에 실패했습니다."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
