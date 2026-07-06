@@ -94,6 +94,9 @@ function App() {
           <NavLink className="nav-link-additem" to="/itemreg">
             Add item
           </NavLink>
+          <NavLink className="nav-link-users" to="/users">
+            Users
+          </NavLink>
         </div>
         <div className="site-utility">
           {accessToken ? (
