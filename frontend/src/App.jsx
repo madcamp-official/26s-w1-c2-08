@@ -1,4 +1,4 @@
-import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Route, Routes, useNavigate, Navigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from './context/AuthContext'
 import { FALLBACK_CATEGORIES } from './constants/categories'
@@ -139,6 +139,7 @@ function App() {
         <Route path="/users" element={<UserlistPage />} />
         <Route path="/user/:username/follower" element={<FollowerListPage />} />
         <Route path="/user/:username/following" element={<FollowingListPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   )

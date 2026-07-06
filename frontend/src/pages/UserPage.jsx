@@ -144,7 +144,6 @@ function UserPage() {
           )
           setCountsStatus('success')
 
-          // 로그인 유저가 이 followers 목록에 있으면 이미 팔로우 중
           if (accessToken && userId !== null) {
             const alreadyFollowing = followersList.some(
               (item) => String(item.user?.id) === String(userId),
@@ -215,7 +214,7 @@ function UserPage() {
   }
 
   return (
-    <main className="page-shell page-shell-narrow">
+    <main className="page-shell">
       <section className="page-content">
         {status === 'loading' && (
           <p className="state-text">불러오는 중...</p>
@@ -236,41 +235,12 @@ function UserPage() {
 
         {status === 'success' && user && (
           <>
-            <div className="panel user-card">
-              <p className="user-id-value">{username}</p>
+            <div className="panel user-profile-header">
+              <p className="user-profile-name">{user.username}</p>
 
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  marginTop: '12px',
-                }}
-              >
-                {accessToken && (
-                  <button
-                    type="button"
-                    onClick={handleFollowToggle}
-                    disabled={followLoading}
-                    style={{
-                      backgroundColor: isFollowing ? '#9ca3af' : '#2563eb',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '8px 16px',
-                      borderRadius: '6px',
-                      cursor: followLoading ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {followLoading
-                      ? '처리 중...'
-                      : isFollowing
-                        ? '팔로잉'
-                        : '팔로우'}
-                  </button>
-                )}
-
+              <p className="user-profile-name">
                 {countsStatus === 'success' && (
-                  <span className="state-text">
+                  <>
                     <Link to={`/user/${username}/follower`} className="text-link">
                       팔로워 {followerCount}
                     </Link>
@@ -278,21 +248,40 @@ function UserPage() {
                     <Link to={`/user/${username}/following`} className="text-link">
                       팔로잉 {followingCount}
                     </Link>
-                  </span>
+                  </>
                 )}
 
-                {countsStatus === 'loading' && (
-                  <span className="state-text">
-                    팔로워/팔로잉 불러오는 중...
-                  </span>
-                )}
+                {countsStatus === 'loading' && '팔로워/팔로잉 불러오는 중...'}
 
                 {countsStatus === 'error' && (
                   <span className="feedback feedback-error">
                     팔로워/팔로잉 정보를 불러오지 못했습니다.
                   </span>
                 )}
-              </div>
+              </p>
+
+              {accessToken && (
+                <button
+                  type="button"
+                  onClick={handleFollowToggle}
+                  disabled={followLoading}
+                  style={{
+                    backgroundColor: isFollowing ? '#9ca3af' : '#2563eb',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    cursor: followLoading ? 'not-allowed' : 'pointer',
+                    marginTop: '12px',
+                  }}
+                >
+                  {followLoading
+                    ? '처리 중...'
+                    : isFollowing
+                      ? '팔로잉'
+                      : '팔로우'}
+                </button>
+              )}
 
               {followError && (
                 <p className="feedback feedback-error" style={{ marginTop: '8px' }}>
@@ -301,112 +290,96 @@ function UserPage() {
               )}
             </div>
 
-            <div className="panel" style={{ marginTop: '24px', padding: '20px' }}>
-              <h2 style={{ marginTop: 0 }}>별표한 아이템</h2>
+            <div className="user-profile-sections">
+              <div className="panel user-profile-section">
+                <h2>별표한 아이템</h2>
 
-              {starStatus === 'loading' && (
-                <p className="state-text">불러오는 중...</p>
-              )}
+                {starStatus === 'loading' && (
+                  <p className="state-text">불러오는 중...</p>
+                )}
 
-              {starStatus === 'error' && (
-                <p className="feedback feedback-error">
-                  별표 목록을 불러오는 중 오류가 발생했습니다.
-                </p>
-              )}
+                {starStatus === 'error' && (
+                  <p className="feedback feedback-error">
+                    별표 목록을 불러오는 중 오류가 발생했습니다.
+                  </p>
+                )}
 
-              {starStatus === 'success' && starredItems.length === 0 && (
-                <p className="state-text">아직 별표한 아이템이 없습니다.</p>
-              )}
+                {starStatus === 'success' && starredItems.length === 0 && (
+                  <p className="state-text">아직 별표한 아이템이 없습니다.</p>
+                )}
 
-              {starStatus === 'success' && starredItems.length > 0 && (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {starredItems.map((item) => (
-                    <li
-                      key={item.itemId}
-                      style={{
-                        padding: '12px 0',
-                        borderBottom: '1px solid var(--border)',
-                      }}
-                    >
-                      <Link to={`/items/${item.itemId}`} className="text-link">
-                        {item.itemName}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                {starStatus === 'success' && starredItems.length > 0 && (
+                  <ul className="user-profile-list">
+                    {starredItems.map((item) => (
+                      <li key={item.itemId}>
+                        <Link to={`/items/${item.itemId}`} className="text-link">
+                          {item.itemName}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-            <div className="panel" style={{ marginTop: '24px', padding: '20px' }}>
-              <h2 style={{ marginTop: 0 }}>작성한 리뷰</h2>
+              <div className="panel user-profile-section">
+                <h2>작성한 리뷰</h2>
 
-              {reviewStatus === 'loading' && (
-                <p className="state-text">불러오는 중...</p>
-              )}
+                {reviewStatus === 'loading' && (
+                  <p className="state-text">불러오는 중...</p>
+                )}
 
-              {reviewStatus === 'error' && (
-                <p className="feedback feedback-error">
-                  리뷰 목록을 불러오는 중 오류가 발생했습니다.
-                </p>
-              )}
+                {reviewStatus === 'error' && (
+                  <p className="feedback feedback-error">
+                    리뷰 목록을 불러오는 중 오류가 발생했습니다.
+                  </p>
+                )}
 
-              {reviewStatus === 'success' && reviews.length === 0 && (
-                <p className="state-text">아직 작성한 리뷰가 없습니다.</p>
-              )}
+                {reviewStatus === 'success' && reviews.length === 0 && (
+                  <p className="state-text">아직 작성한 리뷰가 없습니다.</p>
+                )}
 
-              {reviewStatus === 'success' && reviews.length > 0 && (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {reviews.map((review) => (
-                    <li
-                      key={review.id}
-                      style={{
-                        padding: '12px 0',
-                        borderBottom: '1px solid var(--border)',
-                      }}
-                    >
-                      <Link to={`/reviews/${review.id}`} className="text-link">
-                        {review.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                {reviewStatus === 'success' && reviews.length > 0 && (
+                  <ul className="user-profile-list">
+                    {reviews.map((review) => (
+                      <li key={review.id}>
+                        <Link to={`/items/${review.item}/reviews/${review.id}`} className="text-link">
+                          {review.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-            <div className="panel" style={{ marginTop: '24px', padding: '20px' }}>
-              <h2 style={{ marginTop: 0 }}>등록한 아이템</h2>
+              <div className="panel user-profile-section">
+                <h2>등록한 아이템</h2>
 
-              {createdItemsStatus === 'loading' && (
-                <p className="state-text">불러오는 중...</p>
-              )}
+                {createdItemsStatus === 'loading' && (
+                  <p className="state-text">불러오는 중...</p>
+                )}
 
-              {createdItemsStatus === 'error' && (
-                <p className="feedback feedback-error">
-                  등록한 아이템 목록을 불러오는 중 오류가 발생했습니다.
-                </p>
-              )}
+                {createdItemsStatus === 'error' && (
+                  <p className="feedback feedback-error">
+                    등록한 아이템 목록을 불러오는 중 오류가 발생했습니다.
+                  </p>
+                )}
 
-              {createdItemsStatus === 'success' && createdItems.length === 0 && (
-                <p className="state-text">아직 등록한 아이템이 없습니다.</p>
-              )}
+                {createdItemsStatus === 'success' && createdItems.length === 0 && (
+                  <p className="state-text">아직 등록한 아이템이 없습니다.</p>
+                )}
 
-              {createdItemsStatus === 'success' && createdItems.length > 0 && (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {createdItems.map((item) => (
-                    <li
-                      key={item.id}
-                      style={{
-                        padding: '12px 0',
-                        borderBottom: '1px solid var(--border)',
-                      }}
-                    >
-                      <Link to={`/items/${item.id}`} className="text-link">
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                {createdItemsStatus === 'success' && createdItems.length > 0 && (
+                  <ul className="user-profile-list">
+                    {createdItems.map((item) => (
+                      <li key={item.id}>
+                        <Link to={`/items/${item.id}`} className="text-link">
+                          {item.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </>
         )}
