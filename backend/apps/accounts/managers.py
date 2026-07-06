@@ -1,11 +1,10 @@
-from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import BaseUserManager
+
 
 class UserManager(BaseUserManager):
-    use_in_migrations = True
-
     def create_user(self, username, password=None, **extra_fields):
         if not username:
-            raise ValueError("username is required")
+            raise ValueError("username은 필수입니다.")
 
         user = self.model(username=username, **extra_fields)
         user.set_password(password)

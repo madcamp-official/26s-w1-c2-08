@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.items",
     "apps.reviews",
-    "apps.user"
+    "apps.user",
+    "apps.core",
 ]
 
 REST_FRAMEWORK = {
