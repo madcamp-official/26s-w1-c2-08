@@ -428,7 +428,9 @@ function ItemPage() {
     }
   }
 
-  const showReviewCreateButton = Boolean(accessToken && userId)
+  const isItemOwner = Boolean(item && userId && String(item.created_by_id) === userId)
+  const myReview = reviews.find((review) => String(review.author) === userId)
+  const showReviewButton = Boolean(accessToken && userId && !isItemOwner)
 
   return (
     <main className="page-shell">
@@ -542,9 +544,16 @@ function ItemPage() {
                   <p>좋아요와 싫어요 반응을 기준으로 리뷰가 정렬됩니다.</p>
                 </div>
                 <div className="review-section-utility">
-                  {showReviewCreateButton && (
-                    <Link className="primary-button" to={`/items/${itemId}/reviews/new`}>
-                      리뷰 작성
+                  {showReviewButton && (
+                    <Link
+                      className="primary-button"
+                      to={
+                        myReview
+                          ? `/items/${itemId}/reviews/${myReview.id}`
+                          : `/items/${itemId}/reviews/new`
+                      }
+                    >
+                      {myReview ? '리뷰 수정' : '리뷰 작성'}
                     </Link>
                   )}
                 </div>
