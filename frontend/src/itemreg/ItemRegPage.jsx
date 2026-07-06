@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ConfirmPopup from '../components/ConfirmPopup'
 import LoginPopup from '../components/LoginPopup'
@@ -84,6 +84,7 @@ function ItemRegPage() {
   const [isAiFilling, setIsAiFilling] = useState(false)
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasPassedDuplicateCheck, setHasPassedDuplicateCheck] = useState(false)
   const [message, setMessage] = useState(emptyMessage)
   const [loginPopupMessage, setLoginPopupMessage] = useState('')
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
@@ -91,17 +92,21 @@ function ItemRegPage() {
   const representativeImageSrc = selectedImagePreviewUrl || aiPreview?.imageUrl || ''
   const isAuthenticated = Boolean(accessToken && userId)
 
-  const submitLabel = useMemo(() => {
+  const nextLabel = useMemo(() => {
     if (isCheckingDuplicates) {
       return '유사 아이템 확인 중...'
     }
 
+    return '다음'
+  }, [isCheckingDuplicates])
+
+  const submitLabel = useMemo(() => {
     if (isSubmitting) {
       return '아이템 등록 중...'
     }
 
     return '아이템 등록'
-  }, [isCheckingDuplicates, isSubmitting])
+  }, [isSubmitting])
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -122,6 +127,7 @@ function ItemRegPage() {
 
   function resetDuplicateCheckState() {
     setDuplicateCheckResult(null)
+    setHasPassedDuplicateCheck(false)
   }
 
   function applySelectedImageFile(file) {
@@ -277,7 +283,10 @@ function ItemRegPage() {
       ...current,
       [field]: value,
     }))
-    resetDuplicateCheckState()
+
+    if (field !== 'description') {
+      resetDuplicateCheckState()
+    }
   }
 
   async function createItem() {
@@ -340,7 +349,7 @@ function ItemRegPage() {
     }
   }
 
-  async function runSubmit() {
+  async function runDuplicateCheckAndContinue() {
     setMessage(emptyMessage)
 
     if (!accessToken || !userId) {
@@ -355,11 +364,6 @@ function ItemRegPage() {
 
     if (!aiFields.shopOrBrandName.trim()) {
       setMessage({ type: 'error', text: '쇼핑몰명 또는 브랜드명을 입력해 주세요.' })
-      return
-    }
-
-    if (!aiFields.description.trim()) {
-      setMessage({ type: 'error', text: '상품 설명을 입력해 주세요.' })
       return
     }
 
@@ -399,12 +403,9 @@ function ItemRegPage() {
         return
       }
 
-      setDuplicateCheckResult({
-        has_duplicates: false,
-        message: '',
-        candidates: [],
-      })
-      await createItem()
+      setDuplicateCheckResult(null)
+      setHasPassedDuplicateCheck(true)
+      navigate('/itemreg/description')
     } catch (error) {
       setMessage({
         type: 'error',
@@ -418,7 +419,24 @@ function ItemRegPage() {
     }
   }
 
-  function handleSubmitClick() {
+  async function runSubmit() {
+    setMessage(emptyMessage)
+
+    if (!hasPassedDuplicateCheck) {
+      setMessage({ type: 'error', text: '상품 정보 확인을 먼저 완료해 주세요.' })
+      navigate('/itemreg')
+      return
+    }
+
+    if (!aiFields.description.trim()) {
+      setMessage({ type: 'error', text: '상품 설명을 입력해 주세요.' })
+      return
+    }
+
+    await createItem()
+  }
+
+  function handleFinalSubmitClick() {
     setShowSubmitConfirm(true)
   }
 
@@ -429,6 +447,200 @@ function ItemRegPage() {
   function closeDuplicatePopup() {
     setDuplicateCheckResult(null)
     setMessage(emptyMessage)
+  }
+
+  function proceedDespiteDuplicates() {
+    setDuplicateCheckResult(null)
+    setMessage(emptyMessage)
+    setHasPassedDuplicateCheck(true)
+    navigate('/itemreg/description')
+  }
+
+  function renderItemInfoStep() {
+    return (
+      <>
+        <section className="itemreg-stack">
+          <article className="panel itemreg-panel">
+            <div className="itemreg-panel-heading">
+              <div>
+                <h2>상품 정보 입력</h2>
+                <p>상품 기본 정보 입력 후 다음 버튼을 누르면 유사 아이템 중복 검사를 진행합니다.</p>
+              </div>
+            </div>
+
+            <div className="itemreg-field-grid">
+              <label className="form-field">
+                <span>상품명</span>
+                <input
+                  type="text"
+                  value={aiFields.name}
+                  onChange={(event) => handleFieldChange('name', event.target.value)}
+                />
+              </label>
+              <label className="form-field">
+                <span>쇼핑몰명 또는 브랜드명</span>
+                <input
+                  type="text"
+                  value={aiFields.shopOrBrandName}
+                  onChange={(event) => handleFieldChange('shopOrBrandName', event.target.value)}
+                />
+              </label>
+              <label className="form-field">
+                <span>원본 URL</span>
+                <input
+                  type="url"
+                  value={aiFields.originalUrl}
+                  onChange={(event) => handleFieldChange('originalUrl', event.target.value)}
+                  placeholder={fallbackLinkLabel}
+                />
+              </label>
+              <label className="form-field">
+                <span>가격</span>
+                <input
+                  type="text"
+                  value={aiFields.price}
+                  onChange={(event) => handleFieldChange('price', event.target.value)}
+                  placeholder="28000"
+                />
+              </label>
+              <div className="form-field itemreg-image-field">
+                <span>대표 이미지 첨부</span>
+                <input
+                  ref={imageFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileChange}
+                  hidden
+                />
+                <div className="itemreg-image-panel">
+                  <div className="itemreg-image-preview-shell">
+                    {representativeImageSrc && !isRepresentativeImageBroken ? (
+                      <img
+                        src={representativeImageSrc}
+                        alt="대표 이미지 미리보기"
+                        onError={() => setIsRepresentativeImageBroken(true)}
+                      />
+                    ) : (
+                      <div className="itemreg-image-placeholder">No Image</div>
+                    )}
+                  </div>
+                  <div className="itemreg-image-meta">
+                    <strong>
+                      {imageFileName
+                        ? hasAiGeneratedImage
+                          ? 'AI가 추출한 대표 이미지'
+                          : imageFileName
+                        : '아직 대표 이미지가 없습니다'}
+                    </strong>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={handleImageUploadClick}
+                    >
+                      {imageFileName ? '대표 이미지 변경' : '대표 이미지 직접 첨부'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="itemreg-ai-box">
+              <div className="itemreg-ai-copy">
+                <strong>AI 자동 입력</strong>
+                <p>구매 사이트 스크린샷으로 상품명, 브랜드명, 대표 이미지를 자동으로 채웁니다.</p>
+              </div>
+              <input
+                ref={aiFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAiSourceFileChange}
+                hidden
+              />
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleAiFillClick}
+                disabled={isAiFilling}
+              >
+                {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <div className="itemreg-action-row">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => navigate(-1)}
+          >
+            뒤로가기
+          </button>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={runDuplicateCheckAndContinue}
+            disabled={isCheckingDuplicates || isSubmitting}
+          >
+            {nextLabel}
+          </button>
+        </div>
+      </>
+    )
+  }
+
+  function renderDescriptionStep() {
+    if (!hasPassedDuplicateCheck) {
+      return <Navigate to="/itemreg" replace />
+    }
+
+    return (
+      <>
+        <section className="itemreg-stack">
+          <article className="panel itemreg-panel">
+            <div className="itemreg-panel-heading">
+              <div>
+                <h2>상품 설명 작성</h2>
+              </div>
+            </div>
+
+            <div className="itemreg-summary">
+              <strong>{aiFields.name || '상품명 미입력'}</strong>
+              <p>{aiFields.shopOrBrandName || '브랜드/쇼핑몰명 미입력'}</p>
+              <p>{formatPrice(aiFields.price)}</p>
+            </div>
+
+            <label className="form-field">
+              <span>상품 설명</span>
+              <textarea
+                rows="8"
+                value={aiFields.description}
+                onChange={(event) => handleFieldChange('description', event.target.value)}
+                placeholder="실사용 경험, 장단점, 추천 대상 등을 작성"
+              />
+            </label>
+          </article>
+        </section>
+
+        <div className="itemreg-action-row">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => navigate('/itemreg')}
+          >
+            상품 정보 수정
+          </button>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={handleFinalSubmitClick}
+            disabled={isSubmitting}
+          >
+            {submitLabel}
+          </button>
+        </div>
+      </>
+    )
   }
 
   return (
@@ -503,7 +715,10 @@ function ItemRegPage() {
             </div>
             <div className="login-popup-actions">
               <button type="button" className="secondary-button" onClick={closeDuplicatePopup}>
-                계속 입력하기
+                다시 입력하기
+              </button>
+              <button type="button" className="primary-button" onClick={proceedDespiteDuplicates}>
+                그대로 등록 진행
               </button>
             </div>
           </div>
@@ -520,153 +735,11 @@ function ItemRegPage() {
           </article>
         </section>
       ) : (
-        <>
-          <section className="itemreg-stack">
-            <article className="panel itemreg-panel">
-              <div className="itemreg-panel-heading">
-                <div>
-                  <h2>상품 정보 입력</h2>
-                  <p>상품 기본 정보는 직접 입력할 수 있고, 스크린샷을 넣으면 같은 칸을 AI 예시값으로 채울 수 있습니다.</p>
-                </div>
-              </div>
-
-              <div className="itemreg-field-grid">
-                <label className="form-field">
-                  <span>상품명</span>
-                  <input
-                    type="text"
-                    value={aiFields.name}
-                    onChange={(event) => handleFieldChange('name', event.target.value)}
-                  />
-                </label>
-                <label className="form-field">
-                  <span>쇼핑몰명 또는 브랜드명</span>
-                  <input
-                    type="text"
-                    value={aiFields.shopOrBrandName}
-                    onChange={(event) => handleFieldChange('shopOrBrandName', event.target.value)}
-                  />
-                </label>
-                <label className="form-field">
-                  <span>원본 URL</span>
-                  <input
-                    type="url"
-                    value={aiFields.originalUrl}
-                    onChange={(event) => handleFieldChange('originalUrl', event.target.value)}
-                    placeholder={fallbackLinkLabel}
-                  />
-                </label>
-                <label className="form-field">
-                  <span>가격</span>
-                  <input
-                    type="text"
-                    value={aiFields.price}
-                    onChange={(event) => handleFieldChange('price', event.target.value)}
-                    placeholder="28000"
-                  />
-                </label>
-                <div className="form-field itemreg-image-field">
-                  <span>대표 이미지 첨부</span>
-                  <input
-                    ref={imageFileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFileChange}
-                    hidden
-                  />
-                  <div className="itemreg-image-panel">
-                    <div className="itemreg-image-preview-shell">
-                      {representativeImageSrc && !isRepresentativeImageBroken ? (
-                        <img
-                          src={representativeImageSrc}
-                          alt="대표 이미지 미리보기"
-                          onError={() => setIsRepresentativeImageBroken(true)}
-                        />
-                      ) : (
-                        <div className="itemreg-image-placeholder">No Image</div>
-                      )}
-                    </div>
-                    <div className="itemreg-image-meta">
-                      <strong>
-                        {imageFileName
-                          ? hasAiGeneratedImage
-                            ? 'AI가 추출한 대표 이미지'
-                            : imageFileName
-                          : '아직 대표 이미지가 없습니다'}
-                      </strong>
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={handleImageUploadClick}
-                      >
-                        {imageFileName ? '대표 이미지 변경' : '대표 이미지 직접 첨부'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="itemreg-ai-box">
-                <div className="itemreg-ai-copy">
-                  <strong>AI 자동 입력</strong>
-                  <p>버튼을 누르면 구매 사이트 스크린샷을 선택할 수 있고, 그 이미지 기준으로 상품명, 쇼핑몰명 또는 브랜드명, 대표 이미지를 자동으로 채웁니다.</p>
-                </div>
-                <input
-                  ref={aiFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAiSourceFileChange}
-                  hidden
-                />
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={handleAiFillClick}
-                  disabled={isAiFilling}
-                >
-                  {isAiFilling ? 'AI 분석 중...' : 'AI로 정보 채우기'}
-                </button>
-              </div>
-            </article>
-
-            <article className="panel itemreg-panel">
-              <div className="itemreg-panel-heading">
-                <div>
-                  <h2>상품 설명</h2>
-                  <p>상품 특징, 사용 경험, 추천 포인트를 아이템 설명으로 저장합니다.</p>
-                </div>
-              </div>
-
-              <label className="form-field">
-                <span>상품 설명</span>
-                <textarea
-                  rows="8"
-                  value={aiFields.description}
-                  onChange={(event) => handleFieldChange('description', event.target.value)}
-                  placeholder="실사용 경험, 장단점, 추천 대상 등을 작성"
-                />
-              </label>
-            </article>
-          </section>
-
-          <div className="itemreg-action-row">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => navigate(-1)}
-            >
-              뒤로가기
-            </button>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={handleSubmitClick}
-              disabled={isSubmitting || isCheckingDuplicates}
-            >
-              {submitLabel}
-            </button>
-          </div>
-        </>
+        <Routes>
+          <Route index element={renderItemInfoStep()} />
+          <Route path="description" element={renderDescriptionStep()} />
+          <Route path="*" element={<Navigate to="/itemreg" replace />} />
+        </Routes>
       )}
     </main>
   )

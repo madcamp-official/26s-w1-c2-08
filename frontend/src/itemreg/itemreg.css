@@ -250,6 +250,25 @@
   margin-top: 24px;
 }
 
+.itemreg-summary {
+  margin-bottom: 20px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--surface-soft), rgba(255, 255, 255, 0.95));
+}
+
+.itemreg-summary strong {
+  display: block;
+  color: var(--text-strong);
+  font-size: 18px;
+}
+
+.itemreg-summary p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+
 .itemreg-muted {
   color: var(--text-muted);
 }
