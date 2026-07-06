@@ -19,6 +19,10 @@ function UserPage() {
   const [createdItems, setCreatedItems] = useState([])
   const [createdItemsStatus, setCreatedItemsStatus] = useState('loading')
 
+  const [followerCount, setFollowerCount] = useState(null)
+  const [followingCount, setFollowingCount] = useState(null)
+  const [countsStatus, setCountsStatus] = useState('loading')
+
   useEffect(() => {
     let ignore = false
 
@@ -102,9 +106,35 @@ function UserPage() {
         fetchStarredItems(response.data.id)
         fetchUserReviews(response.data.id)
         fetchCreatedItems(response.data.id)
+        fetchFollowCounts(response.data.id)
       } catch {
         if (!ignore) {
           setStatus('error')
+        }
+      }
+    }
+
+    const fetchFollowCounts = async (userId) => {
+      setCountsStatus('loading')
+
+      try {
+        const [followersRes, followingRes] = await Promise.all([
+          axios.get(buildApiUrl(`/user/${userId}/followers/`)),
+          axios.get(buildApiUrl(`/user/${userId}/following/`)),
+        ])
+
+        if (ignore) return
+
+        setFollowerCount(
+          followersRes.data?.count ?? followersRes.data?.length ?? 0,
+        )
+        setFollowingCount(
+          followingRes.data?.count ?? followingRes.data?.length ?? 0,
+        )
+        setCountsStatus('success')
+      } catch {
+        if (!ignore) {
+          setCountsStatus('error')
         }
       }
     }
@@ -133,6 +163,15 @@ function UserPage() {
           <>
             <div className="panel user-profile-header">
               <p className="user-profile-name">{user.username}</p>
+              <p className="user-profile-name">
+                <Link to={`/user/${user.username}/follower`} className="text-link">
+                  팔로워 {followerCount}
+                </Link>
+                {' · '}
+                <Link to={`/user/${user.username}/following`} className="text-link">
+                  팔로잉 {followingCount}
+                </Link>
+              </p>
             </div>
 
             <div className="user-profile-sections">

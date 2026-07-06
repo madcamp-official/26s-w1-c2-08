@@ -14,6 +14,8 @@ import RankingPage from './rank/ranking.jsx'
 import MyPage from './pages/MyPage.jsx'
 import { buildApiUrl } from './lib/api'
 import UserlistPage from './pages/UserlistPage.jsx'
+import FollowerListPage from './pages/FollowerPage.jsx'
+import FollowingListPage from './pages/FollowingPage.jsx'
 
 function App() {
   const navigate = useNavigate()
@@ -132,6 +134,8 @@ function App() {
         <Route path="/me" element={<MyPage />} />
         <Route path="/user/:username" element={<UserPage />} />
         <Route path="/users" element={<UserlistPage />} />
+        <Route path="/user/:username/follower" element={<FollowerListPage />} />
+        <Route path="/user/:username/following" element={<FollowingListPage />} />
       </Routes>
     </>
   )
