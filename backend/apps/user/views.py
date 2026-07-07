@@ -12,12 +12,12 @@ from .serializers import FollowSerializer, FollowerListSerializer, FollowingList
 
 
 @api_view(["GET"])
-def user_profile(_request, username=None):
-    if username is None:
+def user_profile(_request, user_id=None):
+    if user_id is None:
         users = User.objects.values("id", "username")
         return Response({"users": list(users)})
 
-    user = User.objects.filter(username=username).values("id", "username").first()
+    user = User.objects.filter(id=user_id).values("id", "username").first()
 
     if user is None:
         return Response(

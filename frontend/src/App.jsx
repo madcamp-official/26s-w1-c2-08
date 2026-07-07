@@ -136,11 +136,11 @@ function App() {
         <Route path="/items/:itemId/reviews/new" element={<ReviewCreatePage />} />
         <Route path="/items/:itemId/reviews/:reviewId" element={<ReviewPage />} />
         <Route path="/me" element={<MyPage />} />
-        <Route path="/user/:username" element={<UserPage />} />
+        <Route path="/user/:userId" element={<UserPage />} />
         <Route path="/users" element={<UserlistPage />} />
-        <Route path="/user/:username/follower" element={<FollowerListPage />} />
-        <Route path="/user/:username/following" element={<FollowingListPage />} />
-        <Route path="/user/:username/change" element={<IdChangePage />} />
+        <Route path="/user/:userId/follower" element={<FollowerListPage />} />
+        <Route path="/user/:userId/following" element={<FollowingListPage />} />
+        <Route path="/me/change-username" element={<IdChangePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

@@ -174,18 +174,18 @@ function UserPage() {
               <div>
                 <p className="user-profile-name">{user.username}</p>
                 <p className="user-profile-name">
-                  <Link to={`/user/${user.username}/follower`} className="text-link">
+                  <Link to={`/user/${user.id}/follower`} className="text-link">
                     팔로워 {followerCount}
                   </Link>
                   {' · '}
-                  <Link to={`/user/${user.username}/following`} className="text-link">
+                  <Link to={`/user/${user.id}/following`} className="text-link">
                     팔로잉 {followingCount}
                   </Link>
                 </p>
               </div>
 
               <Link
-                to={`/user/${user.username}/change`}
+                to={`/me/change-username`}
                 className="text-link"
                 style={{
                   flexShrink: 0,

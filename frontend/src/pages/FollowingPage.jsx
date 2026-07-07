@@ -6,7 +6,7 @@ import { buildApiUrl } from '../lib/api'
 
 function FollowingListPage() {
   const { accessToken } = useAuth()
-  const { username } = useParams()
+  const { userId } = useParams()
 
   const [following, setFollowing] = useState([])
   const [status, setStatus] = useState('loading') // loading | success | not-found | error
@@ -18,14 +18,8 @@ function FollowingListPage() {
       setStatus('loading')
 
       try {
-        const userResponse = await axios.get(
-          buildApiUrl(`/user/${encodeURIComponent(username)}/`),
-        )
-
-        if (ignore) return
-
-        const followingResponse = await axios.get(
-          buildApiUrl(`/user/${userResponse.data.id}/following/`),
+        const response = await axios.get(
+          buildApiUrl(`/user/${userId}/following/`),
           {
             headers: accessToken
               ? { Authorization: `Bearer ${accessToken}` }
@@ -34,7 +28,7 @@ function FollowingListPage() {
         )
 
         if (!ignore) {
-          setFollowing(followingResponse.data?.results ?? followingResponse.data ?? [])
+          setFollowing(response.data?.results ?? response.data ?? [])
           setStatus('success')
         }
       } catch (error) {
@@ -53,12 +47,12 @@ function FollowingListPage() {
     return () => {
       ignore = true
     }
-  }, [username, accessToken])
+  }, [userId, accessToken])
 
   return (
     <main className="page-shell page-shell-narrow">
       <section className="page-content">
-        <h2>{username} Following </h2>
+        <h2>Following</h2>
 
         {status === 'loading' && (
           <p className="state-text">불러오는 중...</p>
@@ -67,7 +61,7 @@ function FollowingListPage() {
         {status === 'not-found' && (
           <div className="empty-state">
             <strong>사용자를 찾을 수 없습니다</strong>
-            <p>'{username}'에 해당하는 유저가 존재하지 않습니다.</p>
+            <p>'{userId}'에 해당하는 유저가 존재하지 않습니다.</p>
           </div>
         )}
 
@@ -91,7 +85,10 @@ function FollowingListPage() {
                   borderBottom: '1px solid var(--border)',
                 }}
               >
-                <Link to={`/user/${item.user.username}`} className="text-link">
+                <Link
+                  to={`/user/${item.user.id}`}
+                  className="text-link"
+                >
                   {item.user.username}
                 </Link>
               </li>

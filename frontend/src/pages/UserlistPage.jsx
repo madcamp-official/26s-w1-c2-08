@@ -114,7 +114,7 @@ function UserListPage() {
                         borderBottom: '1px solid var(--border)',
                       }}
                     >
-                      <Link to={`/user/${user.username}`} className="text-link">
+                      <Link to={`/user/${user.id}`} className="text-link">
                         {user.username}
                       </Link>
                     </li>
@@ -158,7 +158,7 @@ function UserListPage() {
 
                         <Link
                           className="item-image"
-                          to={`/user/${user.username}`}
+                          to={`/user/${user.id}`}
                           aria-label={user.username}
                         >
                           <span>{user.username.slice(0, 1).toUpperCase()}</span>

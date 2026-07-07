@@ -5,29 +5,28 @@ import { buildApiUrl } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 
 function UserPage() {
-  const { accessToken, userId } = useAuth()
-  const { username } = useParams()
+  const { accessToken, userId: authUserId } = useAuth()
+  const { userId } = useParams()
+
   const [user, setUser] = useState(null)
-  const [status, setStatus] = useState('loading') // loading | success | not-found | error
+  const [status, setStatus] = useState('loading')
 
   const [starredItems, setStarredItems] = useState([])
-  const [starStatus, setStarStatus] = useState('loading') // loading | success | error
+  const [starStatus, setStarStatus] = useState('loading')
 
   const [reviews, setReviews] = useState([])
-  const [reviewStatus, setReviewStatus] = useState('loading') // loading | success | error
+  const [reviewStatus, setReviewStatus] = useState('loading')
 
   const [createdItems, setCreatedItems] = useState([])
-  const [createdItemsStatus, setCreatedItemsStatus] = useState('loading') // loading | success | error
+  const [createdItemsStatus, setCreatedItemsStatus] = useState('loading')
 
-  // 팔로우 상태
   const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
   const [followError, setFollowError] = useState('')
 
-  // 팔로워/팔로잉 카운트
   const [followerCount, setFollowerCount] = useState(null)
   const [followingCount, setFollowingCount] = useState(null)
-  const [countsStatus, setCountsStatus] = useState('loading') // loading | success | error
+  const [countsStatus, setCountsStatus] = useState('loading')
 
   useEffect(() => {
     let ignore = false
@@ -37,17 +36,17 @@ function UserPage() {
 
       try {
         const response = await axios.get(
-          buildApiUrl(`/user/${encodeURIComponent(username)}/`),
+          buildApiUrl(`/user/${userId}/`)
         )
 
         if (!ignore) {
           setUser(response.data)
           setStatus('success')
 
-          fetchStarredItems(response.data.id)
-          fetchUserReviews(response.data.id)
-          fetchCreatedItems(response.data.id)
-          fetchFollowCounts(response.data.id)
+          fetchStarredItems(userId)
+          fetchUserReviews(userId)
+          fetchCreatedItems(userId)
+          fetchFollowCounts(userId)
         }
       } catch (error) {
         if (ignore) return
@@ -60,62 +59,56 @@ function UserPage() {
       }
     }
 
-    const fetchStarredItems = async (userId) => {
+    const fetchStarredItems = async (id) => {
       setStarStatus('loading')
 
       try {
         const response = await axios.get(
-          buildApiUrl(`/items/users/${userId}/stars/`),
+          buildApiUrl(`/items/users/${id}/stars/`)
         )
 
         if (!ignore) {
           setStarredItems(response.data?.results ?? [])
           setStarStatus('success')
         }
-      } catch (error) {
-        if (!ignore) {
-          setStarStatus('error')
-        }
+      } catch {
+        if (!ignore) setStarStatus('error')
       }
     }
 
-    const fetchUserReviews = async (userId) => {
+    const fetchUserReviews = async (id) => {
       setReviewStatus('loading')
 
       try {
         const response = await axios.get(
           buildApiUrl('/reviews/'),
-          { params: { author_id: userId } },
+          { params: { author_id: id } }
         )
 
         if (!ignore) {
           setReviews(response.data?.results ?? response.data ?? [])
           setReviewStatus('success')
         }
-      } catch (error) {
-        if (!ignore) {
-          setReviewStatus('error')
-        }
+      } catch {
+        if (!ignore) setReviewStatus('error')
       }
     }
 
-    const fetchCreatedItems = async (userId) => {
+    const fetchCreatedItems = async (id) => {
       setCreatedItemsStatus('loading')
 
       try {
         const response = await axios.get(
           buildApiUrl('/items/'),
-          { params: { created_by: userId } },
+          { params: { created_by: id } }
         )
 
         if (!ignore) {
           setCreatedItems(response.data?.results ?? response.data ?? [])
           setCreatedItemsStatus('success')
         }
-      } catch (error) {
-        if (!ignore) {
-          setCreatedItemsStatus('error')
-        }
+      } catch {
+        if (!ignore) setCreatedItemsStatus('error')
       }
     }
 
@@ -139,22 +132,22 @@ function UserPage() {
           setFollowerCount(
             followersRes.data?.count ?? followersList.length ?? 0,
           )
+
           setFollowingCount(
             followingRes.data?.count ?? followingRes.data?.length ?? 0,
           )
+
           setCountsStatus('success')
 
-          if (accessToken && userId !== null) {
+          if (accessToken && authUserId !== null) {
             const alreadyFollowing = followersList.some(
-              (item) => String(item.user?.id) === String(userId),
+              (item) => String(item.user?.id) === String(authUserId)
             )
             setIsFollowing(alreadyFollowing)
           }
         }
-      } catch (error) {
-        if (!ignore) {
-          setCountsStatus('error')
-        }
+      } catch {
+        if (!ignore) setCountsStatus('error')
       }
     }
 
@@ -163,7 +156,7 @@ function UserPage() {
     return () => {
       ignore = true
     }
-  }, [username, accessToken, userId])
+  }, [userId, accessToken, authUserId])
 
   const handleFollowToggle = async () => {
     if (!user?.id || followLoading) return
@@ -177,11 +170,19 @@ function UserPage() {
 
     try {
       if (isFollowing) {
-        await axios.delete(buildApiUrl(`/user/${user.id}/follow/`), { headers })
+        await axios.delete(buildApiUrl(`/user/${user.id}/follow/`), {
+          headers,
+        })
+
         setIsFollowing(false)
         setFollowerCount((prev) => (prev !== null ? prev - 1 : prev))
       } else {
-        await axios.post(buildApiUrl(`/user/${user.id}/follow/`), {}, { headers })
+        await axios.post(
+          buildApiUrl(`/user/${user.id}/follow/`),
+          {},
+          { headers }
+        )
+
         setIsFollowing(true)
         setFollowerCount((prev) => (prev !== null ? prev + 1 : prev))
       }
@@ -207,8 +208,8 @@ function UserPage() {
   if (
     status === 'success' &&
     user &&
-    userId !== null &&
-    String(user.id) === String(userId)
+    authUserId !== null &&
+    String(user.id) === String(authUserId)
   ) {
     return <Navigate to="/me" replace />
   }
@@ -241,11 +242,11 @@ function UserPage() {
               <p className="user-profile-name">
                 {countsStatus === 'success' && (
                   <>
-                    <Link to={`/user/${username}/follower`} className="text-link">
+                    <Link to={`/user/${userId}/follower`} className="text-link">
                       팔로워 {followerCount}
                     </Link>
                     {' · '}
-                    <Link to={`/user/${username}/following`} className="text-link">
+                    <Link to={`/user/${userId}/following`} className="text-link">
                       팔로잉 {followingCount}
                     </Link>
                   </>

@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import { buildApiUrl } from '../lib/api'
 
 function IdChangePage() {
   const { accessToken, userId } = useAuth()
-  const { username: targetUsername } = useParams()
   const navigate = useNavigate()
 
-  const [currentUsername, setCurrentUsername] = useState(null)
-  const [status, setStatus] = useState('loading') // loading | success | error
+  const [currentUsername, setCurrentUsername] = useState('')
+  const [status, setStatus] = useState('loading')
 
   const [newUsername, setNewUsername] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -27,9 +26,14 @@ function IdChangePage() {
       }
 
       try {
-        const response = await axios.get(buildApiUrl('/accounts/me/'), {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        const response = await axios.get(
+          buildApiUrl('/accounts/me/'),
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        )
 
         if (!ignore) {
           setCurrentUsername(response.data.username)
@@ -52,11 +56,6 @@ function IdChangePage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-
-    if (!userId) {
-      setErrorMessage('로그인이 필요합니다.')
-      return
-    }
 
     const trimmed = newUsername.trim()
 
@@ -85,11 +84,12 @@ function IdChangePage() {
         },
       )
 
-      setSuccessMessage('username이 변경되었습니다.')
       setCurrentUsername(response.data.username)
+      setNewUsername(response.data.username)
+      setSuccessMessage('username이 변경되었습니다.')
 
       setTimeout(() => {
-        navigate(`/user/${response.data.username}`, { replace: true })
+        navigate('/me', { replace: true })
       }, 1000)
     } catch (error) {
       const status = error.response?.status
@@ -109,7 +109,6 @@ function IdChangePage() {
     }
   }
 
-  // 로그인이 안 되어 있으면 로그인 페이지로
   if (!accessToken || !userId) {
     return <Navigate to="/login" replace />
   }
@@ -124,23 +123,24 @@ function IdChangePage() {
     )
   }
 
-  // 본인 정보 조회 실패 시
   if (status === 'error') {
     return <Navigate to="/login" replace />
-  }
-
-  // 로그인한 유저의 username과 URL의 username이 다르면 접근 차단
-  if (currentUsername !== targetUsername) {
-    return <Navigate to="/me" replace />
   }
 
   return (
     <main className="page-shell page-shell-narrow">
       <section className="page-content">
-        <h2>username 변경</h2>
+        <h2>Username 변경</h2>
 
-        <form onSubmit={handleSubmit} className="panel" style={{ padding: '16px' }}>
-          <label htmlFor="username-input" style={{ display: 'block', marginBottom: '8px' }}>
+        <form
+          onSubmit={handleSubmit}
+          className="panel"
+          style={{ padding: '16px' }}
+        >
+          <label
+            htmlFor="username-input"
+            style={{ display: 'block', marginBottom: '8px' }}
+          >
             새 username
           </label>
 
@@ -150,7 +150,6 @@ function IdChangePage() {
               type="text"
               value={newUsername}
               onChange={(event) => setNewUsername(event.target.value)}
-              placeholder="새 username"
               disabled={isSubmitting}
               style={{ flex: 1, padding: '8px 12px' }}
             />
@@ -158,27 +157,20 @@ function IdChangePage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: 'none',
-                background: '#2563eb',
-                color: '#ffffff',
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              }}
+              className="primary-button"
             >
               {isSubmitting ? '변경 중...' : '변경하기'}
             </button>
           </div>
 
           {errorMessage && (
-            <p className="feedback feedback-error" style={{ marginTop: '8px' }}>
+            <p className="feedback feedback-error">
               {errorMessage}
             </p>
           )}
 
           {successMessage && (
-            <p className="state-text" style={{ marginTop: '8px', color: '#16a34a' }}>
+            <p className="feedback feedback-success">
               {successMessage}
             </p>
           )}
