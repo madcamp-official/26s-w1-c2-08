@@ -602,33 +602,6 @@ select:focus-visible {
   transform: translateX(3px);
 }
 
-.home-gallery {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.home-gallery-item {
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
-  background: var(--image-bg);
-}
-
-.home-gallery-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(0.15);
-  transition: transform 0.4s ease;
-}
-
-.home-gallery-item:hover img {
-  transform: scale(1.04);
-}
-
 .home-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -719,6 +692,16 @@ select:focus-visible {
 
 .home-item-card {
   flex: 0 0 auto;
+}
+
+.home-item-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  overflow: visible;
+}
+
+.home-item-grid .home-item-card {
+  justify-self: center;
 }
 
 .home-user-card a,
@@ -979,10 +962,6 @@ select:focus-visible {
     padding: 28px 0 0;
   }
 
-  .home-gallery {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .home-section-header {
     margin: 44px 0 20px;
   }
@@ -998,6 +977,10 @@ select:focus-visible {
   }
 
   .category-user-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .home-item-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }

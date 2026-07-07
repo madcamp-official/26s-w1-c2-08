@@ -92,12 +92,38 @@ def recommend(request):
             ],
         }
 
-    # 3. 카테고리별 점수 상위 유저 5명
+    # 3. 카테고리별 점수 상위 유저 5명 + 카테고리별 1위 아이템
     by_category = {}
+    category_top_items = []
 
     for category_value, category_label in Item.Category.choices:
         if category_value == Item.Category.ETC:
             continue
+
+        top_item = (
+            Item.objects.filter(category=category_value)
+            .annotate(star_count=Count("star"))
+            .order_by("-star_count", "id")
+            .first()
+        )
+
+        if top_item is not None:
+            category_top_items.append(
+                {
+                    "id": top_item.id,
+                    "name": top_item.name,
+                    "category": top_item.category,
+                    "category_label": category_label,
+                    "price": top_item.price,
+                    "star_count": top_item.star_count,
+                    "shop_or_brand_name": top_item.shop_or_brand_name,
+                    "image_url": (
+                        top_item.image_file.url
+                        if top_item.image_file
+                        else top_item.image_url
+                    ),
+                }
+            )
 
         created_star_map = _created_item_star_map(category_value)
         recommended_map = _recommended_item_count_map(category_value)
@@ -155,5 +181,6 @@ def recommend(request):
             "results": top_user_results,
             "top_user_items": top_user_items,
             "by_category": by_category,
+            "category_top_items": category_top_items,
         }
     )
