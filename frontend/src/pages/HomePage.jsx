@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { buildApiUrl } from '../lib/api'
-import heroArtwork from '../assets/hero.png'
+import heroArtwork from '../assets/c.avif'
 
 const FEATURES = [
   {
@@ -54,8 +54,7 @@ function HomePage() {
             className="home-panel-shell home-panel-shell-intro"
             style={{
               backgroundImage: `
-                linear-gradient(135deg, rgba(255, 250, 241, 0.96), rgba(255, 255, 255, 0.82)),
-                radial-gradient(circle at top right, rgba(0, 0, 0, 0.06), transparent 34%),
+                linear-gradient(135deg, rgba(255, 250, 241, 0.82), rgba(255, 255, 255, 0.7)),
                 url(${heroArtwork})
               `,
             }}

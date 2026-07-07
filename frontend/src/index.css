@@ -556,8 +556,8 @@ select:focus-visible {
   margin-left: calc(50% - 50vw);
   padding: clamp(48px, 7vw, 88px) max(16px, calc((100vw - var(--page-max)) / 2)) clamp(40px, 6vw, 72px);
   background-repeat: no-repeat;
-  background-position: center center, top right, calc(100% + 84px) 55%;
-  background-size: cover, 100% 100%, clamp(260px, 30vw, 420px);
+  background-position: center center, center center;
+  background-size: cover, cover;
   overflow: hidden;
 }
 
@@ -1043,8 +1043,8 @@ select:focus-visible {
     padding:
       40px max(12px, calc((100vw - min(100% - 24px, var(--page-max))) / 2))
       36px;
-    background-position: center center, top right, center bottom;
-    background-size: cover, 100% 100%, 220px;
+    background-position: center center, center center;
+    background-size: cover, cover;
   }
 
   .home-panel-copy {
