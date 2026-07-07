@@ -698,6 +698,16 @@ select:focus-visible {
   flex: 0 0 auto;
 }
 
+.category-user-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  justify-content: start;
+}
+
+.category-user-row .home-user-card {
+  justify-self: center;
+}
+
 .home-item-row {
   display: flex;
   gap: 16px;
@@ -764,6 +774,45 @@ select:focus-visible {
   font-weight: 400;
   line-height: 1;
   color: var(--text-strong);
+}
+
+.home-user-rank-gold,
+.home-user-rank-silver,
+.home-user-rank-bronze {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.home-user-rank-gold {
+  background: linear-gradient(145deg, #ffe08a, #f2b100);
+  color: #6b4500;
+}
+
+.home-user-rank-silver {
+  background: linear-gradient(145deg, #f1f3f5, #c1c8d1);
+  color: #4a4f57;
+}
+
+.home-user-rank-bronze {
+  background: linear-gradient(145deg, #e8ad7c, #b5713a);
+  color: #4a2c10;
+}
+
+.home-user-rank-star {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  color: #f2b100;
+  font-size: 13px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
 }
 
 .home-user-name {
@@ -946,5 +995,9 @@ select:focus-visible {
   .home-user-row {
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .category-user-row {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
