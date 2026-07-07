@@ -618,7 +618,31 @@ select:focus-visible {
   gap: 4px;
 }
 
-.home-section-header-compact {
+.section-divider {
+  display: flex;
+  align-items: center;
+  width: 500px;
+  margin: 50px auto 0;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.section-divider-diamond {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin: 0 10px;
+  background: #000;
+  transform: rotate(45deg);
+}
+
+.home-section-header.home-section-header-compact {
   margin: 0 0 4px;
 }
 

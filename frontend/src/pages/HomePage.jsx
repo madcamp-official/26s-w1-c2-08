@@ -22,6 +22,14 @@ const USER_SLOT_COUNT = 10
 const USERS_PER_PAGE = 5
 const USER_PAGE_COUNT = USER_SLOT_COUNT / USERS_PER_PAGE
 
+function SectionDivider() {
+  return (
+    <div className="section-divider" aria-hidden="true">
+      <span className="section-divider-diamond" />
+    </div>
+  )
+}
+
 function HomePage() {
   const [recommendedUsers, setRecommendedUsers] = useState([])
   const [topUserItems, setTopUserItems] = useState({ username: '', items: [] })
@@ -116,6 +124,8 @@ function HomePage() {
           </ul>
         </div>
 
+        <SectionDivider />
+
         <div className="home-highlight-section">
           <div className="home-section-header home-section-header-compact">
             <div>
@@ -179,51 +189,55 @@ function HomePage() {
         </div>
 
         {topUserItems.items.length > 0 && (
-          <div className="home-highlight-section">
-            <div className="home-section-header home-section-header-compact">
-              <div>
-                <p className="home-eyebrow">Best Picks</p>
-                <h2>팔로워 1위 '{topUserItems.username}'님의 꿀템</h2>
-              </div>
-            </div>
+          <>
+            <SectionDivider />
 
-            <ul className="home-item-row">
-              {topUserItems.items.map((item) => (
-                <li className="home-item-card" key={item.id}>
-                  <Link to={`/items/${item.id}`}>
-                    <span className="home-item-thumb">
-                      {item.image_url ? (
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            borderRadius: 'inherit',
-                          }}
-                        />
-                      ) : (
-                        item.name.slice(0, 1)
-                      )}
-                    </span>
-                    <span className="home-item-name">{item.name}</span>
-                    <span className="home-item-footer">
-                      <span className="home-item-brand-price">
-                        {item.shop_or_brand_name}
-                        {item.shop_or_brand_name ? ' · ' : ''}
-                        {item.price.toLocaleString()}원
+            <div className="home-highlight-section">
+              <div className="home-section-header home-section-header-compact">
+                <div>
+                  <p className="home-eyebrow">Best Picks</p>
+                  <h2>팔로워 1위 '{topUserItems.username}'님의 꿀템</h2>
+                </div>
+              </div>
+
+              <ul className="home-item-row">
+                {topUserItems.items.map((item) => (
+                  <li className="home-item-card" key={item.id}>
+                    <Link to={`/items/${item.id}`}>
+                      <span className="home-item-thumb">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              borderRadius: 'inherit',
+                            }}
+                          />
+                        ) : (
+                          item.name.slice(0, 1)
+                        )}
                       </span>
-                      <span className="home-item-stars">
-                        <span className="home-item-star">★</span>
-                        {item.star_count}
+                      <span className="home-item-name">{item.name}</span>
+                      <span className="home-item-footer">
+                        <span className="home-item-brand-price">
+                          {item.shop_or_brand_name}
+                          {item.shop_or_brand_name ? ' · ' : ''}
+                          {item.price.toLocaleString()}원
+                        </span>
+                        <span className="home-item-stars">
+                          <span className="home-item-star">★</span>
+                          {item.star_count}
+                        </span>
                       </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
         )}
       </section>
 
