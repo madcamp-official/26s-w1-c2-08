@@ -770,7 +770,7 @@ select:focus-visible {
   display: inline-block;
   max-width: 100%;
   color: var(--accent-strong);
-  font-size: 25px;
+  font-size: 22px;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
