@@ -62,5 +62,3 @@ VITE_API_BASE_URL=/api
 ## Nginx 배포
 
 프론트는 `Nginx`가 `dist`를 정적 서빙하고, `/api/`, `/media/`는 Django 백엔드로 프록시하는 구성을 기준으로 합니다.
-
-상세 절차는 [DEPLOY_NGINX.md](/root/workspace/ggultem/DEPLOY_NGINX.md:1)를 참고합니다.
