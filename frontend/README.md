@@ -34,7 +34,7 @@ python manage.py runserver
 기본 개발 서버:
 
 ```text
-http://127.0.0.1:5173
+http://127.0.0.1:5175
 ```
 
 ## 프로덕션 빌드

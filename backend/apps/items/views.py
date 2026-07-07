@@ -1,3 +1,6 @@
+import json
+import logging
+
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from django.db.models import BooleanField, Count, Exists, OuterRef, Q, Value
@@ -20,6 +23,7 @@ from .vision_service import VisionExtractionError, extract_item_info_from_screen
 
 DEFAULT_RANKING_LIMIT = 20
 MAX_RANKING_LIMIT = 100
+logger = logging.getLogger("apps.items.vision")
 
 
 def _parse_ranking_limit(request):
@@ -78,6 +82,18 @@ def _ranked_items_queryset(category=None):
         queryset = queryset.filter(category=category)
 
     return queryset
+
+
+def _build_vision_request_log_context(request, screenshot, detail):
+    return {
+        "detail": detail,
+        "content_type": getattr(screenshot, "content_type", ""),
+        "filename": getattr(screenshot, "name", ""),
+        "size": getattr(screenshot, "size", None),
+        "user_id": request.user.id if getattr(request.user, "is_authenticated", False) else None,
+        "remote_addr": request.META.get("REMOTE_ADDR"),
+        "path": request.path,
+    }
 
 
 class ItemListCreateView(generics.ListCreateAPIView):
@@ -192,9 +208,21 @@ class ItemScreenshotExtractView(APIView):
         try:
             result = extract_item_info_from_screenshot(screenshot)
         except VisionExtractionError as error:
+            log_context = _build_vision_request_log_context(request, screenshot, error.detail)
+            log_context["error_code"] = error.error_code
+            log_context["provider"] = error.provider
+            log_context["retryable"] = error.retryable
+            logger.warning(
+                "Vision extraction request failed | context=%s",
+                json.dumps(
+                    log_context,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ),
+            )
             return Response(
-                {"detail": str(error)},
-                status=status.HTTP_502_BAD_GATEWAY,
+                {"detail": error.detail, "error_code": error.error_code},
+                status=error.status_code,
             )
 
         return Response(
