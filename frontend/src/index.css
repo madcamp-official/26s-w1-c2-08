@@ -555,6 +555,7 @@ select:focus-visible {
   flex-wrap: wrap;
   gap: 24px;
   margin-top: 8px;
+  margin-bottom: 40px;
 }
 
 .home-cta {
