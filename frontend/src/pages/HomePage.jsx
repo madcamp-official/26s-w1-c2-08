@@ -100,42 +100,43 @@ function HomePage() {
               </div>
             </div>
 
-          <ul className="home-item-row home-item-grid">
-            {categoryTopItems.map((item) => (
-              <li className="home-item-card" key={item.id}>
-                <Link to={`/items/${item.id}`}>
-                  <span className="home-item-thumb">
-                    {item.image_url ? (
-                      <img
-                        src={item.image_url}
-                        alt={item.name}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: 'inherit',
-                        }}
-                      />
-                    ) : (
-                      item.name.slice(0, 1)
-                    )}
-                  </span>
-                  <span className="home-item-name">{item.name}</span>
-                  <span className="home-item-footer">
-                    <span className="home-item-brand-price">
-                      {item.shop_or_brand_name}
-                      {item.shop_or_brand_name ? ' · ' : ''}
-                      {item.price.toLocaleString()}원
+            <ul className="home-item-row home-item-grid">
+              {categoryTopItems.map((item) => (
+                <li className="home-item-card" key={item.id}>
+                  <Link to={`/items/${item.id}`}>
+                    <span className="home-item-thumb">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            borderRadius: 'inherit',
+                          }}
+                        />
+                      ) : (
+                        item.name.slice(0, 1)
+                      )}
                     </span>
-                    <span className="home-item-stars">
-                      <span className="home-item-star">★</span>
-                      {item.star_count}
+                    <span className="home-item-name">{item.name}</span>
+                    <span className="home-item-footer">
+                      <span className="home-item-brand-price">
+                        {item.shop_or_brand_name}
+                        {item.shop_or_brand_name ? ' · ' : ''}
+                        {item.price.toLocaleString()}원
+                      </span>
+                      <span className="home-item-stars">
+                        <span className="home-item-star">★</span>
+                        {item.star_count}
+                      </span>
                     </span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <SectionDivider />
