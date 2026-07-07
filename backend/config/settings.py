@@ -3,6 +3,8 @@ from pathlib import Path
 from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+LOG_DIR = Path(os.getenv("DJANGO_LOG_DIR", BASE_DIR / "logs"))
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def env_bool(name, default=False):
@@ -143,4 +145,32 @@ AUTH_USER_MODEL = "accounts.User"
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "vision_verbose": {
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
+        },
+    },
+    "handlers": {
+        "vision_file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "vision.log"),
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 5,
+            "formatter": "vision_verbose",
+            "encoding": "utf-8",
+        },
+    },
+    "loggers": {
+        "apps.items.vision": {
+            "handlers": ["vision_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
 }
