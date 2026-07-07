@@ -7,6 +7,7 @@ import { buildApiUrl } from '../lib/api'
 const initialForm = {
   username: '',
   password: '',
+  passwordConfirm: '',
 }
 
 function SignupPage() {
@@ -30,35 +31,50 @@ function SignupPage() {
     }))
   }
 
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    setStatus('loading')
-    setMessage('')
+const handleSubmit = async (event) => {
+  event.preventDefault()
+  setStatus('loading')
+  setMessage('')
 
-    try {
-      const response = await axios.post(
-        buildApiUrl('/accounts/signup/'),
-        form,
-      )
+  if (form.password !== form.passwordConfirm) {
+    setStatus('error')
+    setMessage('비밀번호가 일치하지 않습니다.')
+    return
+  }
 
-      setStatus('success')
-      const signedUpUsername = response.data?.user?.username ?? form.username
-      setMessage(response.data?.message ?? 'signup success')
-      setForm(initialForm)
-      navigate('/login', {
-        replace: true,
-        state: {
-          signedUpUsername,
-        },
-      })
-    } catch (error) {
-      setStatus('error')
+  try {
+    const response = await axios.post(
+      buildApiUrl('/accounts/signup/'),
+      {
+        username: form.username,
+        password: form.password,
+      },
+    )
+
+    setStatus('success')
+    const signedUpUsername = response.data?.user?.username ?? form.username
+    setMessage(response.data?.message ?? 'signup success')
+    setForm(initialForm)
+
+    navigate('/login', {
+      replace: true,
+      state: {
+        signedUpUsername,
+      },
+    })
+  } catch (error) {
+    setStatus('error')
+
+    if (error.response?.data?.username) {
+      setMessage(error.response.data.username[0])
+    } else {
       setMessage(
         error.response?.data?.detail ??
           '회원가입에 실패했습니다. backend 서버가 실행 중인지 확인해 주세요.',
       )
     }
   }
+}
 
   return (
     <main className="page-shell page-shell-narrow auth-page">
@@ -90,6 +106,20 @@ function SignupPage() {
               value={form.password}
               onChange={handleChange}
               placeholder="8자 이상"
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Password 확인</span>
+            <input
+              name="passwordConfirm"
+              type="password"
+              value={form.passwordConfirm}
+              onChange={handleChange}
+              placeholder="비밀번호를 다시 입력하세요"
               autoComplete="new-password"
               minLength={8}
               required
