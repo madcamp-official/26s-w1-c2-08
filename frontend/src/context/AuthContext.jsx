@@ -4,6 +4,26 @@ import { buildApiUrl } from '../lib/api'
 
 const AuthContext = createContext(null)
 
+function readStorage(key) {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {}
+}
+
+function removeStorage(key) {
+  try {
+    window.localStorage.removeItem(key)
+  } catch {}
+}
+
 function decodeTokenPayload(token) {
   if (!token) {
     return null
@@ -24,19 +44,19 @@ function decodeTokenPayload(token) {
 }
 
 export function AuthProvider({ children }) {
-  const rawAccessToken = localStorage.getItem('access_token')
+  const rawAccessToken = readStorage('access_token')
   const tokenPayload = decodeTokenPayload(rawAccessToken)
   const isTokenExpired =
     typeof tokenPayload?.exp === 'number' && tokenPayload.exp * 1000 <= Date.now()
   const storedAccessToken = isTokenExpired ? null : rawAccessToken
-  const storedRefreshToken = isTokenExpired ? null : localStorage.getItem('refresh_token')
+  const storedRefreshToken = isTokenExpired ? null : readStorage('refresh_token')
   const storedUserId =
-    isTokenExpired ? null : localStorage.getItem('user_id') ?? (tokenPayload?.user_id ? String(tokenPayload.user_id) : null)
+    isTokenExpired ? null : readStorage('user_id') ?? (tokenPayload?.user_id ? String(tokenPayload.user_id) : null)
 
   if (isTokenExpired) {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('user_id')
+    removeStorage('access_token')
+    removeStorage('refresh_token')
+    removeStorage('user_id')
   }
 
   const [accessToken, setAccessToken] = useState(
@@ -61,7 +81,7 @@ export function AuthProvider({ children }) {
         if (ignore) return
         const id = response.data?.id
         if (id !== undefined && id !== null) {
-          localStorage.setItem('user_id', id)
+          writeStorage('user_id', String(id))
           setUserId(id)
         }
       })
@@ -80,24 +100,24 @@ export function AuthProvider({ children }) {
           ? String(decodeTokenPayload(access).user_id)
           : null
 
-    localStorage.setItem('access_token', access)
-    localStorage.setItem('refresh_token', refresh)
+    writeStorage('access_token', access)
+    writeStorage('refresh_token', refresh)
     setAccessToken(access)
     setRefreshToken(refresh)
 
     if (nextUserId !== null) {
-      localStorage.setItem('user_id', nextUserId)
+      writeStorage('user_id', nextUserId)
       setUserId(nextUserId)
     } else {
-      localStorage.removeItem('user_id')
+      removeStorage('user_id')
       setUserId(null)
     }
   }
 
   const logout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('user_id')
+    removeStorage('access_token')
+    removeStorage('refresh_token')
+    removeStorage('user_id')
     setAccessToken(null)
     setRefreshToken(null)
     setUserId(null)

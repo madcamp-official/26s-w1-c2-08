@@ -16,6 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 VISION_DIR = REPO_ROOT / "vision"
 RUN_EXTRACT_SCRIPT = VISION_DIR / "run_extract.sh"
 RUN_CROP_SCRIPT = VISION_DIR / "run_crop.sh"
+VISION_ENV_FILE = VISION_DIR / ".env"
 
 
 class VisionExtractionError(Exception):
@@ -55,16 +56,35 @@ def _build_vision_environment():
     env = os.environ.copy()
     env.setdefault("HOME", str(Path.home()))
     env.setdefault("PATH", os.defpath)
+    env.setdefault("VISION_PROVIDER", env.get("VISION_PROVIDER", "gemini"))
 
-    codex_bin = _find_codex_bin(env)
-    if codex_bin:
-        env["VISION_CODEX_BIN"] = codex_bin
-        # Keep the user-facing bin dir so the matching `node` binary remains on PATH.
-        codex_bin_dir = str(Path(codex_bin).expanduser().parent)
-        current_path = env.get("PATH", "")
-        path_parts = [part for part in current_path.split(os.pathsep) if part]
-        if codex_bin_dir not in path_parts:
-            env["PATH"] = os.pathsep.join([codex_bin_dir, *path_parts]) if path_parts else codex_bin_dir
+    if VISION_ENV_FILE.is_file():
+        for raw_line in VISION_ENV_FILE.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip("'\"")
+            if key and value and key not in env:
+                env[key] = value
+
+    if env["VISION_PROVIDER"] == "codex":
+        codex_bin = _find_codex_bin(env)
+        if codex_bin:
+            env["VISION_CODEX_BIN"] = codex_bin
+            # Keep the user-facing bin dir so the matching `node` binary remains on PATH.
+            codex_bin_dir = str(Path(codex_bin).expanduser().parent)
+            current_path = env.get("PATH", "")
+            path_parts = [part for part in current_path.split(os.pathsep) if part]
+            if codex_bin_dir not in path_parts:
+                env["PATH"] = os.pathsep.join([codex_bin_dir, *path_parts]) if path_parts else codex_bin_dir
+
+    if not env.get("VISION_GEMINI_API_KEY"):
+        for key_name in ("GEMINI_API_KEY", "API_KEY"):
+            if env.get(key_name):
+                env["VISION_GEMINI_API_KEY"] = env[key_name]
+                break
 
     return env
 

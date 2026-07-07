@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -14,7 +15,7 @@ from .duplicate_detection import (
     trigram_similarity,
 )
 from .models import Item, Star
-from .vision_service import _build_vision_environment, _normalize_extracted_category
+from .vision_service import VISION_ENV_FILE, _build_vision_environment, _normalize_extracted_category
 
 
 def make_test_image_file(name="item.png"):
@@ -40,6 +41,48 @@ class DuplicateDetectionTests(APITestCase):
         score = trigram_similarity("세라마이드 수분크림", "세라마이드 수분 크림")
 
         self.assertGreater(score, 0.8)
+
+
+class VisionEnvironmentDefaultTests(APITestCase):
+    @patch.dict(os.environ, {"VISION_PROVIDER": "gemini", "GEMINI_API_KEY": "test-key"}, clear=True)
+    def test_build_vision_environment_sets_gemini_defaults(self):
+        env = _build_vision_environment()
+
+        self.assertEqual(env["VISION_PROVIDER"], "gemini")
+        self.assertEqual(env["VISION_GEMINI_API_KEY"], "test-key")
+        self.assertNotIn("VISION_CODEX_BIN", env)
+
+    @patch.dict(os.environ, {"API_KEY": "fallback-key"}, clear=True)
+    @patch("apps.items.vision_service.VISION_ENV_FILE", Path("/tmp/nonexistent-vision-env"))
+    def test_build_vision_environment_uses_api_key_fallback(self):
+        env = _build_vision_environment()
+
+        self.assertEqual(env["VISION_PROVIDER"], "gemini")
+        self.assertEqual(env["VISION_GEMINI_API_KEY"], "fallback-key")
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_build_vision_environment_reads_vision_env_file(self):
+        original_content = VISION_ENV_FILE.read_text(encoding="utf-8") if VISION_ENV_FILE.exists() else None
+        try:
+            VISION_ENV_FILE.write_text("GEMINI_API_KEY=vision-env-key\n", encoding="utf-8")
+            env = _build_vision_environment()
+        finally:
+            if original_content is None:
+                VISION_ENV_FILE.unlink(missing_ok=True)
+            else:
+                VISION_ENV_FILE.write_text(original_content, encoding="utf-8")
+
+        self.assertEqual(env["VISION_PROVIDER"], "gemini")
+        self.assertEqual(env["VISION_GEMINI_API_KEY"], "vision-env-key")
+
+    @patch.dict(os.environ, {"VISION_PROVIDER": "codex"}, clear=True)
+    @patch("apps.items.vision_service._find_codex_bin", return_value="/tmp/codex")
+    def test_build_vision_environment_keeps_codex_default(self, mock_find_codex_bin):
+        env = _build_vision_environment()
+
+        self.assertEqual(env["VISION_PROVIDER"], "codex")
+        self.assertEqual(env["VISION_CODEX_BIN"], "/tmp/codex")
+        mock_find_codex_bin.assert_called_once()
 
 
 class ItemApiTests(APITestCase):
@@ -343,7 +386,7 @@ class ItemApiTests(APITestCase):
 
 
 class VisionEnvironmentTests(APITestCase):
-    @patch.dict(os.environ, {"PATH": "/usr/bin", "HOME": "/root"}, clear=True)
+    @patch.dict(os.environ, {"PATH": "/usr/bin", "HOME": "/root", "VISION_PROVIDER": "codex"}, clear=True)
     @patch("apps.items.vision_service._find_codex_bin", return_value="/root/.nvm/versions/node/v26.4.0/bin/codex")
     def test_build_vision_environment_includes_codex_bin_dir(self, _mock_find_codex_bin):
         env = _build_vision_environment()
