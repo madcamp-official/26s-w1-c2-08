@@ -71,7 +71,7 @@ function SignupPage() {
       <section className="page-content">
         <form className="auth-card panel" onSubmit={handleSubmit}>
           <label className="form-field">
-            <span>Username</span>
+            <span>ID</span>
             <input
               name="username"
               value={form.username}
