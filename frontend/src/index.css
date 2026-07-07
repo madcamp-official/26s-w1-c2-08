@@ -651,7 +651,7 @@ select:focus-visible {
 
 .home-user-carousel {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 12px;
 }
 
@@ -661,6 +661,7 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
   width: 40px;
+  height: 60px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
@@ -681,20 +682,20 @@ select:focus-visible {
   cursor: not-allowed;
 }
 
-.home-carousel-arrow.home-carousel-arrow-hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .home-user-row {
-  display: grid;
+  display: flex;
   flex: 1;
   min-width: 0;
-  grid-template-columns: repeat(5, 1fr);
+  justify-content: space-between;
+  align-items: flex-start;
   gap: 16px;
   margin: 0;
   padding: 4px 0 4px;
   list-style: none;
+}
+
+.home-user-card {
+  flex: 0 0 auto;
 }
 
 .home-item-row {
@@ -729,11 +730,12 @@ select:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  width: 100%;
-  padding: 40px 18px;
+  gap: 8px;
+  width: 170px;
+  height: 170px;
+  padding: 16px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 50%;
   text-align: center;
 }
 
@@ -742,10 +744,12 @@ select:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  padding: 40px 18px;
+  gap: 8px;
+  width: 170px;
+  height: 170px;
+  padding: 16px;
   border: 1px dashed var(--border);
-  border-radius: var(--radius);
+  border-radius: 50%;
   text-align: center;
 }
 
@@ -763,15 +767,10 @@ select:focus-visible {
 }
 
 .home-user-name {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   max-width: 100%;
-  padding: 6px 18px;
-  border: 1.5px solid var(--accent-strong);
-  border-radius: 999px;
-  background: #ffffff;
   color: var(--accent-strong);
-  font-size: 18px;
+  font-size: 25px;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -779,7 +778,6 @@ select:focus-visible {
 }
 
 .home-user-name.home-user-name-empty {
-  border-color: var(--border);
   color: var(--text-muted);
 }
 
@@ -797,6 +795,7 @@ select:focus-visible {
   flex-direction: column;
   align-items: flex-start;
   width: 180px;
+  min-height: 190px;
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -945,6 +944,7 @@ select:focus-visible {
   }
 
   .home-user-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }

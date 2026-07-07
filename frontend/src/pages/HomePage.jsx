@@ -91,19 +91,16 @@ function HomePage() {
           </div>
 
           <div className="home-user-carousel">
-            <button
-              type="button"
-              className={
-                userPage === 0
-                  ? 'home-carousel-arrow home-carousel-arrow-hidden'
-                  : 'home-carousel-arrow'
-              }
-              onClick={() => setUserPage((page) => Math.max(page - 1, 0))}
-              disabled={userPage === 0}
-              aria-label="이전 순위 보기"
-            >
-              ‹
-            </button>
+            {userPage > 0 && (
+              <button
+                type="button"
+                className="home-carousel-arrow"
+                onClick={() => setUserPage((page) => Math.max(page - 1, 0))}
+                aria-label="이전 순위 보기"
+              >
+                ‹
+              </button>
+            )}
 
             <ul className="home-user-row">
               {Array.from({ length: USERS_PER_PAGE }).map((_, slot) => {
@@ -134,19 +131,16 @@ function HomePage() {
               })}
             </ul>
 
-            <button
-              type="button"
-              className={
-                userPage === USER_PAGE_COUNT - 1
-                  ? 'home-carousel-arrow home-carousel-arrow-hidden'
-                  : 'home-carousel-arrow'
-              }
-              onClick={() => setUserPage((page) => Math.min(page + 1, USER_PAGE_COUNT - 1))}
-              disabled={userPage === USER_PAGE_COUNT - 1}
-              aria-label="다음 순위 보기"
-            >
-              ›
-            </button>
+            {userPage < USER_PAGE_COUNT - 1 && (
+              <button
+                type="button"
+                className="home-carousel-arrow"
+                onClick={() => setUserPage((page) => Math.min(page + 1, USER_PAGE_COUNT - 1))}
+                aria-label="다음 순위 보기"
+              >
+                ›
+              </button>
+            )}
           </div>
         </div>
 
