@@ -18,12 +18,6 @@ const FEATURES = [
   },
 ]
 
-const GALLERY = [
-  'https://images.unsplash.com/photo-1567016432779-094069958ea5?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
-]
-
 const USER_SLOT_COUNT = 10
 const USERS_PER_PAGE = 5
 const USER_PAGE_COUNT = USER_SLOT_COUNT / USERS_PER_PAGE
@@ -32,6 +26,7 @@ function HomePage() {
   const [recommendedUsers, setRecommendedUsers] = useState([])
   const [topUserItems, setTopUserItems] = useState({ username: '', items: [] })
   const [byCategory, setByCategory] = useState({})
+  const [categoryTopItems, setCategoryTopItems] = useState([])
   const [userPage, setUserPage] = useState(0)
 
   useEffect(() => {
@@ -43,6 +38,7 @@ function HomePage() {
           response.data.top_user_items ?? { username: '', items: [] },
         )
         setByCategory(response.data.by_category ?? {})
+        setCategoryTopItems(response.data.category_top_items ?? [])
       } catch (error) {
         console.error('추천 유저를 불러오지 못했습니다.', error)
       }
@@ -74,13 +70,51 @@ function HomePage() {
           </Link>
         </div>
 
-        <ul className="home-gallery">
-          {GALLERY.map((src) => (
-            <li className="home-gallery-item" key={src}>
-              <img src={src} alt="" />
-            </li>
-          ))}
-        </ul>
+        <div className="home-highlight-section">
+          <div className="home-section-header home-section-header-compact">
+            <div>
+              <p className="home-eyebrow">Category Best</p>
+              <h2>카테고리별 1위 꿀템</h2>
+            </div>
+          </div>
+
+          <ul className="home-item-row home-item-grid">
+            {categoryTopItems.map((item) => (
+              <li className="home-item-card" key={item.id}>
+                <Link to={`/items/${item.id}`}>
+                  <span className="home-item-thumb">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: 'inherit',
+                        }}
+                      />
+                    ) : (
+                      item.name.slice(0, 1)
+                    )}
+                  </span>
+                  <span className="home-item-name">{item.name}</span>
+                  <span className="home-item-footer">
+                    <span className="home-item-brand-price">
+                      {item.shop_or_brand_name}
+                      {item.shop_or_brand_name ? ' · ' : ''}
+                      {item.price.toLocaleString()}원
+                    </span>
+                    <span className="home-item-stars">
+                      <span className="home-item-star">★</span>
+                      {item.star_count}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <div className="home-highlight-section">
           <div className="home-section-header home-section-header-compact">

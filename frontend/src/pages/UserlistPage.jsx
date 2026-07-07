@@ -135,48 +135,34 @@ function UserListPage() {
               >
                 <h3 style={{ marginBottom: '12px' }}>{categoryData.category_label}</h3>
 
-                <ol className="ranking-list category-user-list">
+                <ul className="home-user-row category-user-row">
                   {categoryData.top_users.map((user, index) => {
                     const rank = index + 1
-                    const rankBadgeClass =
+                    const rankClass =
                       rank === 1
-                        ? 'rank-badge rank-badge-gold'
+                        ? 'home-user-rank home-user-rank-gold'
                         : rank === 2
-                          ? 'rank-badge rank-badge-silver'
+                          ? 'home-user-rank home-user-rank-silver'
                           : rank === 3
-                            ? 'rank-badge rank-badge-bronze'
-                            : 'rank-badge'
+                            ? 'home-user-rank home-user-rank-bronze'
+                            : 'home-user-rank'
 
                     return (
-                      <li className="ranking-item" key={user.id}>
-                        <div className={rankBadgeClass}>
-                          {rank === 1 && (
-                            <span className="rank-star" aria-hidden="true">★</span>
-                          )}
-                          {rank}
-                        </div>
-
-                        <Link
-                          className="item-image"
-                          to={`/user/${user.id}`}
-                          aria-label={user.username}
-                        >
-                          <span>{user.username.slice(0, 1).toUpperCase()}</span>
+                      <li className="home-user-card" key={user.id}>
+                        <Link to={`/user/${user.id}`}>
+                          <span className={rankClass}>
+                            {rank === 1 && (
+                              <span className="home-user-rank-star" aria-hidden="true">★</span>
+                            )}
+                            {rank}
+                          </span>
+                          <span className="home-user-name">{user.username}</span>
+                          <span className="home-user-followers">팔로워 {user.follower_count}</span>
                         </Link>
-
-                        <div className="item-body">
-                          <div className="item-heading">
-                            <h2 className="ranking-item-link">{user.username}</h2>
-                          </div>
-
-                          <div className="item-meta">
-                            <span>팔로워 {user.follower_count}</span>
-                          </div>
-                        </div>
                       </li>
                     )
                   })}
-                </ol>
+                </ul>
               </div>
             ))
           )}
