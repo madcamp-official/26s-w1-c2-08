@@ -131,7 +131,7 @@ function getCategoryLabel(category) {
 }
 
 function getOriginalUrlLabel(url) {
-  return url ? '원본 URL로 이동하기' : '링크 없음'
+  return url ? '원본 URL로 이동하기' : '연결 링크 없음'
 }
 
 function ItemPage() {
@@ -671,25 +671,20 @@ function ItemPage() {
                       <p className="item-category-badge">{getCategoryLabel(item.category)}</p>
                       <h2>{item.name}</h2>
                     </div>
+                  </div>
+
                   <div className="item-score-block">
-                    <div className="item-score-panel">
-                      <span className="star-icon">★</span>
-                      <strong>{item.starCount ?? 0}</strong>
-                    </div>
                     <button
-                      className={
-                        item.isStarred
-                          ? 'reaction-button active-positive'
-                          : 'reaction-button'
-                      }
                       type="button"
-                      disabled={pendingTarget === 'item-recommend'}
+                      className={item.isStarred ? 'star-button star-button-active' : 'star-button'}
                       onClick={() => handleRecommendClick()}
+                      disabled={pendingTarget === 'item-recommend'}
+                      aria-pressed={item.isStarred}
                     >
-                      추천하기
+                      <span className="star-icon" aria-hidden="true">★</span>
+                      {item.starCount ?? 0}
                     </button>
                   </div>
-                </div>
 
                 <div className="item-detail-box">
                   <dl className="item-detail-grid">

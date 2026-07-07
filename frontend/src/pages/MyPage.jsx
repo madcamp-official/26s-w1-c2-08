@@ -161,17 +161,43 @@ function UserPage() {
 
         {status === 'success' && user && (
           <>
-            <div className="panel user-profile-header">
-              <p className="user-profile-name">{user.username}</p>
-              <p className="user-profile-name">
-                <Link to={`/user/${user.username}/follower`} className="text-link">
-                  팔로워 {followerCount}
-                </Link>
-                {' · '}
-                <Link to={`/user/${user.username}/following`} className="text-link">
-                  팔로잉 {followingCount}
-                </Link>
-              </p>
+            <div
+              className="panel user-profile-header"
+              style={{
+                display: 'flex',
+                flexWrap: 'nowrap',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '12px',
+              }}
+            >
+              <div>
+                <p className="user-profile-name">{user.username}</p>
+                <p className="user-profile-name">
+                  <Link to={`/user/${user.username}/follower`} className="text-link">
+                    팔로워 {followerCount}
+                  </Link>
+                  {' · '}
+                  <Link to={`/user/${user.username}/following`} className="text-link">
+                    팔로잉 {followingCount}
+                  </Link>
+                </p>
+              </div>
+
+              <Link
+                to={`/user/${user.username}/change`}
+                className="text-link"
+                style={{
+                  flexShrink: 0,
+                  marginLeft: 'auto',
+                  padding: '6px 12px',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                ID 변경
+              </Link>
             </div>
 
             <div className="user-profile-sections">

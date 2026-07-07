@@ -22,7 +22,7 @@ const emptyAiFields = {
   description: '',
 }
 
-const fallbackLinkLabel = '링크 없음'
+const fallbackLinkLabel = '연결 링크 없음'
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -581,7 +581,7 @@ function ItemRegPage() {
                       className="secondary-button"
                       onClick={handleImageUploadClick}
                     >
-                      {imageFileName ? '대표 이미지 변경' : '대표 이미지 직접 첨부'}
+                      {imageFileName ? '대표 이미지 변경' : '대표 이미지 직접 첨부하기'}
                     </button>
                   </div>
                 </div>

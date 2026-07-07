@@ -43,12 +43,12 @@ def recommend(request):
     follower_counts = _follower_count_map()
     usernames = dict(User.objects.values_list("id", "username"))
 
-    # 1. 전역 팔로워 top 5
+    # 1. 전역 팔로워 top 10
     top_users = (
         User.objects.annotate(
             follower_count=Count("follower_relationships")
         )
-        .order_by("-follower_count", "id")[:5]
+        .order_by("-follower_count", "id")[:10]
     )
 
     top_user_results = [
@@ -81,6 +81,7 @@ def recommend(request):
                     "category": item.category,
                     "price": item.price,
                     "star_count": item.star_count,
+                    "shop_or_brand_name": item.shop_or_brand_name,
                 }
                 for item in top_items
             ],

@@ -70,7 +70,7 @@ def login(request):
     user = User.objects.filter(username=username).first()
     if user is None or not check_password(password, user.password):
         return Response(
-            {"detail": "username 또는 password가 올바르지 않습니다."},
+            {"detail": "Id 또는 password가 올바르지 않습니다."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

@@ -24,10 +24,15 @@ const GALLERY = [
   'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
 ]
 
+const USER_SLOT_COUNT = 10
+const USERS_PER_PAGE = 5
+const USER_PAGE_COUNT = USER_SLOT_COUNT / USERS_PER_PAGE
+
 function HomePage() {
   const [recommendedUsers, setRecommendedUsers] = useState([])
   const [topUserItems, setTopUserItems] = useState({ username: '', items: [] })
   const [byCategory, setByCategory] = useState({})
+  const [userPage, setUserPage] = useState(0)
 
   useEffect(() => {
     const fetchRecommendedUsers = async () => {
@@ -77,58 +82,98 @@ function HomePage() {
           ))}
         </ul>
 
-        <div style={{ marginTop: '1px' }}>
-          <h2>인기 유저 TOP 5</h2>
+        <div className="home-highlight-section">
+          <div className="home-section-header home-section-header-compact">
+            <div>
+              <p className="home-eyebrow">Top Honey Bees</p>
+              <h2>인기 유저 TOP 10</h2>
+            </div>
+          </div>
 
-          <ul>
-            {recommendedUsers.map((user) => (
-              <li key={user.id}>
-                <Link to={`/user/${user.username}`}>
-                  {user.username}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="home-user-carousel">
+            {userPage > 0 && (
+              <button
+                type="button"
+                className="home-carousel-arrow"
+                onClick={() => setUserPage((page) => Math.max(page - 1, 0))}
+                aria-label="이전 순위 보기"
+              >
+                ‹
+              </button>
+            )}
+
+            <ul className="home-user-row">
+              {Array.from({ length: USERS_PER_PAGE }).map((_, slot) => {
+                const index = userPage * USERS_PER_PAGE + slot
+                const user = recommendedUsers[index]
+
+                if (!user) {
+                  return (
+                    <li className="home-user-card home-user-card-empty" key={`empty-${index}`}>
+                      <span className="home-user-rank">{index + 1}</span>
+                      <span className="home-user-name home-user-name-empty">-</span>
+                      <span className="home-user-followers home-user-followers-empty">
+                        placeholder
+                      </span>
+                    </li>
+                  )
+                }
+
+                return (
+                  <li className="home-user-card" key={user.id}>
+                    <Link to={`/user/${user.username}`}>
+                      <span className="home-user-rank">{index + 1}</span>
+                      <span className="home-user-name">{user.username}</span>
+                      <span className="home-user-followers">팔로워 {user.follower_count}</span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+
+            {userPage < USER_PAGE_COUNT - 1 && (
+              <button
+                type="button"
+                className="home-carousel-arrow"
+                onClick={() => setUserPage((page) => Math.min(page + 1, USER_PAGE_COUNT - 1))}
+                aria-label="다음 순위 보기"
+              >
+                ›
+              </button>
+            )}
+          </div>
         </div>
 
         {topUserItems.items.length > 0 && (
-          <div style={{ marginTop: '1px' }}>
-            <h2>팔로워 1위 {topUserItems.username}님의 꿀템</h2>
+          <div className="home-highlight-section">
+            <div className="home-section-header home-section-header-compact">
+              <div>
+                <p className="home-eyebrow">Best Picks</p>
+                <h2>팔로워 1위 {topUserItems.username}님의 꿀템</h2>
+              </div>
+            </div>
 
-            <ul>
+            <ul className="home-item-row">
               {topUserItems.items.map((item) => (
-                <li key={item.id}>
+                <li className="home-item-card" key={item.id}>
                   <Link to={`/items/${item.id}`}>
-                    {item.name}
+                    <span className="home-item-thumb">{item.name.slice(0, 1)}</span>
+                    <span className="home-item-name">{item.name}</span>
+                    <span className="home-item-footer">
+                      <span className="home-item-brand-price">
+                        {item.shop_or_brand_name}
+                        {item.shop_or_brand_name ? ' · ' : ''}
+                        {item.price.toLocaleString()}원
+                      </span>
+                      <span className="home-item-stars">
+                        <span className="home-item-star">★</span>
+                        {item.star_count}
+                      </span>
+                    </span>
                   </Link>
-                  <span style={{ marginLeft: '8px' }}>
-                    ⭐ {item.star_count} · {item.price.toLocaleString()}원
-                  </span>
                 </li>
               ))}
             </ul>
-          </div>
-        )}
-
-        {Object.keys(byCategory).length > 0 && (
-          <div style={{ marginTop: '1px' }}>
-            <h2>카테고리별 꿀벌</h2>
-
-            {Object.entries(byCategory).map(([categoryValue, categoryData]) => (
-              <div key={categoryValue} style={{ marginTop: '16px' }}>
-                <h3>{categoryData.category_label}</h3>
-
-                <ul>
-                  {categoryData.top_users.map((user) => (
-                    <li key={user.id}>
-                      <Link to={`/user/${user.username}`}>
-                        {user.username}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
           </div>
         )}
       </section>

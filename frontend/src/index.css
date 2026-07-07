@@ -640,6 +640,223 @@ select:focus-visible {
   letter-spacing: 0.2em;
 }
 
+.home-highlight-section {
+  display: grid;
+  gap: 4px;
+}
+
+.home-section-header-compact {
+  margin: 0 0 4px;
+}
+
+.home-user-carousel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-carousel-arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 60px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-strong);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.home-carousel-arrow:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.home-carousel-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.home-user-row {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 0;
+  padding: 4px 0 4px;
+  list-style: none;
+}
+
+.home-user-card {
+  flex: 0 0 auto;
+}
+
+.home-item-row {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 4px 4px 12px;
+  list-style: none;
+  overflow-x: auto;
+}
+
+.home-item-card {
+  flex: 0 0 auto;
+}
+
+.home-user-card a,
+.home-item-card a {
+  display: flex;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.home-user-card a:hover,
+.home-item-card a:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.home-user-card a {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 170px;
+  height: 170px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  text-align: center;
+}
+
+.home-user-card-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 170px;
+  height: 170px;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 50%;
+  text-align: center;
+}
+
+.home-user-card-empty .home-user-rank {
+  color: var(--text-muted);
+}
+
+.home-user-rank {
+  display: inline-block;
+  font-family: var(--script);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--text-strong);
+}
+
+.home-user-name {
+  display: inline-block;
+  max-width: 100%;
+  color: var(--accent-strong);
+  font-size: 22px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-user-name.home-user-name-empty {
+  color: var(--text-muted);
+}
+
+.home-user-followers {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.home-user-followers.home-user-followers-empty {
+  visibility: hidden;
+}
+
+.home-item-card a {
+  flex-direction: column;
+  align-items: flex-start;
+  width: 180px;
+  min-height: 190px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.home-item-thumb {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius);
+  background: var(--image-bg);
+  color: var(--accent);
+  font-size: 32px;
+  font-weight: 900;
+}
+
+.home-item-name {
+  margin-top: 10px;
+  color: var(--text-strong);
+  font-size: 14px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.home-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.home-item-brand-price {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.home-item-stars {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-item-star {
+  color: #f2b100;
+  font-size: 13px;
+}
+
 .home-section-header {
   display: flex;
   align-items: flex-end;
@@ -724,5 +941,10 @@ select:focus-visible {
   .home-features {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+
+  .home-user-row {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }

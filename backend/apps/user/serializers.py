@@ -35,3 +35,19 @@ class FollowingListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = ["user", "created_at"]
+
+class UsernameChangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["username"]
+
+    def validate_username(self, value):
+        qs = User.objects.filter(username=value)
+
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if qs.exists():
+            raise serializers.ValidationError("이미 사용 중인 username입니다.")
+
+        return value
