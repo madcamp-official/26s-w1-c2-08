@@ -121,7 +121,7 @@ function HomePage() {
 
                 return (
                   <li className="home-user-card" key={user.id}>
-                    <Link to={`/user/${user.username}`}>
+                    <Link to={`/user/${user.id}`}>
                       <span className="home-user-rank">{index + 1}</span>
                       <span className="home-user-name">{user.username}</span>
                       <span className="home-user-followers">팔로워 {user.follower_count}</span>
