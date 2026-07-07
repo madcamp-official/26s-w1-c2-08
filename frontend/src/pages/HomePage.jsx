@@ -100,12 +100,6 @@ function HomePage() {
           </div>
         )}
 
-        {recommendedUsers.length > 0 && topUserItems.items.length > 0 && (
-          <div className="home-divider" aria-hidden="true">
-            <span />
-          </div>
-        )}
-
         {topUserItems.items.length > 0 && (
           <div className="home-highlight-section">
             <div className="home-section-header home-section-header-compact">

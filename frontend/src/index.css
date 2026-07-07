@@ -645,29 +645,6 @@ select:focus-visible {
   gap: 4px;
 }
 
-.home-divider {
-  position: relative;
-  height: 1px;
-  margin: 0 0 -50px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--border) 15%,
-    var(--border) 85%,
-    transparent
-  );
-}
-
-.home-divider span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 7px;
-  height: 7px;
-  background: var(--accent-strong);
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
 .home-section-header-compact {
   margin: 0 0 4px;
 }
