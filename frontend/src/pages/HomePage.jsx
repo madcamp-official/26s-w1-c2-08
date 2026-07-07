@@ -183,7 +183,7 @@ function HomePage() {
             <div className="home-section-header home-section-header-compact">
               <div>
                 <p className="home-eyebrow">Best Picks</p>
-                <h2>팔로워 1위 {topUserItems.username}님의 꿀템</h2>
+                <h2>팔로워 1위 '{topUserItems.username}'님의 꿀템</h2>
               </div>
             </div>
 
