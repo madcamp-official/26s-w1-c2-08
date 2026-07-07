@@ -89,12 +89,12 @@
   .uploader-badge {
     display: inline-flex;
     align-items: center;
-    padding: 3px 10px;
+    padding: 2px 8px;
     border-radius: 999px;
     background: var(--price);
     color: #ffffff;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 13px;
+    font-weight: 400;
     line-height: 1.4;
     white-space: nowrap;
   }

@@ -74,7 +74,7 @@ function getCategoryLabel(category) {
 }
 
 function getOriginalUrlLabel(url) {
-  return url ? '원본 URL로 이동하기' : '링크 없음'
+  return url ? '원본 URL로 이동하기' : '연결 링크 없음'
 }
 
 function ReviewCreatePage() {

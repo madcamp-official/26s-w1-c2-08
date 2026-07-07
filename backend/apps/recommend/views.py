@@ -81,6 +81,7 @@ def recommend(request):
                     "category": item.category,
                     "price": item.price,
                     "star_count": item.star_count,
+                    "shop_or_brand_name": item.shop_or_brand_name,
                 }
                 for item in top_items
             ],
