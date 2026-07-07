@@ -90,15 +90,19 @@ select:focus-visible {
   position: sticky;
   top: 0;
   z-index: 10;
+  width: 100%;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+}
+
+.site-nav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: min(var(--page-max), calc(100% - 32px));
   min-height: 64px;
   margin: 0 auto;
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(14px);
 }
 
 .site-brand {
@@ -522,10 +526,75 @@ select:focus-visible {
   color: var(--text-muted);
 }
 
+.home-page-shell {
+  width: min(var(--page-max), calc(100% - 32px));
+}
+
 .home-hero {
   display: grid;
+  gap: 24px;
+  padding: 24px 0 0;
+}
+
+.home-hero-intro {
+  animation: homeHeroReveal 0.55s ease-out both;
+}
+
+.home-panel-shell {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+}
+
+.home-panel-shell::after {
+  content: none;
+}
+
+.home-panel-shell-intro {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding: clamp(48px, 7vw, 88px) max(16px, calc((100vw - var(--page-max)) / 2)) clamp(40px, 6vw, 72px);
+  background-repeat: no-repeat;
+  background-position: center center, center center;
+  background-size: cover, cover;
+  overflow: hidden;
+}
+
+.home-panel-shell-intro::after {
+  content: '';
+  position: absolute;
+  inset: auto -8% -24% auto;
+  width: 280px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.05), transparent 68%);
+  pointer-events: none;
+}
+
+.home-panel-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
   gap: 28px;
-  padding: 48px 0 0;
+  max-width: min(640px, 100%);
+}
+
+.home-panel-copy-intro {
+  width: min(var(--page-max), calc(100% - 32px));
+  max-width: 640px;
+}
+
+@keyframes homeHeroReveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .home-hero h1 {
@@ -616,7 +685,9 @@ select:focus-visible {
 
 .home-highlight-section {
   display: grid;
-  gap: 4px;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
 }
 
 .section-divider {
@@ -970,6 +1041,10 @@ select:focus-visible {
     width: min(100% - 24px, var(--page-max));
   }
 
+  .site-nav-inner {
+    width: min(100% - 24px, var(--page-max));
+  }
+
   .app-shell,
   .page-shell,
   .page-shell-narrow {
@@ -985,7 +1060,24 @@ select:focus-visible {
   }
 
   .home-hero {
-    padding: 28px 0 0;
+    padding: 16px 0 0;
+  }
+
+  .home-panel-shell-intro {
+    margin-left: calc(50% - 50vw);
+    padding:
+      40px max(12px, calc((100vw - min(100% - 24px, var(--page-max))) / 2))
+      36px;
+    background-position: center center, center center;
+    background-size: cover, cover;
+  }
+
+  .home-panel-copy {
+    gap: 24px;
+  }
+
+  .home-panel-copy-intro {
+    width: min(100% - 24px, var(--page-max));
   }
 
   .home-section-header {

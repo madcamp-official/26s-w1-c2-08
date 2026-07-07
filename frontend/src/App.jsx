@@ -40,89 +40,91 @@ function App() {
   return (
     <>
       <nav className="site-nav">
-        <NavLink className="site-brand" to="/">
-          <svg
-            className="site-brand-icon"
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            aria-hidden="true"
-          >
-            <circle
-              cx="8"
-              cy="13"
-              r="5"
-              stroke="currentColor"
-              strokeWidth="2"
-              fill="none"
-            />
-            <line
-              x1="11.5"
-              y1="16.5"
-              x2="16"
-              y2="21"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <path
-              d="M17 2L18.5 5.5L22 7L18.5 8.5L17 12L15.5 8.5L12 7L15.5 5.5Z"
-              fill="currentColor"
-            />
-          </svg>
-          꿀템
-        </NavLink>
-        <div className="site-links">
-          <NavLink className="nav-link-main" to="/" end>
-            Main
-          </NavLink>
-          <div className="nav-item nav-item-ranking">
-            <NavLink className="nav-link-ranking" to="/ranking">
-              Ranking
-            </NavLink>
-            <div className="nav-dropdown">
-              {FALLBACK_CATEGORIES.map((category) => (
-                <Link
-                  className="nav-dropdown-item"
-                  key={category.value}
-                  to={`/ranking?category=${encodeURIComponent(category.value)}`}
-                >
-                  {category.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-          <NavLink className="nav-link-additem" to="/itemreg">
-            Add item
-          </NavLink>
-          <NavLink className="nav-link-users" to="/users">
-            Users
-          </NavLink>
-        </div>
-        <div className="site-utility">
-          {accessToken ? (
-            <button className="nav-logout-button" type="button" onClick={handleLogout}>
-              Logout
-            </button>
-          ) : (
-            <NavLink className="site-utility-item" to="/login">
-              Login
-            </NavLink>
-          )}
-          <NavLink
-            className="nav-user-icon"
-            to={accessToken && userId ? `/me` : '/login'}
-            aria-label="내 프로필"
-            title="내 프로필"
-          >
-            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" fill="currentColor" />
+        <div className="site-nav-inner">
+          <NavLink className="site-brand" to="/">
+            <svg
+              className="site-brand-icon"
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              aria-hidden="true"
+            >
+              <circle
+                cx="8"
+                cy="13"
+                r="5"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+              />
+              <line
+                x1="11.5"
+                y1="16.5"
+                x2="16"
+                y2="21"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
               <path
-                d="M4 20c0-4.418 3.582-7 8-7s8 2.582 8 7"
+                d="M17 2L18.5 5.5L22 7L18.5 8.5L17 12L15.5 8.5L12 7L15.5 5.5Z"
                 fill="currentColor"
               />
             </svg>
+            꿀템
           </NavLink>
+          <div className="site-links">
+            <NavLink className="nav-link-main" to="/" end>
+              Main
+            </NavLink>
+            <div className="nav-item nav-item-ranking">
+              <NavLink className="nav-link-ranking" to="/ranking">
+                Ranking
+              </NavLink>
+              <div className="nav-dropdown">
+                {FALLBACK_CATEGORIES.map((category) => (
+                  <Link
+                    className="nav-dropdown-item"
+                    key={category.value}
+                    to={`/ranking?category=${encodeURIComponent(category.value)}`}
+                  >
+                    {category.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <NavLink className="nav-link-additem" to="/itemreg">
+              Add item
+            </NavLink>
+            <NavLink className="nav-link-users" to="/users">
+              Users
+            </NavLink>
+          </div>
+          <div className="site-utility">
+            {accessToken ? (
+              <button className="nav-logout-button" type="button" onClick={handleLogout}>
+                Logout
+              </button>
+            ) : (
+              <NavLink className="site-utility-item" to="/login">
+                Login
+              </NavLink>
+            )}
+            <NavLink
+              className="nav-user-icon"
+              to={accessToken && userId ? `/me` : '/login'}
+              aria-label="내 프로필"
+              title="내 프로필"
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" fill="currentColor" />
+                <path
+                  d="M4 20c0-4.418 3.582-7 8-7s8 2.582 8 7"
+                  fill="currentColor"
+                />
+              </svg>
+            </NavLink>
+          </div>
         </div>
       </nav>
 
