@@ -130,7 +130,7 @@ function IdChangePage() {
   return (
     <main className="page-shell page-shell-narrow">
       <section className="page-content">
-        <h2>Username 변경</h2>
+        <h2>ID 변경</h2>
 
         <form
           onSubmit={handleSubmit}
@@ -141,7 +141,7 @@ function IdChangePage() {
             htmlFor="username-input"
             style={{ display: 'block', marginBottom: '8px' }}
           >
-            새 username
+            새 ID
           </label>
 
           <div style={{ display: 'flex', gap: '8px' }}>
