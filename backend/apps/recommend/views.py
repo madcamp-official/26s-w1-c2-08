@@ -109,6 +109,10 @@ def recommend(request):
         max_recommended_count = max(recommended_map.values(), default=1)
         max_follower_count = max(follower_counts.values(), default=1)
 
+        max_created_stars = max(max_created_stars, 1)
+        max_recommended_count = max(max_recommended_count, 1)
+        max_follower_count = max(max_follower_count, 1)
+
         scored_users = []
 
         for user_id in candidate_user_ids:
