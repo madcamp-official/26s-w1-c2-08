@@ -77,33 +77,56 @@ function HomePage() {
           ))}
         </ul>
 
-        <div style={{ marginTop: '1px' }}>
-          <h2>인기 유저 TOP 5</h2>
+        {recommendedUsers.length > 0 && (
+          <div className="home-highlight-section">
+            <div className="home-section-header home-section-header-compact">
+              <div>
+                <p className="home-eyebrow">Top Honey Bees</p>
+                <h2>인기 유저 TOP 5</h2>
+              </div>
+            </div>
 
-          <ul>
-            {recommendedUsers.map((user) => (
-              <li key={user.id}>
-                <Link to={`/user/${user.username}`}>
-                  {user.username}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+            <ul className="home-user-row">
+              {recommendedUsers.map((user, index) => (
+                <li className="home-user-card" key={user.id}>
+                  <Link to={`/user/${user.username}`}>
+                    <span className="home-user-rank">{index + 1}</span>
+                    <span className="home-user-name">{user.username}</span>
+                    <span className="home-user-followers">팔로워 {user.follower_count}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {topUserItems.items.length > 0 && (
-          <div style={{ marginTop: '1px' }}>
-            <h2>팔로워 1위 {topUserItems.username}님의 꿀템</h2>
+          <div className="home-highlight-section">
+            <div className="home-section-header home-section-header-compact">
+              <div>
+                <p className="home-eyebrow">Best Picks</p>
+                <h2>팔로워 1위 {topUserItems.username}님의 꿀템</h2>
+              </div>
+            </div>
 
-            <ul>
+            <ul className="home-item-row">
               {topUserItems.items.map((item) => (
-                <li key={item.id}>
+                <li className="home-item-card" key={item.id}>
                   <Link to={`/items/${item.id}`}>
-                    {item.name}
+                    <span className="home-item-thumb">{item.name.slice(0, 1)}</span>
+                    <span className="home-item-name">{item.name}</span>
+                    <span className="home-item-footer">
+                      <span className="home-item-brand-price">
+                        {item.shop_or_brand_name}
+                        {item.shop_or_brand_name ? ' · ' : ''}
+                        {item.price.toLocaleString()}원
+                      </span>
+                      <span className="home-item-stars">
+                        <span className="home-item-star">★</span>
+                        {item.star_count}
+                      </span>
+                    </span>
                   </Link>
-                  <span style={{ marginLeft: '8px' }}>
-                    ⭐ {item.star_count} · {item.price.toLocaleString()}원
-                  </span>
                 </li>
               ))}
             </ul>
