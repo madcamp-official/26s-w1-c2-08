@@ -3,6 +3,7 @@ import { useParams, Link, Navigate } from 'react-router-dom'
 import axios from 'axios'
 import { buildApiUrl } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
+import { FALLBACK_CATEGORIES } from '../constants/categories'
 
 function UserPage() {
   const { accessToken, userId: authUserId } = useAuth()
@@ -27,6 +28,11 @@ function UserPage() {
   const [followerCount, setFollowerCount] = useState(null)
   const [followingCount, setFollowingCount] = useState(null)
   const [countsStatus, setCountsStatus] = useState('loading')
+
+  const [starCategory, setStarCategory] = useState('all')
+  const [createdCategory, setCreatedCategory] = useState('all')
+  const [isStarFilterOpen, setIsStarFilterOpen] = useState(false)
+  const [isCreatedFilterOpen, setIsCreatedFilterOpen] = useState(false)
 
   useEffect(() => {
     let ignore = false
@@ -205,6 +211,22 @@ function UserPage() {
     }
   }
 
+  const visibleStarredItems =
+    starCategory === 'all'
+      ? starredItems
+      : starredItems.filter((item) => item.category === starCategory)
+
+  const visibleCreatedItems =
+    createdCategory === 'all'
+      ? createdItems
+      : createdItems.filter((item) => item.category === createdCategory)
+
+  const starCategoryLabel =
+    FALLBACK_CATEGORIES.find((c) => c.value === starCategory)?.label ?? '전체'
+
+  const createdCategoryLabel =
+    FALLBACK_CATEGORIES.find((c) => c.value === createdCategory)?.label ?? '전체'
+
   if (
     status === 'success' &&
     user &&
@@ -224,7 +246,7 @@ function UserPage() {
         {status === 'not-found' && (
           <div className="empty-state">
             <strong>사용자를 찾을 수 없습니다</strong>
-            <p>'{username}'에 해당하는 유저가 존재하지 않습니다.</p>
+            <p>'{userId}'에 해당하는 유저가 존재하지 않습니다.</p>
           </div>
         )}
 
@@ -293,7 +315,92 @@ function UserPage() {
 
             <div className="user-profile-sections">
               <div className="panel user-profile-section">
-                <h2>별표한 아이템</h2>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <h2 style={{ margin: 0 }}>별표한 아이템</h2>
+
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsStarFilterOpen((prev) => !prev)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        background: 'var(--surface)',
+                        color: 'var(--text-strong)',
+                        font: 'inherit',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {starCategoryLabel}
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          display: 'inline-block',
+                          transition: 'transform 0.2s ease',
+                          transform: isStarFilterOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        }}
+                      >
+                        ▾
+                      </span>
+                    </button>
+
+                    {isStarFilterOpen && (
+                      <div
+                        className="category-filter"
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          right: 0,
+                          zIndex: 10,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          flexWrap: 'nowrap',
+                          alignItems: 'flex-start',
+                          gap: '4px',
+                          width: 'max-content',
+                          minWidth: '140px',
+                          margin: 0,
+                          padding: '12px',
+                          background: 'var(--surface)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '8px',
+                        }}
+                      >
+                        {FALLBACK_CATEGORIES.map((category) => (
+                          <button
+                            key={category.value}
+                            type="button"
+                            className={
+                              starCategory === category.value
+                                ? 'category-button active-category'
+                                : 'category-button'
+                            }
+                            onClick={() => {
+                              setStarCategory(category.value)
+                              setIsStarFilterOpen(false)
+                            }}
+                            style={{ width: '100%', textAlign: 'left' }}
+                          >
+                            {category.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {starStatus === 'loading' && (
                   <p className="state-text">불러오는 중...</p>
@@ -309,9 +416,15 @@ function UserPage() {
                   <p className="state-text">아직 별표한 아이템이 없습니다.</p>
                 )}
 
-                {starStatus === 'success' && starredItems.length > 0 && (
+                {starStatus === 'success' &&
+                  starredItems.length > 0 &&
+                  visibleStarredItems.length === 0 && (
+                    <p className="state-text">해당 카테고리의 아이템이 없습니다.</p>
+                  )}
+
+                {starStatus === 'success' && visibleStarredItems.length > 0 && (
                   <ul className="user-profile-list">
-                    {starredItems.map((item) => (
+                    {visibleStarredItems.map((item) => (
                       <li key={item.itemId}>
                         <Link to={`/items/${item.itemId}`} className="text-link">
                           {item.itemName}
@@ -353,7 +466,92 @@ function UserPage() {
               </div>
 
               <div className="panel user-profile-section">
-                <h2>등록한 아이템</h2>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <h2 style={{ margin: 0 }}>등록한 아이템</h2>
+
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatedFilterOpen((prev) => !prev)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        background: 'var(--surface)',
+                        color: 'var(--text-strong)',
+                        font: 'inherit',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {createdCategoryLabel}
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          display: 'inline-block',
+                          transition: 'transform 0.2s ease',
+                          transform: isCreatedFilterOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        }}
+                      >
+                        ▾
+                      </span>
+                    </button>
+
+                    {isCreatedFilterOpen && (
+                      <div
+                        className="category-filter"
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          right: 0,
+                          zIndex: 10,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          flexWrap: 'nowrap',
+                          alignItems: 'flex-start',
+                          gap: '4px',
+                          width: 'max-content',
+                          minWidth: '140px',
+                          margin: 0,
+                          padding: '12px',
+                          background: 'var(--surface)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '8px',
+                        }}
+                      >
+                        {FALLBACK_CATEGORIES.map((category) => (
+                          <button
+                            key={category.value}
+                            type="button"
+                            className={
+                              createdCategory === category.value
+                                ? 'category-button active-category'
+                                : 'category-button'
+                            }
+                            onClick={() => {
+                              setCreatedCategory(category.value)
+                              setIsCreatedFilterOpen(false)
+                            }}
+                            style={{ width: '100%', textAlign: 'left' }}
+                          >
+                            {category.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {createdItemsStatus === 'loading' && (
                   <p className="state-text">불러오는 중...</p>
@@ -369,9 +567,15 @@ function UserPage() {
                   <p className="state-text">아직 등록한 아이템이 없습니다.</p>
                 )}
 
-                {createdItemsStatus === 'success' && createdItems.length > 0 && (
+                {createdItemsStatus === 'success' &&
+                  createdItems.length > 0 &&
+                  visibleCreatedItems.length === 0 && (
+                    <p className="state-text">해당 카테고리의 아이템이 없습니다.</p>
+                  )}
+
+                {createdItemsStatus === 'success' && visibleCreatedItems.length > 0 && (
                   <ul className="user-profile-list">
-                    {createdItems.map((item) => (
+                    {visibleCreatedItems.map((item) => (
                       <li key={item.id}>
                         <Link to={`/items/${item.id}`} className="text-link">
                           {item.name}

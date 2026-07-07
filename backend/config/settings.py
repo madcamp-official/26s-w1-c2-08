@@ -7,6 +7,23 @@ LOG_DIR = Path(os.getenv("DJANGO_LOG_DIR", BASE_DIR / "logs"))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _load_dotenv(env_path):
+    if not env_path.is_file():
+        return
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("'\"")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv(BASE_DIR / ".env")
+
+
 def env_bool(name, default=False):
     value = os.getenv(name)
     if value is None:
