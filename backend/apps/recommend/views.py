@@ -98,19 +98,35 @@ def recommend(request):
     for category_value, category_label in Item.Category.choices:
         if category_value == Item.Category.ETC:
             continue
-        
+
         created_star_map = _created_item_star_map(category_value)
         recommended_map = _recommended_item_count_map(category_value)
 
         candidate_user_ids = follower_counts.keys()
 
+        # 정규화를 위한 최대값
+        max_created_stars = max(created_star_map.values(), default=1)
+        max_recommended_count = max(recommended_map.values(), default=1)
+        max_follower_count = max(follower_counts.values(), default=1)
+
         scored_users = []
+
         for user_id in candidate_user_ids:
             created_stars = created_star_map.get(user_id, 0)
             recommended_count = recommended_map.get(user_id, 0)
             follower_count = follower_counts.get(user_id, 0)
 
-            score = created_stars + recommended_count + follower_count
+            # 0~1 사이로 정규화
+            created_score = created_stars / max_created_stars
+            recommended_score = recommended_count / max_recommended_count
+            follower_score = follower_count / max_follower_count
+
+            # 5:3:2 가중치 적용
+            score = (
+                created_score * 0.5
+                + recommended_score * 0.3
+                + follower_score * 0.2
+            )
 
             scored_users.append(
                 {
@@ -119,7 +135,7 @@ def recommend(request):
                     "created_item_star_total": created_stars,
                     "recommended_item_count": recommended_count,
                     "follower_count": follower_count,
-                    "score": score,
+                    "score": round(score, 4),
                 }
             )
 
