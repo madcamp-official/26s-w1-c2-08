@@ -132,28 +132,6 @@ function HomePage() {
             </ul>
           </div>
         )}
-
-        {Object.keys(byCategory).length > 0 && (
-          <div style={{ marginTop: '1px' }}>
-            <h2>카테고리별 꿀벌</h2>
-
-            {Object.entries(byCategory).map(([categoryValue, categoryData]) => (
-              <div key={categoryValue} style={{ marginTop: '16px' }}>
-                <h3>{categoryData.category_label}</h3>
-
-                <ul>
-                  {categoryData.top_users.map((user) => (
-                    <li key={user.id}>
-                      <Link to={`/user/${user.username}`}>
-                        {user.username}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <div className="home-section-header">
