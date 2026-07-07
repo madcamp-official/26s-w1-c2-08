@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 
 from apps.accounts.models import User
 from .models import Follow
-from .serializers import FollowSerializer, FollowerListSerializer, FollowingListSerializer
+from .serializers import FollowSerializer, FollowerListSerializer, FollowingListSerializer, UsernameChangeSerializer
 
 
 @api_view(["GET"])
@@ -103,3 +103,30 @@ class FollowingListView(generics.ListAPIView):
         user_id = self.kwargs["user_id"]
         get_object_or_404(User, id=user_id)
         return Follow.objects.filter(follower_id=user_id).select_related("following")
+
+class UsernameChangeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, user_id):
+        target_user = get_object_or_404(User, id=user_id)
+
+        if request.user.id != target_user.id:
+            return Response(
+                {"detail": "본인의 username만 변경할 수 있습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = UsernameChangeSerializer(
+            target_user, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {
+                "id": target_user.id,
+                "username": target_user.username,
+                "detail": "username이 변경되었습니다.",
+            },
+            status=status.HTTP_200_OK,
+        )
