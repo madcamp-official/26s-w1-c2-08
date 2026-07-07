@@ -347,7 +347,8 @@ def user_star_list(request, user_id):
     data = [
         {
             "itemId": star.item.id,
-            "itemName": star.item.name,  # 실제 Item 필드명에 맞게 조정
+            "itemName": star.item.name,
+            "category": star.item.category,
         }
         for star in starred_items
     ]
