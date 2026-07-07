@@ -14,8 +14,8 @@ class Command(BaseCommand):
     help = "더미 User 및 Follow 생성"
 
     def handle(self, *args, **kwargs):
-        Follow.objects.all().delete()
-        User.objects.filter(is_superuser=False).delete()
+        # Follow.objects.all().delete()
+        # User.objects.filter(is_superuser=False).delete()
 
         self.stdout.write("User 생성 중...")
 

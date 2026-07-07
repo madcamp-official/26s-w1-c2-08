@@ -206,7 +206,7 @@ function ItemRegPage() {
       setAiFields(nextFields)
       setAiPreview({
         ...nextFields,
-        imageUrl: data.cropped_image_url ?? '',
+        imageUrl: data.cropped_image_url ?? nextFields.imageUrl,
       })
       setIsRepresentativeImageBroken(false)
       resetDuplicateCheckState()
