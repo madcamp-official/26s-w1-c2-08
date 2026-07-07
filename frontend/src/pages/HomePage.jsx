@@ -24,10 +24,15 @@ const GALLERY = [
   'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
 ]
 
+const USER_SLOT_COUNT = 10
+const USERS_PER_PAGE = 5
+const USER_PAGE_COUNT = USER_SLOT_COUNT / USERS_PER_PAGE
+
 function HomePage() {
   const [recommendedUsers, setRecommendedUsers] = useState([])
   const [topUserItems, setTopUserItems] = useState({ username: '', items: [] })
   const [byCategory, setByCategory] = useState({})
+  const [userPage, setUserPage] = useState(0)
 
   useEffect(() => {
     const fetchRecommendedUsers = async () => {
@@ -77,28 +82,73 @@ function HomePage() {
           ))}
         </ul>
 
-        {recommendedUsers.length > 0 && (
-          <div className="home-highlight-section">
-            <div className="home-section-header home-section-header-compact">
-              <div>
-                <p className="home-eyebrow">Top Honey Bees</p>
-                <h2>인기 유저 TOP 5</h2>
-              </div>
+        <div className="home-highlight-section">
+          <div className="home-section-header home-section-header-compact">
+            <div>
+              <p className="home-eyebrow">Top Honey Bees</p>
+              <h2>인기 유저 TOP 10</h2>
             </div>
+          </div>
+
+          <div className="home-user-carousel">
+            <button
+              type="button"
+              className={
+                userPage === 0
+                  ? 'home-carousel-arrow home-carousel-arrow-hidden'
+                  : 'home-carousel-arrow'
+              }
+              onClick={() => setUserPage((page) => Math.max(page - 1, 0))}
+              disabled={userPage === 0}
+              aria-label="이전 순위 보기"
+            >
+              ‹
+            </button>
 
             <ul className="home-user-row">
-              {recommendedUsers.map((user, index) => (
-                <li className="home-user-card" key={user.id}>
-                  <Link to={`/user/${user.username}`}>
-                    <span className="home-user-rank">{index + 1}</span>
-                    <span className="home-user-name">{user.username}</span>
-                    <span className="home-user-followers">팔로워 {user.follower_count}</span>
-                  </Link>
-                </li>
-              ))}
+              {Array.from({ length: USERS_PER_PAGE }).map((_, slot) => {
+                const index = userPage * USERS_PER_PAGE + slot
+                const user = recommendedUsers[index]
+
+                if (!user) {
+                  return (
+                    <li className="home-user-card home-user-card-empty" key={`empty-${index}`}>
+                      <span className="home-user-rank">{index + 1}</span>
+                      <span className="home-user-name home-user-name-empty">-</span>
+                      <span className="home-user-followers home-user-followers-empty">
+                        placeholder
+                      </span>
+                    </li>
+                  )
+                }
+
+                return (
+                  <li className="home-user-card" key={user.id}>
+                    <Link to={`/user/${user.username}`}>
+                      <span className="home-user-rank">{index + 1}</span>
+                      <span className="home-user-name">{user.username}</span>
+                      <span className="home-user-followers">팔로워 {user.follower_count}</span>
+                    </Link>
+                  </li>
+                )
+              })}
             </ul>
+
+            <button
+              type="button"
+              className={
+                userPage === USER_PAGE_COUNT - 1
+                  ? 'home-carousel-arrow home-carousel-arrow-hidden'
+                  : 'home-carousel-arrow'
+              }
+              onClick={() => setUserPage((page) => Math.min(page + 1, USER_PAGE_COUNT - 1))}
+              disabled={userPage === USER_PAGE_COUNT - 1}
+              aria-label="다음 순위 보기"
+            >
+              ›
+            </button>
           </div>
-        )}
+        </div>
 
         {topUserItems.items.length > 0 && (
           <div className="home-highlight-section">

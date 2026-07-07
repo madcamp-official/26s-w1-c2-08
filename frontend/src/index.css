@@ -649,7 +649,54 @@ select:focus-visible {
   margin: 0 0 4px;
 }
 
-.home-user-row,
+.home-user-carousel {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.home-carousel-arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-strong);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.home-carousel-arrow:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.home-carousel-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.home-carousel-arrow.home-carousel-arrow-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.home-user-row {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin: 0;
+  padding: 4px 0 4px;
+  list-style: none;
+}
+
 .home-item-row {
   display: flex;
   gap: 16px;
@@ -659,7 +706,6 @@ select:focus-visible {
   overflow-x: auto;
 }
 
-.home-user-card,
 .home-item-card {
   flex: 0 0 auto;
 }
@@ -683,18 +729,34 @@ select:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: 132px;
-  padding: 18px 12px;
+  gap: 14px;
+  width: 100%;
+  padding: 40px 18px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   text-align: center;
 }
 
+.home-user-card-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px 18px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.home-user-card-empty .home-user-rank {
+  color: var(--text-muted);
+}
+
 .home-user-rank {
   display: inline-block;
   font-family: var(--script);
-  font-size: 18px;
+  font-size: 30px;
   font-weight: 400;
   line-height: 1;
   color: var(--text-strong);
@@ -704,22 +766,31 @@ select:focus-visible {
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  padding: 2px 13px;
+  padding: 6px 18px;
   border: 1.5px solid var(--accent-strong);
   border-radius: 999px;
   background: #ffffff;
   color: var(--accent-strong);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.home-user-name.home-user-name-empty {
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
 .home-user-followers {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
+}
+
+.home-user-followers.home-user-followers-empty {
+  visibility: hidden;
 }
 
 .home-item-card a {
@@ -871,5 +942,9 @@ select:focus-visible {
   .home-features {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+
+  .home-user-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
