@@ -915,7 +915,14 @@ function ItemPage() {
                           <p className="review-meta">
                             작성자 {review.author_username ?? review.author} · {formatDate(review.created_at)}
                           </p>
-                          {!isEditingThis && <h4>{review.title}</h4>}
+                          {!isEditingThis && (
+                            <Link
+                              className="review-title-link"
+                              to={`/items/${itemId}/reviews/${review.id}`}
+                            >
+                              <h4>{review.title}</h4>
+                            </Link>
+                          )}
                         </div>
                         {isReviewAuthor && (
                           <div className="comment-owner-actions">
