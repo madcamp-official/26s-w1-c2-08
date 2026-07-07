@@ -1,4 +1,5 @@
 import os
+import subprocess
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
@@ -15,7 +16,15 @@ from .duplicate_detection import (
     trigram_similarity,
 )
 from .models import Item, Star
-from .vision_service import VISION_ENV_FILE, _build_vision_environment, _normalize_extracted_category
+from .vision_service import (
+    VISION_ENV_FILE,
+    VisionExtractionError,
+    _build_gemini_api_key_candidates,
+    _build_vision_error,
+    _build_vision_environment,
+    _normalize_extracted_category,
+    _run_command,
+)
 
 
 def make_test_image_file(name="item.png"):
@@ -74,6 +83,24 @@ class VisionEnvironmentDefaultTests(APITestCase):
 
         self.assertEqual(env["VISION_PROVIDER"], "gemini")
         self.assertEqual(env["VISION_GEMINI_API_KEY"], "vision-env-key")
+
+    @patch.dict(
+        os.environ,
+        {
+            "VISION_PROVIDER": "gemini",
+            "VISION_GEMINI_API_KEY": "primary-key",
+            "VISION_GEMINI_API_KEY_2": "secondary-key",
+            "GEMINI_API_KEYS": "secondary-key, tertiary-key",
+        },
+        clear=True,
+    )
+    def test_build_gemini_api_key_candidates_includes_fallbacks_without_duplicates(self):
+        env = _build_vision_environment()
+
+        self.assertEqual(
+            _build_gemini_api_key_candidates(env),
+            ["primary-key", "secondary-key", "tertiary-key"],
+        )
 
     @patch.dict(os.environ, {"VISION_PROVIDER": "codex"}, clear=True)
     @patch("apps.items.vision_service._find_codex_bin", return_value="/tmp/codex")
@@ -160,6 +187,29 @@ class ItemApiTests(APITestCase):
         self.assertIsNone(created_item.original_url)
         self.assertEqual(response.data["original_url"], "")
 
+    def test_create_item_with_long_original_url(self):
+        self.client.force_authenticate(user=self.user)
+
+        long_path = "very-long-segment-" * 15
+        original_url = f"https://shop.example.com/products/{long_path}?ref={long_path}"
+
+        self.assertGreater(len(original_url), 200)
+
+        payload = {
+            "name": "긴 링크 상품",
+            "description": "원본 링크가 긴 상품도 등록할 수 있어야 합니다",
+            "price": 21900,
+            "shop_or_brand_name": "LONGURL",
+            "original_url": original_url,
+        }
+
+        response = self.client.post(reverse("items-list-create"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created_item = Item.objects.get(name=payload["name"])
+        self.assertEqual(created_item.original_url, original_url)
+        self.assertEqual(response.data["original_url"], original_url)
+
     def test_create_items_with_same_uploaded_filename_get_unique_image_paths(self):
         self.client.force_authenticate(user=self.user)
 
@@ -221,6 +271,32 @@ class ItemApiTests(APITestCase):
         self.assertEqual(response.data["cropped_image_url"], "/media/ai-item-crops/test.png")
         self.assertEqual(response.data["price"], 9900)
         mock_extract.assert_called_once()
+
+    @patch("apps.items.views.logger")
+    @patch("apps.items.views.extract_item_info_from_screenshot")
+    def test_extract_item_logs_failed_screenshot_request(self, mock_extract, mock_logger):
+        mock_extract.side_effect = VisionExtractionError(
+            "현재 AI 요청 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.",
+            error_code="too_many_requests",
+            provider="gemini",
+            retryable=False,
+            status_code=429,
+        )
+
+        response = self.client.post(
+            reverse("items-extract-from-screenshot"),
+            {"screenshot": make_test_image_file("failed-screenshot.png")},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(response.data["detail"], "현재 AI 요청 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.")
+        self.assertEqual(response.data["error_code"], "too_many_requests")
+        mock_logger.warning.assert_called_once()
+        log_message = mock_logger.warning.call_args.args[1]
+        self.assertIn("failed-screenshot.png", log_message)
+        self.assertIn("too_many_requests", log_message)
+        self.assertIn("gemini", log_message)
 
     def test_extract_item_info_requires_screenshot(self):
         response = self.client.post(
@@ -386,6 +462,28 @@ class ItemApiTests(APITestCase):
 
 
 class VisionEnvironmentTests(APITestCase):
+    def test_build_vision_error_maps_quota_error(self):
+        error = _build_vision_error(
+            'RuntimeError: Gemini API request failed: {"error":{"message":"You do not have enough quota to make this request.","code":"too_many_requests"}}',
+            provider="gemini",
+        )
+
+        self.assertEqual(error.error_code, "too_many_requests")
+        self.assertEqual(error.provider, "gemini")
+        self.assertEqual(error.status_code, 429)
+        self.assertFalse(error.retryable)
+
+    def test_build_vision_error_marks_api_error_retryable(self):
+        error = _build_vision_error(
+            'RuntimeError: Gemini API request failed: {"error":{"message":"Internal error encountered.","code":"api_error"}}',
+            provider="gemini",
+        )
+
+        self.assertEqual(error.error_code, "api_error")
+        self.assertEqual(error.provider, "gemini")
+        self.assertEqual(error.status_code, 502)
+        self.assertTrue(error.retryable)
+
     @patch.dict(os.environ, {"PATH": "/usr/bin", "HOME": "/root", "VISION_PROVIDER": "codex"}, clear=True)
     @patch("apps.items.vision_service._find_codex_bin", return_value="/root/.nvm/versions/node/v26.4.0/bin/codex")
     def test_build_vision_environment_includes_codex_bin_dir(self, _mock_find_codex_bin):
@@ -399,3 +497,75 @@ class VisionEnvironmentTests(APITestCase):
     def test_normalize_extracted_category_falls_back_to_etc(self):
         self.assertEqual(_normalize_extracted_category("not-a-category"), Item.Category.ETC)
         self.assertEqual(_normalize_extracted_category(Item.Category.FOOD), Item.Category.FOOD)
+
+    @patch("apps.items.vision_service.logger")
+    @patch("apps.items.vision_service.subprocess.run")
+    def test_run_command_logs_called_process_error_details(self, mock_run, mock_logger):
+        error = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["bash", "vision/run_extract.sh"],
+            output="",
+            stderr='RuntimeError: Gemini API request failed: {"error":{"message":"You do not have enough quota to make this request.","code":"too_many_requests"}}',
+        )
+        mock_run.side_effect = error
+
+        with self.assertRaises(VisionExtractionError):
+            _run_command(["bash", "vision/run_extract.sh"])
+
+        mock_logger.exception.assert_called_once()
+        log_message = mock_logger.exception.call_args.args[1]
+        self.assertIn("vision/run_extract.sh", log_message)
+        self.assertIn("too_many_requests", log_message)
+
+    @patch("apps.items.vision_service.time.sleep")
+    @patch("apps.items.vision_service.logger")
+    @patch("apps.items.vision_service.subprocess.run")
+    def test_run_command_retries_transient_api_error(self, mock_run, mock_logger, mock_sleep):
+        transient = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["bash", "vision/run_extract.sh"],
+            output="",
+            stderr='RuntimeError: Gemini API request failed: {"error":{"message":"Internal error encountered.","code":"api_error"}}',
+        )
+        mock_run.side_effect = [transient, None]
+
+        _run_command(["bash", "vision/run_extract.sh"])
+
+        self.assertEqual(mock_run.call_count, 2)
+        mock_sleep.assert_called_once()
+        self.assertTrue(mock_logger.warning.called)
+
+    @patch.dict(
+        os.environ,
+        {
+            "VISION_PROVIDER": "gemini",
+            "VISION_GEMINI_API_KEY": "primary-key",
+            "VISION_GEMINI_API_KEY_2": "secondary-key",
+        },
+        clear=True,
+    )
+    @patch("apps.items.vision_service.logger")
+    @patch("apps.items.vision_service.subprocess.run")
+    def test_run_command_falls_back_to_second_gemini_key_after_quota_error(self, mock_run, mock_logger):
+        quota_error = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["bash", "vision/run_extract.sh"],
+            output="",
+            stderr='RuntimeError: Gemini API request failed: {"error":{"message":"You do not have enough quota to make this request.","code":"too_many_requests"}}',
+        )
+
+        captured_keys = []
+
+        def side_effect(*_args, **kwargs):
+            captured_keys.append(kwargs["env"]["VISION_GEMINI_API_KEY"])
+            if len(captured_keys) == 1:
+                raise quota_error
+            return None
+
+        mock_run.side_effect = side_effect
+
+        _run_command(["bash", "vision/run_extract.sh"])
+
+        self.assertEqual(captured_keys, ["primary-key", "secondary-key"])
+        self.assertEqual(mock_run.call_count, 2)
+        self.assertTrue(mock_logger.warning.called)
