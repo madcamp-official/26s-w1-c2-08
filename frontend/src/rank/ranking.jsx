@@ -283,50 +283,52 @@ function RankingPage() {
                         ? 'rank-badge rank-badge-bronze'
                         : 'rank-badge'
 
-                return (
-                  <li className="ranking-item" key={item.id}>
-                    <div className={rankBadgeClass}>
-                      {rank === 1 && <span className="rank-star" aria-hidden="true">★</span>}
-                      {rank}
-                    </div>
+              return (
+                <li className="ranking-item" key={item.id}>
+                  <div className={rankBadgeClass}>
+                    {rank === 1 && <span className="rank-star" aria-hidden="true">★</span>}
+                    {rank}
+                  </div>
 
-                    <Link className="item-image" to={`/items/${item.id}`} aria-label={item.name}>
-                      {hasImage ? (
-                        <img
-                          src={item.imageUrl}
-                          alt=""
-                          onError={() =>
-                            setBrokenImages((current) => ({
-                              ...current,
-                              [item.id]: true,
-                            }))
-                          }
-                        />
-                      ) : (
-                        <span>{item.name.slice(0, 1)}</span>
-                      )}
-                    </Link>
+                  <Link className="item-image" to={`/items/${item.id}`} aria-label={item.name}>
+                    {hasImage ? (
+                      <img
+                        src={item.imageUrl}
+                        alt=""
+                        onError={() =>
+                          setBrokenImages((current) => ({
+                            ...current,
+                            [item.id]: true,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <span>{item.name.slice(0, 1)}</span>
+                    )}
+                  </Link>
 
-                    <div className="item-body">
-                      <div className="item-heading">
-                        <h2 className="ranking-item-link">{item.name}</h2>
+                  <div className="item-body">
+                    <div className="item-heading">
+                      <h2 className="ranking-item-link">{item.name}</h2>
 
-                        <div className="star-column">
-                          <button
-                            type="button"
-                            className={item.isStarred ? 'star-button star-button-active' : 'star-button'}
-                            onClick={() => handleStarClick(item.id)}
-                            disabled={pendingStar === item.id}
-                            aria-pressed={item.isStarred}
-                          >
-                            <span className="star-icon" aria-hidden="true">★</span>
-                            {item.starCount ?? 0}
-                          </button>
-                          {item.createdByUsername && (
-                            <span className="uploader-badge">{item.createdByUsername}</span>
-                          )}
-                        </div>
+                      <div className="star-column">
+                        <button
+                          type="button"
+                          className={item.isStarred ? 'star-button star-button-active' : 'star-button'}
+                          onClick={() => handleStarClick(item.id)}
+                          disabled={pendingStar === item.id}
+                          aria-pressed={item.isStarred}
+                        >
+                          <span className="star-icon" aria-hidden="true">★</span>
+                          {item.starCount ?? 0}
+                        </button>
+                        {item.createdByUsername && (
+                          <Link to={`/user/${item.createdBy}`} className="uploader-badge">
+                            {item.createdByUsername}
+                          </Link>
+                        )}
                       </div>
+                    </div>
 
                       {hasMeta && (
                         <div className="item-meta">

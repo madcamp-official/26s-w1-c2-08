@@ -719,7 +719,9 @@ function ItemPage() {
                         <dt>
                           상품 설명
                           {item.created_by_username && (
-                            <span className="uploader-badge">{item.created_by_username}</span>
+                            <Link to={`/user/${item.created_by_id}`} className="uploader-badge">
+                              {item.created_by_username}
+                            </Link>
                           )}
                         </dt>
                         <dd>{item.description}</dd>

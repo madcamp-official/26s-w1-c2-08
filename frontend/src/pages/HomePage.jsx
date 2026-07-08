@@ -20,15 +20,11 @@ const FEATURES = [
 ]
 
 const USER_SLOT_COUNT = 10
-const USERS_PER_PAGE = 5
-const USER_PAGE_COUNT = USER_SLOT_COUNT / USERS_PER_PAGE
+const USERS_PER_PAGE = 7
+const USER_PAGE_COUNT = Math.ceil(USER_SLOT_COUNT / USERS_PER_PAGE)
 
 function SectionDivider() {
-  return (
-    <div className="section-divider" aria-hidden="true">
-      <span className="section-divider-diamond" />
-    </div>
-  )
+  return <div className="section-divider" aria-hidden="true" />
 }
 
 function HomePage() {
@@ -150,7 +146,7 @@ function HomePage() {
             <div className="home-section-header home-section-header-compact">
               <div>
                 <p className="home-eyebrow">Top Honey Bees</p>
-                <h2>인기 유저 TOP 10</h2>
+                <h2>인기 유저 랭킹</h2>
               </div>
             </div>
 
