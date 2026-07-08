@@ -9,15 +9,6 @@ import { apiFetch, buildApiUrl } from '../lib/api'
 
 const RANKING_PAGE_SIZE = 20
 
-function sortRankingItems(items) {
-  return [...items].sort((a, b) => {
-    const scoreDiff = (b.starCount ?? 0) - (a.starCount ?? 0)
-    if (scoreDiff !== 0) return scoreDiff
-
-    return a.id - b.id
-  })
-}
-
 async function readErrorMessage(response) {
   try {
     const data = await response.json()
@@ -85,7 +76,7 @@ function RankingPage() {
       const itemsData = await itemsResponse.json()
       const rawItems = itemsData.results ?? []
 
-      setItems(sortRankingItems(rawItems))
+      setItems(rawItems)
       setTotalCount(itemsData.count ?? rawItems.length)
     } catch (error) {
       setErrorMessage(
@@ -102,10 +93,6 @@ function RankingPage() {
   }, [])
 
   useEffect(() => {
-    setLimit(RANKING_PAGE_SIZE)
-  }, [activeCategory])
-
-  useEffect(() => {
     loadRanking(activeCategory, limit, { isLoadMore: limit > RANKING_PAGE_SIZE })
   }, [activeCategory, limit])
 
@@ -114,12 +101,14 @@ function RankingPage() {
     if (categoryFromUrl && categoryFromUrl !== activeCategory) {
       setActionMessage('')
       setActiveCategory(categoryFromUrl)
+      setLimit(RANKING_PAGE_SIZE)
     }
   }, [location.search])
 
   function handleCategoryChange(category) {
     setActionMessage('')
     setActiveCategory(category)
+    setLimit(RANKING_PAGE_SIZE)
   }
 
   function handleLoadMore() {
@@ -169,18 +158,16 @@ function RankingPage() {
       const wasAdded = response.status === 201
 
       setItems((currentItems) =>
-        sortRankingItems(
-          currentItems.map((item) =>
-            item.id === itemId
-              ? {
-                  ...item,
-                  isStarred: wasAdded,
-                  starCount: wasAdded
-                    ? (item.starCount ?? 0) + 1
-                    : Math.max((item.starCount ?? 1) - 1, 0),
-                }
-              : item,
-          ),
+        currentItems.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                isStarred: wasAdded,
+                starCount: wasAdded
+                  ? (item.starCount ?? 0) + 1
+                  : Math.max((item.starCount ?? 1) - 1, 0),
+              }
+            : item,
         ),
       )
     } catch (error) {
