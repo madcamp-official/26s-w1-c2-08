@@ -91,12 +91,20 @@
     align-items: center;
     padding: 2px 8px;
     border-radius: 999px;
+    border: none;
     background: var(--price);
     color: #ffffff;
     font-size: 13px;
-    font-weight: 400;
+    font-weight: 200;
     line-height: 1.4;
     white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .uploader-badge:hover {
+    opacity: 0.85;
   }
 
   .rank-badge {

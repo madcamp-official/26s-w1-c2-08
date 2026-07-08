@@ -691,27 +691,10 @@ select:focus-visible {
 }
 
 .section-divider {
-  display: flex;
-  align-items: center;
   width: 500px;
-  margin: 50px auto 0;
-}
-
-.section-divider::before,
-.section-divider::after {
-  content: '';
-  flex: 1;
   height: 1px;
+  margin: 50px auto 20px;
   background: var(--border);
-}
-
-.section-divider-diamond {
-  flex-shrink: 0;
-  width: 6px;
-  height: 6px;
-  margin: 0 10px;
-  background: #000;
-  transform: rotate(45deg);
 }
 
 .home-section-header.home-section-header-compact {
@@ -729,8 +712,8 @@ select:focus-visible {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 60px;
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
@@ -755,12 +738,13 @@ select:focus-visible {
   display: flex;
   flex: 1;
   min-width: 0;
-  justify-content: space-between;
+  flex-wrap: nowrap;
   align-items: flex-start;
   gap: 16px;
   margin: 0;
   padding: 4px 0 4px;
   list-style: none;
+  overflow-x: auto;
 }
 
 .home-user-card {
@@ -768,13 +752,11 @@ select:focus-visible {
 }
 
 .category-user-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  justify-content: start;
-}
-
-.category-user-row .home-user-card {
-  justify-self: center;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  padding: 4px 0 12px;
+  overflow-x: auto;
 }
 
 .home-item-row {
@@ -806,40 +788,61 @@ select:focus-visible {
   height: 100%;
   color: inherit;
   text-decoration: none;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .home-user-card a:hover,
 .home-item-card a:hover {
   transform: translateY(-2px);
+}
+
+.home-item-card a:hover {
   border-color: var(--accent);
+}
+
+.home-user-card a:hover {
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 10px 20px rgba(20, 20, 20, 0.12),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    inset 0 -6px 10px rgba(20, 20, 20, 0.05);
 }
 
 .home-user-card a {
   flex-direction: column;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: 170px;
-  height: 170px;
-  padding: 16px;
-  border: 1px solid var(--border);
+  gap: 4px;
+  width: 122px;
+  height: 122px;
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 50%;
   text-align: center;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.45));
+  box-shadow:
+    0 6px 14px rgba(20, 20, 20, 0.08),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    inset 0 -6px 10px rgba(20, 20, 20, 0.04);
 }
 
 .home-user-card-empty {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: 170px;
-  height: 170px;
-  padding: 16px;
+  gap: 4px;
+  width: 122px;
+  height: 122px;
+  aspect-ratio: 1 / 1;
+  padding: 8px;
   border: 1px dashed var(--border);
   border-radius: 50%;
   text-align: center;
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .home-user-card-empty .home-user-rank {
@@ -849,7 +852,7 @@ select:focus-visible {
 .home-user-rank {
   display: inline-block;
   font-family: var(--script);
-  font-size: 30px;
+  font-size: 20px;
   font-weight: 400;
   line-height: 1;
   color: var(--text-strong);
@@ -898,7 +901,7 @@ select:focus-visible {
   display: inline-block;
   max-width: 100%;
   color: var(--accent-strong);
-  font-size: 22px;
+  font-size: 15px;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -911,7 +914,7 @@ select:focus-visible {
 
 .home-user-followers {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -1087,15 +1090,6 @@ select:focus-visible {
   .home-features {
     grid-template-columns: 1fr;
     gap: 28px;
-  }
-
-  .home-user-row {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .category-user-row {
-    grid-template-columns: repeat(2, 1fr);
   }
 
   .home-item-grid {
