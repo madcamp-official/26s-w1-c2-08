@@ -7,6 +7,8 @@ import ConfirmPopup from '../components/ConfirmPopup'
 import '../rank/ranking.css'
 import { apiFetch, buildApiUrl } from '../lib/api'
 
+const RANKING_PAGE_SIZE = 20
+
 function getRankingScore(item) {
   return item.rankingScore ?? item.starCount ?? 0
 }
@@ -33,6 +35,9 @@ function RankingPage() {
   const { accessToken } = useAuth()
   const location = useLocation()
   const [items, setItems] = useState([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [limit, setLimit] = useState(RANKING_PAGE_SIZE)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [activeCategory, setActiveCategory] = useState(
     () => new URLSearchParams(location.search).get('category') ?? 'all',
@@ -60,19 +65,23 @@ function RankingPage() {
     }
   }
 
-  async function loadRanking(category) {
-    setIsLoading(true)
+  async function loadRanking(category, currentLimit, { isLoadMore = false } = {}) {
+    if (isLoadMore) {
+      setIsLoadingMore(true)
+    } else {
+      setIsLoading(true)
+    }
     setErrorMessage('')
 
     try {
-      const categoryQuery =
-        category && category !== 'all'
-          ? `?category=${encodeURIComponent(category)}`
-          : ''
+      const params = new URLSearchParams()
+      if (category && category !== 'all') {
+        params.set('category', category)
+      }
+      params.set('limit', String(currentLimit))
 
-      // 아이템 목록 + star 정보를 동시에 요청
       const [itemsResponse, starResponse] = await Promise.all([
-        apiFetch(`/items/ranking/${categoryQuery}`),
+        apiFetch(`/items/ranking/?${params.toString()}`),
         apiFetch('/items/star-summary/', {
           headers: accessToken
             ? { Authorization: `Bearer ${accessToken}` }
@@ -87,7 +96,6 @@ function RankingPage() {
       const itemsData = await itemsResponse.json()
       const rawItems = itemsData.results ?? []
 
-      // star API 실패해도 목록 자체는 보여줄 수 있게 별도 처리
       let starMap = {}
       if (starResponse.ok) {
         const starData = await starResponse.json()
@@ -103,12 +111,14 @@ function RankingPage() {
       }))
 
       setItems(sortRankingItems(merged))
+      setTotalCount(itemsData.count ?? merged.length)
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : '랭킹을 불러오지 못했습니다.',
       )
     } finally {
       setIsLoading(false)
+      setIsLoadingMore(false)
     }
   }
 
@@ -117,8 +127,12 @@ function RankingPage() {
   }, [])
 
   useEffect(() => {
-    loadRanking(activeCategory)
+    setLimit(RANKING_PAGE_SIZE)
   }, [activeCategory])
+
+  useEffect(() => {
+    loadRanking(activeCategory, limit, { isLoadMore: limit > RANKING_PAGE_SIZE })
+  }, [activeCategory, limit])
 
   useEffect(() => {
     const categoryFromUrl = new URLSearchParams(location.search).get('category')
@@ -131,6 +145,10 @@ function RankingPage() {
   function handleCategoryChange(category) {
     setActionMessage('')
     setActiveCategory(category)
+  }
+
+  function handleLoadMore() {
+    setLimit((prev) => prev + RANKING_PAGE_SIZE)
   }
 
   function handleStarClick(itemId) {
@@ -173,7 +191,7 @@ function RankingPage() {
         throw new Error(await readErrorMessage(response))
       }
 
-      const wasAdded = response.status === 201 // 201: 추가됨, 200: 취소됨
+      const wasAdded = response.status === 201
 
       setItems((currentItems) =>
         sortRankingItems(
@@ -276,85 +294,106 @@ function RankingPage() {
         )}
 
         {!isLoading && !errorMessage && visibleItems.length > 0 && (
-          <ol className="ranking-list">
-            {visibleItems.map((item, index) => {
-              const hasImage = item.imageUrl && !brokenImages[item.id]
-              const hasMeta =
-                item.brandOrShopName ||
-                item.priceText ||
-                (item.externalReviewCount !== null &&
-                  item.externalReviewCount !== undefined)
+          <>
+            <ol className="ranking-list">
+              {visibleItems.map((item, index) => {
+                const hasImage = item.imageUrl && !brokenImages[item.id]
+                const hasMeta =
+                  item.brandOrShopName ||
+                  item.priceText ||
+                  (item.externalReviewCount !== null &&
+                    item.externalReviewCount !== undefined)
 
-              const rank = index + 1
-              const rankBadgeClass =
-                rank === 1
-                  ? 'rank-badge rank-badge-gold'
-                  : rank === 2
-                    ? 'rank-badge rank-badge-silver'
-                    : rank === 3
-                      ? 'rank-badge rank-badge-bronze'
-                      : 'rank-badge'
+                const rank = index + 1
+                const rankBadgeClass =
+                  rank === 1
+                    ? 'rank-badge rank-badge-gold'
+                    : rank === 2
+                      ? 'rank-badge rank-badge-silver'
+                      : rank === 3
+                        ? 'rank-badge rank-badge-bronze'
+                        : 'rank-badge'
 
-              return (
-                <li className="ranking-item" key={item.id}>
-                  <div className={rankBadgeClass}>
-                    {rank === 1 && <span className="rank-star" aria-hidden="true">★</span>}
-                    {rank}
-                  </div>
-
-                  <Link className="item-image" to={`/items/${item.id}`} aria-label={item.name}>
-                    {hasImage ? (
-                      <img
-                        src={item.imageUrl}
-                        alt=""
-                        onError={() =>
-                          setBrokenImages((current) => ({
-                            ...current,
-                            [item.id]: true,
-                          }))
-                        }
-                      />
-                    ) : (
-                      <span>{item.name.slice(0, 1)}</span>
-                    )}
-                  </Link>
-
-                  <div className="item-body">
-                    <div className="item-heading">
-                      <h2 className="ranking-item-link">{item.name}</h2>
-
-                      <div className="star-column">
-                        <button
-                          type="button"
-                          className={item.isStarred ? 'star-button star-button-active' : 'star-button'}
-                          onClick={() => handleStarClick(item.id)}
-                          disabled={pendingStar === item.id}
-                          aria-pressed={item.isStarred}
-                        >
-                          <span className="star-icon" aria-hidden="true">★</span>
-                          {item.starCount ?? 0}
-                        </button>
-                        {item.createdByUsername && (
-                          <span className="uploader-badge">{item.createdByUsername}</span>
-                        )}
-                      </div>
+                return (
+                  <li className="ranking-item" key={item.id}>
+                    <div className={rankBadgeClass}>
+                      {rank === 1 && <span className="rank-star" aria-hidden="true">★</span>}
+                      {rank}
                     </div>
 
-                    {hasMeta && (
-                      <div className="item-meta">
-                        {item.brandOrShopName && <span>{item.brandOrShopName}</span>}
-                        {item.priceText && <span>{item.priceText}</span>}
-                        {item.externalReviewCount !== null &&
-                          item.externalReviewCount !== undefined && (
-                            <span>리뷰 {item.externalReviewCount}</span>
+                    <Link className="item-image" to={`/items/${item.id}`} aria-label={item.name}>
+                      {hasImage ? (
+                        <img
+                          src={item.imageUrl}
+                          alt=""
+                          onError={() =>
+                            setBrokenImages((current) => ({
+                              ...current,
+                              [item.id]: true,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <span>{item.name.slice(0, 1)}</span>
+                      )}
+                    </Link>
+
+                    <div className="item-body">
+                      <div className="item-heading">
+                        <h2 className="ranking-item-link">{item.name}</h2>
+
+                        <div className="star-column">
+                          <button
+                            type="button"
+                            className={item.isStarred ? 'star-button star-button-active' : 'star-button'}
+                            onClick={() => handleStarClick(item.id)}
+                            disabled={pendingStar === item.id}
+                            aria-pressed={item.isStarred}
+                          >
+                            <span className="star-icon" aria-hidden="true">★</span>
+                            {item.starCount ?? 0}
+                          </button>
+                          {item.createdByUsername && (
+                            <span className="uploader-badge">{item.createdByUsername}</span>
                           )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
+
+                      {hasMeta && (
+                        <div className="item-meta">
+                          {item.brandOrShopName && <span>{item.brandOrShopName}</span>}
+                          {item.priceText && <span>{item.priceText}</span>}
+                          {item.externalReviewCount !== null &&
+                            item.externalReviewCount !== undefined && (
+                              <span>리뷰 {item.externalReviewCount}</span>
+                            )}
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+
+            {!normalizedSearchTerm && items.length < totalCount && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="category-button"
+                  style={{
+                    padding: '10px 24px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    cursor: isLoadingMore ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {isLoadingMore ? '불러오는 중...' : `더 보기 (${items.length}/${totalCount})`}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
     </main>
