@@ -1,13 +1,13 @@
 # Frontend
 
-Vite + React 기반 프론트엔드입니다.
+React 19 + Vite 기반 프론트엔드입니다. 개발 환경에서는 `/api`, `/media` 요청을 Django 백엔드로 프록시합니다.
 
 ## 요구 사항
 
 - Node.js 20 이상 권장
 - npm
 
-## 개발 서버 실행
+## 실행
 
 ```bash
 cd frontend
@@ -15,50 +15,52 @@ npm install
 npm run dev
 ```
 
-로컬 개발에서도 프론트는 `/api` 상대경로를 사용하고, `vite` 개발 서버가 이를 기본적으로 `http://127.0.0.1:8000` Django 백엔드로 프록시합니다.
-
-다른 백엔드 주소를 쓰려면:
-
-```bash
-VITE_BACKEND_TARGET=http://127.0.0.1:8010 npm run dev
-```
-
-백엔드를 같이 띄우려면:
-
-```bash
-cd backend
-source venv/bin/activate
-python manage.py runserver
-```
-
 기본 개발 서버:
 
-```text
-http://127.0.0.1:5175
-```
+- `http://127.0.0.1:5175`
 
-## 프로덕션 빌드
+기본 프록시 대상:
+
+- `http://127.0.0.1:8000`
+
+다른 백엔드를 연결하려면:
 
 ```bash
 cd frontend
-cp .env.production.example .env.production
-npm install
-npm run build
+VITE_BACKEND_TARGET=http://127.0.0.1:8010 npm run dev
 ```
 
-`.env.production` 예시:
+## 빌드
 
 ```bash
-VITE_API_BASE_URL=/api
+cd frontend
+npm install
+VITE_API_BASE_URL=/api npm run build
 ```
 
 빌드 결과물은 `frontend/dist`에 생성됩니다.
 
-즉 경로 규칙은 개발/배포가 같습니다.
+## 주요 화면
 
-- 개발: `vite`가 `/api`, `/media`를 Django로 프록시
-- 배포: `nginx`가 `/api`, `/media`를 gunicorn/Django로 프록시
+- 홈
+- 로그인 / 회원가입
+- 랭킹
+- 아이템 등록
+- 아이템 상세
+- 리뷰 작성 / 리뷰 상세
+- 마이페이지
+- 유저 목록 / 유저 프로필
+- 팔로워 / 팔로잉 목록
+- username 변경
 
-## Nginx 배포
+## API 경로 규칙
 
-프론트는 `Nginx`가 `dist`를 정적 서빙하고, `/api/`, `/media/`는 Django 백엔드로 프록시하는 구성을 기준으로 합니다.
+- 기본 API base URL은 `VITE_API_BASE_URL`이며 지정하지 않으면 `/api`를 사용합니다.
+- 개발 서버에서는 `vite.config.js`가 `/api`, `/media`를 백엔드로 프록시합니다.
+
+## 사용 가능한 스크립트
+
+- `npm run dev`
+- `npm run build`
+- `npm run preview`
+- `npm run lint`

@@ -1,13 +1,13 @@
 # Backend
 
-Django REST Framework 기반의 백엔드 서버입니다. 현재는 서버 실행 테스트를 위한 최소 API만 포함되어 있습니다.
+Django 4.2 + Django REST Framework 기반 백엔드입니다. JWT 인증, 아이템/리뷰/유저 API, Django admin을 포함합니다.
 
 ## 요구 사항
 
 - Python 3.10 이상
 - pip
 
-## 처음 실행하기
+## 실행
 
 ```bash
 cd backend
@@ -18,29 +18,50 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-서버가 실행되면 아래 주소에서 상태 확인 API를 호출할 수 있습니다.
+기본 주소:
 
-```text
-http://127.0.0.1:8000/api/health/
+- API root: `http://127.0.0.1:8000/api/`
+- health check: `http://127.0.0.1:8000/api/health/`
+- admin: `http://127.0.0.1:8000/admin/`
+
+## 환경 개요
+
+- 기본 DB: `backend/db.sqlite3`
+- 커스텀 사용자 모델 사용: `accounts.User`
+- JWT 인증: `rest_framework_simplejwt`
+- 미디어 파일 경로: `backend/media/`
+- 로그 파일 경로: `backend/logs/vision.log`
+
+`backend/.env` 파일이 있으면 Django 설정에서 자동으로 읽습니다.
+
+주요 환경 변수 예시:
+
+```env
+DJANGO_SECRET_KEY=change-me
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+DJANGO_CORS_ALLOWED_ORIGINS=http://127.0.0.1:5175,http://localhost:5175
+DJANGO_CSRF_TRUSTED_ORIGINS=http://127.0.0.1:5175,http://localhost:5175
 ```
 
-정상 응답:
+## 포함된 앱
 
-```json
-{
-  "status": "ok",
-  "message": "Backend server is running."
-}
-```
+- `apps.accounts`: 회원가입, 로그인, 로그아웃, 내 정보
+- `apps.items`: 아이템 CRUD, 랭킹, 카테고리, 중복 후보, 스크린샷 추출, 변경 요청
+- `apps.reviews`: 리뷰, 댓글, 리뷰/댓글 반응
+- `apps.user`: 유저 목록/프로필, 팔로우, 팔로워/팔로잉, username 변경
+- `apps.recommend`: 추천 API 엔드포인트
+- `api`: API 루트와 health check
 
-## 이미 venv가 있는 경우
+## 대표 API 경로
 
-```bash
-cd backend
-source venv/bin/activate
-python manage.py runserver
-```
+- `/api/accounts/`
+- `/api/items/`
+- `/api/reviews/`
+- `/api/user/`
+- `/api/recommend/`
 
-## Git에 올리는 파일
+## 기타
 
-`venv/`, `db.sqlite3`, `__pycache__/` 등 로컬 실행 산출물은 `.gitignore`에 의해 제외됩니다. 팀원은 Git에 올라간 `requirements.txt`와 Django 소스 코드를 기준으로 같은 환경을 다시 만들면 됩니다.
+- 개발 중 `DEBUG=True`일 때 `/media/`를 Django가 직접 서빙합니다.
+- 데이터 준비용 management command와 vision 관련 보조 코드가 저장소에 포함되어 있습니다.

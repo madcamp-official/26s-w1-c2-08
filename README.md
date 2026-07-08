@@ -28,7 +28,7 @@
 
 - **목적:**
 
-기존 commercial 서비스와 다르게 아이템 중심이 아닌 User 중심의 생태계로 특정 아이템에서 영향력이 있는 사람의 추천목록 그리고 여러 사람들이 좋아한 아이템을 쉽게 보여주고자 한다. 
+여러 commercial 서비스를 통합하여 나만 알기 아까운 꿀템들을 게시하고, 여러 사람들이 좋아한 아이템에 대한 정보를 쉽게 모아볼 수 있는 서비스를 개발하고자 한다. 
 
 - **서비스 범위:**
   - 초기 MVP에서는 구매 가능한 실물 상품만 추천 대상으로 다룬다.
@@ -47,8 +47,6 @@
   - 특정 분야에 신뢰하는 인플루언서/유저의 추천을 따라가고 싶은 사람
 
 ## 기능 명세서
-
-> 구현할 기능을 사용자 관점에서 정리하고, 필수 기능과 선택 기능을 구분
 
 ### 필수 기능
 
@@ -170,12 +168,15 @@ Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다
 ### 관계 요약
 
 ```text
-User - Item - Review - Comment
+User - Item - Review - ReviewComment
+User - Star - Item
+User - ReviewReaction - Review
+User - ReviewCommentReaction - ReviewComment
+User - Follow - User
+User - ItemChangeRequest - Item
 ```
 
-서비스의 핵심 컨텐츠는 아이템과 그 아이템에 달린 유저 리뷰다. 최초 유저가 어떤 상품에 대한 리뷰를 작성하면 해당 상품이 아이템으로 DB에 추가된다. 이미 DB에 존재하는 아이템에 대해서는 다른 유저들이 별도의 리뷰를 추가로 작성할 수 있다.
-
-### 테이블 초안
+현재 백엔드는 `accounts`, `items`, `reviews`, `user` 앱 기준으로 테이블이 구성되어 있다. 서비스의 핵심 컨텐츠는 아이템과 그 아이템에 달린 유저 리뷰이며, 별점형 추천은 `Star`, 리뷰/댓글 반응은 별도 Reaction 테이블로 관리한다. 아이템 수정 요청과 삭제 요청은 분리 테이블이 아니라 `ItemChangeRequest.request_type`으로 구분한다.
 
 #### User
 
@@ -184,8 +185,8 @@ User - Item - Review - Comment
 | id | 사용자 ID |
 | username | 로그인 ID |
 | password | 비밀번호 해시 |
-| nickname | 서비스 내 표시 이름 |
-| created_at | 가입 일시 |
+| is_active | 활성 상태 |
+| is_staff | 관리자 여부 |
 
 #### Item
 
@@ -193,12 +194,13 @@ User - Item - Review - Comment
 |---|---|
 | id | 아이템 ID |
 | name | 상품명 |
-| image_url | 대표 이미지 URL |
+| description | 상품 설명 |
+| category | 카테고리 |
+| image_url | 외부 이미지 URL |
+| image_file | 업로드된 대표 이미지 파일 |
 | price | 가격 |
 | shop_or_brand_name | 쇼핑몰 또는 브랜드명 |
 | original_url | 원본 상품 URL |
-| rating | 구매 사이트 별점 |
-| review_count | 구매 사이트 리뷰 수 |
 | created_by | 최초 등록 사용자 |
 | created_at | 등록 일시 |
 | updated_at | 수정 일시 |
@@ -209,35 +211,38 @@ User - Item - Review - Comment
 |---|---|
 | id | 리뷰 ID |
 | item_id | 리뷰 대상 아이템 |
-| user_id | 리뷰 작성자 |
-| reason | 추천 이유 |
+| author_id | 리뷰 작성자 |
+| title | 리뷰 제목 |
 | content | 리뷰 본문 |
+| like_count | 좋아요 수 캐시 |
+| dislike_count | 싫어요 수 캐시 |
 | created_at | 작성 일시 |
 | updated_at | 수정 일시 |
 
-#### Comment
+한 사용자는 같은 아이템에 리뷰를 1개만 작성할 수 있고, 본인이 등록한 아이템에는 리뷰를 작성할 수 없다.
+
+#### ReviewComment
 
 | 필드 | 설명 |
 |---|---|
 | id | 댓글 ID |
 | review_id | 댓글 대상 리뷰 |
-| user_id | 댓글 작성자 |
+| author_id | 댓글 작성자 |
 | content | 댓글 본문 |
+| like_count | 댓글 좋아요 수 캐시 |
+| dislike_count | 댓글 싫어요 수 캐시 |
 | created_at | 작성 일시 |
 | updated_at | 수정 일시 |
 
-#### ItemReaction
+#### Star
 
 | 필드 | 설명 |
 |---|---|
-| id | 아이템 반응 ID |
-| item_id | 반응 대상 아이템 |
-| user_id | 반응한 사용자 |
-| reaction | `recommend` 또는 `not_recommend` |
-| created_at | 반응 일시 |
-| updated_at | 변경 일시 |
+| id | 추천 ID |
+| item_id | 추천 대상 아이템 |
+| user_id | 추천한 사용자 |
 
-한 사용자는 한 아이템에 대해 추천 또는 비추천 중 하나만 선택할 수 있다.
+한 사용자는 한 아이템에 별(`Star`)을 1개만 남길 수 있으며, 다시 누르면 취소된다.
 
 #### ReviewReaction
 
@@ -252,32 +257,42 @@ User - Item - Review - Comment
 
 한 사용자는 한 리뷰에 대해 좋아요 또는 싫어요 중 하나만 선택할 수 있다.
 
-#### ItemEditRequest
+#### ReviewCommentReaction
 
 | 필드 | 설명 |
 |---|---|
-| id | 수정 요청 ID |
-| item_id | 수정 요청 대상 아이템 |
-| user_id | 요청한 사용자 |
-| requested_fields | 수정 요청 내용 |
-| reason | 수정 요청 사유 |
+| id | 댓글 반응 ID |
+| comment_id | 반응 대상 댓글 |
+| user_id | 반응한 사용자 |
+| reaction | `like` 또는 `dislike` |
+| created_at | 반응 일시 |
+| updated_at | 변경 일시 |
+
+#### ItemChangeRequest
+
+| 필드 | 설명 |
+|---|---|
+| id | 변경 요청 ID |
+| item_id | 요청 대상 아이템 |
+| requested_by_id | 요청한 사용자 |
+| request_type | `edit` 또는 `delete` |
+| requested_fields | 수정 요청 필드 JSON |
+| reason | 요청 사유 |
 | status | `pending`, `approved`, `rejected` |
 | admin_note | Admin 처리 메모 |
 | created_at | 요청 일시 |
 | resolved_at | 처리 일시 |
 
-#### ItemDeleteRequest
+삭제 요청은 `request_type=delete`이고, 수정 요청은 `request_type=edit`와 `requested_fields`로 표현한다. 삭제 요청은 아이템 등록자만 보낼 수 있다.
+
+#### Follow
 
 | 필드 | 설명 |
 |---|---|
-| id | 삭제 요청 ID |
-| item_id | 삭제 요청 대상 아이템 |
-| user_id | 요청한 사용자 |
-| reason | 삭제 요청 사유 |
-| status | `pending`, `approved`, `rejected` |
-| admin_note | Admin 처리 메모 |
-| created_at | 요청 일시 |
-| resolved_at | 처리 일시 |
+| id | 팔로우 관계 ID |
+| follower_id | 팔로우하는 사용자 |
+| following_id | 팔로우 대상 사용자 |
+| created_at | 팔로우 일시 |
 
 ---
 
@@ -285,9 +300,85 @@ User - Item - Review - Comment
 
 > API 주소, 요청 방식, 요청값, 응답값, 에러 상황을 정리
 
+기본 prefix는 `/api/`이며, 인증이 필요한 API는 JWT `Authorization: Bearer <access_token>` 헤더를 사용한다.
+
+### System
+
 | Method | Endpoint | 설명 | 요청 | 응답 |
 |---|---|---|---|---|
-|  |  | 추후 작성 |  |  |
+| GET | `/api/` | API 루트 | 없음 | 서비스 상태, 주요 엔드포인트 |
+| GET | `/api/health/` | 헬스 체크 | 없음 | `{status, message}` |
+
+### Accounts
+
+| Method | Endpoint | 설명 | 요청 | 응답 |
+|---|---|---|---|---|
+| GET | `/api/accounts/` | 유저 목록 조회 | 없음 | `{users: [{id, username}]}` |
+| GET | `/api/accounts/me/` | 내 정보 조회 | JWT 필요 | `{id, username}` |
+| POST | `/api/accounts/signup/` | 회원가입 | `{username, password}` | `{message, user}` |
+| POST | `/api/accounts/login/` | 로그인 | `{username, password}` | `{message, user, access, refresh}` |
+| POST | `/api/accounts/logout/` | 로그아웃 | `{refresh}` + JWT | `{message}` |
+
+### Items
+
+| Method | Endpoint | 설명 | 요청 | 응답 |
+|---|---|---|---|---|
+| GET | `/api/items/` | 아이템 목록/검색 | `name`, `shop_or_brand_name`, `original_url`, `created_by` 쿼리 | 아이템 배열 |
+| POST | `/api/items/` | 아이템 생성 | `name`, `description`, `category`, `price`, `shop_or_brand_name`, `original_url`, `image` + JWT | 생성된 아이템 |
+| GET | `/api/items/{id}/` | 아이템 상세 | 없음 | 아이템 상세 |
+| PATCH/PUT | `/api/items/{id}/` | 아이템 수정 | 수정 필드 | 수정된 아이템 |
+| DELETE | `/api/items/{id}/` | 아이템 삭제 | 없음 | `204 No Content` |
+| POST | `/api/items/duplicate-candidates/` | 중복 후보 탐색 | `{name, shop_or_brand_name?, original_url?, price?}` | `{has_duplicates, message, candidates}` |
+| POST | `/api/items/extract-from-screenshot/` | 스크린샷 기반 상품 정보 추출 | `multipart/form-data`의 `screenshot` | `{name, category, shop_or_brand_name, price, price_text, cropped_image_url, confidence, warnings}` |
+| GET | `/api/items/ranking/` | 별 수 기반 랭킹 | `limit`, `category`, `name` 쿼리 | `{count, limit, category, results}` |
+| GET | `/api/items/categories/` | 카테고리 옵션 조회 | 없음 | `{results: [{value, label}]}` |
+| GET | `/api/items/{id}/ranking-detail/` | 랭킹용 아이템 상세 | 없음 | 랭킹 직렬화 결과 |
+| POST | `/api/items/{id}/star/` | 아이템 추천 토글 | JWT 필요 | `{detail}` |
+| GET | `/api/items/star-summary/` | 전체 아이템 별 수 요약 | 선택적 JWT | `{results: [{id, starCount, isStarred}]}` |
+| GET | `/api/items/{id}/star-summary/` | 개별 아이템 별 수 요약 | 선택적 JWT | `{id, starCount, isStarred}` |
+| GET | `/api/items/users/{user_id}/stars/` | 특정 유저가 별 준 아이템 목록 | 없음 | `{results: [{itemId, itemName, category}]}` |
+| POST | `/api/items/{id}/change-requests/` | 아이템 수정/삭제 요청 생성 | `{request_type, requested_fields?, reason}` + JWT | 변경 요청 객체 |
+| GET | `/api/items/{id}/change-requests/mine/` | 내 대기중 요청 조회 | JWT 필요 | 변경 요청 객체 또는 `null` |
+| DELETE | `/api/items/change-requests/{id}/` | 내 대기중 요청 취소 | JWT 필요 | `204 No Content` |
+
+### Reviews
+
+| Method | Endpoint | 설명 | 요청 | 응답 |
+|---|---|---|---|---|
+| GET | `/api/reviews/` | 리뷰 목록/검색 | `item_id`, `author_id`, `q`, `user_id` 쿼리 | 리뷰 배열 |
+| POST | `/api/reviews/` | 리뷰 생성 | `{item, user_id?, title, content}` | 생성된 리뷰 |
+| GET | `/api/reviews/{id}/` | 리뷰 상세 | `user_id` 선택 쿼리 | 리뷰 상세 |
+| PATCH/PUT | `/api/reviews/{id}/` | 리뷰 수정 | `{user_id, title?, content?}` | 수정된 리뷰 |
+| DELETE | `/api/reviews/{id}/` | 리뷰 삭제 | `{user_id}` | `204 No Content` |
+| GET | `/api/reviews/{review_id}/comments/` | 댓글 목록 | `user_id` 선택 쿼리 | 댓글 배열 |
+| POST | `/api/reviews/{review_id}/comments/` | 댓글 생성 | `{user_id, content}` | 생성된 댓글 |
+| GET | `/api/reviews/comments/{comment_id}/` | 댓글 상세 | `user_id` 선택 쿼리 | 댓글 상세 |
+| PATCH | `/api/reviews/comments/{comment_id}/` | 댓글 수정 | `{user_id, content}` | 수정된 댓글 |
+| DELETE | `/api/reviews/comments/{comment_id}/` | 댓글 삭제 | `{user_id}` | `204 No Content` |
+| POST | `/api/reviews/{review_id}/reaction/` | 리뷰 좋아요/싫어요 토글 | `{user_id, reaction}` | 갱신된 리뷰 |
+| GET | `/api/reviews/{review_id}/reactions/` | 리뷰 반응 목록 | 없음 | 반응 배열 |
+| POST | `/api/reviews/comments/{comment_id}/reaction/` | 댓글 좋아요/싫어요 토글 | `{user_id, reaction}` | 갱신된 댓글 |
+| GET | `/api/reviews/comments/{comment_id}/reactions/` | 댓글 반응 목록 | 없음 | 반응 배열 |
+
+`reaction` 값은 리뷰/댓글 모두 `like` 또는 `dislike`다. 같은 반응을 다시 보내면 취소되고, 다른 반응을 보내면 교체된다.
+
+### Users / Follow
+
+| Method | Endpoint | 설명 | 요청 | 응답 |
+|---|---|---|---|---|
+| GET | `/api/user/` | 유저 목록 조회 | 선택적 JWT | `{users: [{id, username}]}` |
+| GET | `/api/user/{user_id}/` | 유저 프로필 조회 | 없음 | `{id, username}` |
+| POST | `/api/user/{user_id}/follow/` | 팔로우 | JWT 필요 | `{detail}` |
+| DELETE | `/api/user/{user_id}/follow/` | 언팔로우 | JWT 필요 | `204 No Content` |
+| GET | `/api/user/{user_id}/followers/` | 팔로워 목록 | 없음 | `[{user: {id, username}, created_at}]` |
+| GET | `/api/user/{user_id}/following/` | 팔로잉 목록 | 없음 | `[{user: {id, username}, created_at}]` |
+| PATCH | `/api/user/{user_id}/transname/` | username 변경 | `{username}` + JWT | `{id, username, detail}` |
+
+### Recommend
+
+| Method | Endpoint | 설명 | 요청 | 응답 |
+|---|---|---|---|---|
+| GET | `/api/recommend/` | 팔로워/별 수 기반 추천 집계 | 없음 | `{results, top_user_items, by_category, category_top_items}` |
 
 ---
 
@@ -296,16 +387,63 @@ User - Item - Review - Comment
 > 접속 가능한 링크, 실행 방법, 주요 구현 내용
 
 - **서비스 URL:**
-https://chekonghoon.madcamp-kaist.org/
+https://ggultem.chekonghoon.madcamp-kaist.org/
+
 - **실행 방법:**
+
+### Frontend
+
+상세 실행 방법은 `frontend/README.md`를 참고합니다.
 
 ### Backend
 
 상세 실행 방법은 `backend/README.md`를 참고합니다.
 
-### Frontend
+- **주요 구현 내용**
 
-상세 실행 방법은 `frontend/README.md`를 참고합니다.
+### 개발 환경 구조
+
+```text
+브라우저
+  -> Vite dev server
+  -> /api, /media 프록시
+  -> Django runserver
+```
+
+- 프론트엔드는 Vite 개발 서버에서 실행하고, 브라우저는 우선 Vite에 접속한다.
+- Vite가 `/api`, `/media` 요청만 Django로 프록시하므로, 프론트와 백엔드를 각각 독립적으로 개발하면서도 브라우저 입장에서는 같은 오리진처럼 다룰 수 있다.
+- 이 구조를 쓰면 React HMR, 빠른 번들링, 프론트엔드 에러 확인은 Vite가 담당하고, API 개발과 Django admin, 미디어 처리는 Django가 담당하게 되어 개발 효율이 높다.
+
+### 배포 환경 구조
+
+```text
+브라우저
+  -> Nginx
+  -> 정적 파일(frontend/dist) 서빙
+  -> /api, /media 프록시
+  -> gunicorn
+  -> Django
+```
+
+- 배포 시에는 Vite dev server를 띄우지 않고 `frontend/dist` 빌드 결과물을 Nginx가 직접 서빙한다.
+- API 요청은 Nginx가 `/api` 경로를 gunicorn 뒤의 Django 애플리케이션으로 전달한다.
+- 이렇게 하면 브라우저는 하나의 도메인만 바라보고, 정적 리소스와 API를 같은 진입점에서 사용할 수 있다.
+
+### 왜 이런 구조를 채택했는가
+
+- 개발과 배포의 책임을 분리하기 좋다. 개발에서는 Vite가 빠른 프론트엔드 피드백을 제공하고, 배포에서는 Nginx가 안정적으로 정적 파일을 전달한다.
+- Django가 정적 파일까지 모두 직접 처리하지 않아도 되므로 애플리케이션 서버는 API와 비즈니스 로직에 집중할 수 있다.
+- 프론트엔드와 백엔드가 `/api` 기준으로 느슨하게 연결되어 있어서, 로컬 개발과 운영 배포에서 동일한 URL 규칙을 유지하기 쉽다.
+- 추후 트래픽이 늘어나도 Nginx, gunicorn, Django 레이어를 역할별로 조정하기 쉽다.
+
+### Nginx 리버스 프록시를 두는 이유
+
+- 정적 파일 서빙 성능이 좋다. `dist` 산출물은 Nginx가 직접 응답하는 편이 gunicorn/Django보다 효율적이다.
+- `/api`와 `/media` 요청을 Django로 안전하게 전달하는 단일 진입점 역할을 한다.
+- 브라우저가 프론트엔드와 백엔드를 서로 다른 포트로 직접 호출하지 않아도 되므로 운영 환경에서 CORS, 인증 쿠키/헤더, URL 관리가 단순해진다.
+- TLS 종료, 캐시 정책, 압축, 요청 크기 제한, 접근 로그 같은 운영 설정을 웹 서버 계층에서 일괄 관리할 수 있다.
+- gunicorn 앞단에서 연결을 받아주기 때문에 Django 프로세스를 외부에 직접 노출하지 않아도 된다.
+
 
 ## 회고 문서
 

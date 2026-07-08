@@ -373,9 +373,27 @@
   .item-hero-card {
     grid-template-columns: 1fr;
   }
+
+  .item-score-block,
+  .item-url-row {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
+  .item-page-section {
+    gap: 20px;
+    margin-top: 18px;
+  }
+
+  .item-hero-card {
+    gap: 20px;
+  }
+
+  .item-hero-image {
+    font-size: 56px;
+  }
+
   .review-card {
     padding: 16px 0;
   }
@@ -387,5 +405,39 @@
 
   .item-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .item-change-request-type-row,
+  .comment-edit-actions,
+  .review-section-utility {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .comment-edit-actions .compact-action-button,
+  .review-section-utility .compact-action-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .item-hero-heading h2 {
+    font-size: 24px;
+  }
+
+  .item-detail-box {
+    padding: 14px 0;
+  }
+
+  .item-detail-grid {
+    gap: 12px;
+  }
+
+  .item-detail-grid dd {
+    font-size: 15px;
+  }
+
+  .review-section-header h3 {
+    font-size: 17px;
   }
 }

@@ -65,7 +65,11 @@ function HomePage() {
           >
             <div className="home-panel-copy home-panel-copy-intro">
               <h1 style={{ fontSize: '2rem' }}>
-                써본 사람만 아는 진짜 꿀템을 한 곳에서
+                써본 사람만 아는
+                <br className="home-mobile-break" />
+                진짜 꿀템을
+                <br className="home-mobile-break" />
+                한 곳에서
               </h1>
 
               <p className="home-lead">
@@ -96,7 +100,7 @@ function HomePage() {
               </div>
             </div>
 
-            <ul className="home-item-row home-item-grid">
+            <ul className="home-item-row home-item-grid home-category-items">
               {categoryTopItems.map((item) => (
                 <li className="home-item-card" key={item.id}>
                   <Link to={`/items/${item.id}`}>
@@ -211,11 +215,13 @@ function HomePage() {
               <div className="home-section-header home-section-header-compact">
                 <div>
                   <p className="home-eyebrow">Best Picks</p>
-                  <h2>팔로워 1위 '{topUserItems.username}'님의 꿀템</h2>
+                  <h2 className="home-top-user-title">
+                    팔로워 1위 '{topUserItems.username}'님의 꿀템
+                  </h2>
                 </div>
               </div>
 
-              <ul className="home-item-row">
+              <ul className="home-item-row home-top-user-items">
                 {topUserItems.items.map((item) => (
                   <li className="home-item-card" key={item.id}>
                     <Link to={`/items/${item.id}`}>
