@@ -49,9 +49,9 @@ DJANGO_CSRF_TRUSTED_ORIGINS=http://127.0.0.1:5175,http://localhost:5175
 ```env
 DJANGO_SECRET_KEY=change-me
 DJANGO_DEBUG=False
-DJANGO_ALLOWED_HOSTS=ggultem.madcamp-kaist.org,localhost,127.0.0.1
-DJANGO_CORS_ALLOWED_ORIGINS=https://ggultem.madcamp-kaist.org
-DJANGO_CSRF_TRUSTED_ORIGINS=https://ggultem.madcamp-kaist.org
+DJANGO_ALLOWED_HOSTS=ggultem.madcamp-kaist.org,www.ggultem.madcamp-kaist.org,localhost,127.0.0.1
+DJANGO_CORS_ALLOWED_ORIGINS=https://ggultem.madcamp-kaist.org,https://www.ggultem.madcamp-kaist.org
+DJANGO_CSRF_TRUSTED_ORIGINS=https://ggultem.madcamp-kaist.org,https://www.ggultem.madcamp-kaist.org
 ```
 
 ## 포함된 앱
