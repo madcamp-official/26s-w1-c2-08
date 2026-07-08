@@ -65,10 +65,8 @@ function HomePage() {
           >
             <div className="home-panel-copy home-panel-copy-intro">
               <h1 style={{ fontSize: '2rem' }}>
-                써본 사람만 아는
-                <br className="home-mobile-break" />
-                진짜 꿀템을
-                <br className="home-mobile-break" />
+                써본 사람만 아는<br className="home-mobile-break" />{' '}
+                진짜 꿀템을<br className="home-mobile-break" />{' '}
                 한 곳에서
               </h1>
 
