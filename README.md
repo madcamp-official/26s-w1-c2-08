@@ -267,8 +267,6 @@ https://ggultem.madcamp-kaist.org/
 
 상세 실행 방법은 `backend/README.md`를 참고합니다.
 
-- **주요 구현 내용**
-
 ### 개발/배포 환경 구조 이원화
 <img width="2816" height="1536" alt="Gemini_Generated_Image_lqqgkhlqqgkhlqqg" src="https://github.com/user-attachments/assets/d4f06b16-d312-4907-8c49-8b198f993d49" />
 
