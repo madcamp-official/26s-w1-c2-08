@@ -1108,27 +1108,15 @@ select:focus-visible {
     gap: 12px;
   }
 
-  .home-user-row {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .category-user-row {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .home-item-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .home-item-grid .home-item-card,
-  .category-user-row .home-user-card {
+  .home-item-grid .home-item-card {
     width: 100%;
   }
 
-  .home-item-card a,
-  .home-user-card a,
-  .home-user-card-empty {
+  .home-item-card a {
     width: 100%;
   }
 }
@@ -1203,11 +1191,6 @@ select:focus-visible {
     gap: 28px;
   }
 
-  .home-user-row {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
   .home-user-carousel {
     flex-direction: column;
     align-items: stretch;
@@ -1216,15 +1199,6 @@ select:focus-visible {
   .home-carousel-arrow {
     width: 100%;
     height: 44px;
-  }
-
-  .home-user-card a,
-  .home-user-card-empty {
-    height: 148px;
-  }
-
-  .category-user-row {
-    grid-template-columns: repeat(2, 1fr);
   }
 
   .home-item-grid {
@@ -1275,8 +1249,7 @@ select:focus-visible {
     justify-content: center;
   }
 
-  .home-item-grid,
-  .category-user-row {
+  .home-item-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1309,12 +1282,6 @@ select:focus-visible {
   .home-top-user-items .home-item-card a {
     width: 100%;
     max-width: none;
-  }
-
-  .home-user-card a,
-  .home-user-card-empty {
-    max-width: 180px;
-    margin: 0 auto;
   }
 
   .home-section-header h2 {
