@@ -426,7 +426,11 @@ function UserPage() {
                   <ul className="user-profile-list">
                     {visibleStarredItems.map((item) => (
                       <li key={item.itemId}>
-                        <Link to={`/items/${item.itemId}`} className="text-link">
+                        <Link
+                          to={`/items/${item.itemId}`}
+                          className="text-link"
+                          style={{ fontWeight: 'normal' }}
+                        >
                           {item.itemName}
                         </Link>
                       </li>
@@ -456,7 +460,7 @@ function UserPage() {
                   <ul className="user-profile-list">
                     {reviews.map((review) => (
                       <li key={review.id}>
-                        <Link to={`/items/${review.item}/reviews/${review.id}`} className="text-link">
+                        <Link to={`/items/${review.item}/reviews/${review.id}`} className="text-link" style={{ fontWeight: 'normal' }}>
                           {review.title}
                         </Link>
                       </li>
@@ -577,7 +581,11 @@ function UserPage() {
                   <ul className="user-profile-list">
                     {visibleCreatedItems.map((item) => (
                       <li key={item.id}>
-                        <Link to={`/items/${item.id}`} className="text-link">
+                        <Link
+                          to={`/items/${item.id}`}
+                          className="text-link"
+                          style={{ fontWeight: 'normal' }}
+                        >
                           {item.name}
                         </Link>
                       </li>

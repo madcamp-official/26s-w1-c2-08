@@ -335,7 +335,9 @@ function RankingPage() {
                           {item.starCount ?? 0}
                         </button>
                         {item.createdByUsername && (
-                          <span className="uploader-badge">{item.createdByUsername}</span>
+                          <Link to={`/user/${item.createdBy}`} className="uploader-badge">
+                            {item.createdByUsername}
+                          </Link>
                         )}
                       </div>
                     </div>
