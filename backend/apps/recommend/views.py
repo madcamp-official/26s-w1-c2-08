@@ -73,6 +73,7 @@ def recommend(request):
         )
 
         top_user_items = {
+            "id": top_user.id,
             "username": top_user.username,
             "items": [
                 {

@@ -259,7 +259,32 @@ function UserPage() {
         {status === 'success' && user && (
           <>
             <div className="panel user-profile-header">
-              <p className="user-profile-name">{user.username}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <p className="user-profile-name">{user.username}</p>
+
+                {accessToken && (
+                  <button
+                    type="button"
+                    onClick={handleFollowToggle}
+                    disabled={followLoading}
+                    style={{
+                      backgroundColor: isFollowing ? '#9ca3af' : '#2563eb',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      cursor: followLoading ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {followLoading
+                      ? '처리 중...'
+                      : isFollowing
+                        ? '팔로잉'
+                        : '팔로우'}
+                  </button>
+                )}
+              </div>
 
               <p className="user-profile-name">
                 {countsStatus === 'success' && (
@@ -282,29 +307,6 @@ function UserPage() {
                   </span>
                 )}
               </p>
-
-              {accessToken && (
-                <button
-                  type="button"
-                  onClick={handleFollowToggle}
-                  disabled={followLoading}
-                  style={{
-                    backgroundColor: isFollowing ? '#9ca3af' : '#2563eb',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    cursor: followLoading ? 'not-allowed' : 'pointer',
-                    marginTop: '12px',
-                  }}
-                >
-                  {followLoading
-                    ? '처리 중...'
-                    : isFollowing
-                      ? '팔로잉'
-                      : '팔로우'}
-                </button>
-              )}
 
               {followError && (
                 <p className="feedback feedback-error" style={{ marginTop: '8px' }}>

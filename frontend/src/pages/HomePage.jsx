@@ -29,7 +29,7 @@ function SectionDivider() {
 
 function HomePage() {
   const [recommendedUsers, setRecommendedUsers] = useState([])
-  const [topUserItems, setTopUserItems] = useState({ username: '', items: [] })
+  const [topUserItems, setTopUserItems] = useState({ id: null, username: '', items: [] })
   const [categoryTopItems, setCategoryTopItems] = useState([])
   const [userPage, setUserPage] = useState(0)
 
@@ -39,7 +39,7 @@ function HomePage() {
         const response = await axios.get(buildApiUrl('/recommend/'))
         setRecommendedUsers(response.data.results ?? [])
         setTopUserItems(
-          response.data.top_user_items ?? { username: '', items: [] },
+          response.data.top_user_items ?? { id: null, username: '', items: [] },
         )
         setCategoryTopItems(response.data.category_top_items ?? [])
       } catch (error) {
@@ -217,6 +217,12 @@ function HomePage() {
                     팔로워 1위 '{topUserItems.username}'님의 꿀템
                   </h2>
                 </div>
+
+                {topUserItems.id != null && (
+                  <Link className="home-cta-ghost" to={`/user/${topUserItems.id}`}>
+                    더보기 <span aria-hidden="true">→</span>
+                  </Link>
+                )}
               </div>
 
               <ul className="home-item-row home-top-user-items">
