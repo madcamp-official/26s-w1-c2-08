@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext'
 import { buildApiUrl } from '../lib/api'
 import '../pages/userlist.css'
 
+const CATEGORY_USER_SLOT_COUNT = 7
+
 function UserListPage() {
   const { accessToken } = useAuth()
 
@@ -136,8 +138,25 @@ function UserListPage() {
                 <h3 style={{ marginBottom: '12px' }}>{categoryData.category_label}</h3>
 
                 <ul className="home-user-row category-user-row">
-                  {categoryData.top_users.map((user, index) => {
+                  {Array.from({ length: CATEGORY_USER_SLOT_COUNT }).map((_, index) => {
+                    const user = categoryData.top_users[index]
                     const rank = index + 1
+
+                    if (!user) {
+                      return (
+                        <li
+                          className="home-user-card home-user-card-empty"
+                          key={`empty-${categoryValue}-${index}`}
+                        >
+                          <span className="home-user-rank">{rank}</span>
+                          <span className="home-user-name home-user-name-empty">-</span>
+                          <span className="home-user-followers home-user-followers-empty">
+                            placeholder
+                          </span>
+                        </li>
+                      )
+                    }
+
                     const rankClass =
                       rank === 1
                         ? 'home-user-rank home-user-rank-gold'
