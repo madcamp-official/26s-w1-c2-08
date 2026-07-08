@@ -153,13 +153,13 @@ Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다
 
 ## 화면 설계서
 <p align="center">
-  <img width="45%" src="첫번째이미지">
-  <img width="45%" src="두번째이미지">
+  <img src="첫번째이미지" width="48%">
+  <img src="두번째이미지" width="48%">
 </p>
 
 <p align="center">
-  <img width="45%" src="세번째이미지">
-  <img width="45%" src="네번째이미지">
+  <img src="세번째이미지" width="48%">
+  <img src="네번째이미지" width="48%">
 </p>
 
 ---
