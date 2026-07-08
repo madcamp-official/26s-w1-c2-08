@@ -119,7 +119,7 @@
 
 ## IA 및 화면 설계서
 
-## Information Architecture (IA)
+### Information Architecture (IA)
 
 ```mermaid
 graph LR
@@ -147,7 +147,7 @@ graph LR
 ```
 Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다.
 
-## 화면 설계서
+### 화면 설계서
 <p align="center">
   <img width="45%" src="https://github.com/user-attachments/assets/0a5f1e5b-3c5d-4fac-b5b4-5c8c64f1bfec">
   <img width="45%" src="https://github.com/user-attachments/assets/d63b3525-7aaa-4827-a671-400a5744a4de">
