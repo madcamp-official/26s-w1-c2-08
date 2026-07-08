@@ -9,13 +9,9 @@ import { apiFetch, buildApiUrl } from '../lib/api'
 
 const RANKING_PAGE_SIZE = 20
 
-function getRankingScore(item) {
-  return item.rankingScore ?? item.starCount ?? 0
-}
-
 function sortRankingItems(items) {
   return [...items].sort((a, b) => {
-    const scoreDiff = getRankingScore(b) - getRankingScore(a)
+    const scoreDiff = (b.starCount ?? 0) - (a.starCount ?? 0)
     if (scoreDiff !== 0) return scoreDiff
 
     return a.id - b.id
@@ -80,14 +76,7 @@ function RankingPage() {
       }
       params.set('limit', String(currentLimit))
 
-      const [itemsResponse, starResponse] = await Promise.all([
-        apiFetch(`/items/ranking/?${params.toString()}`),
-        apiFetch('/items/star-summary/', {
-          headers: accessToken
-            ? { Authorization: `Bearer ${accessToken}` }
-            : {},
-        }),
-      ])
+      const itemsResponse = await apiFetch(`/items/ranking/?${params.toString()}`)
 
       if (!itemsResponse.ok) {
         throw new Error(await readErrorMessage(itemsResponse))
@@ -96,22 +85,8 @@ function RankingPage() {
       const itemsData = await itemsResponse.json()
       const rawItems = itemsData.results ?? []
 
-      let starMap = {}
-      if (starResponse.ok) {
-        const starData = await starResponse.json()
-        starMap = Object.fromEntries(
-          (starData.results ?? []).map((s) => [s.id, s]),
-        )
-      }
-
-      const merged = rawItems.map((item) => ({
-        ...item,
-        starCount: starMap[item.id]?.starCount ?? 0,
-        isStarred: starMap[item.id]?.isStarred ?? false,
-      }))
-
-      setItems(sortRankingItems(merged))
-      setTotalCount(itemsData.count ?? merged.length)
+      setItems(sortRankingItems(rawItems))
+      setTotalCount(itemsData.count ?? rawItems.length)
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : '랭킹을 불러오지 못했습니다.',
