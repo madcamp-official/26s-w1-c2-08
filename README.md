@@ -18,8 +18,6 @@
 
 ## 기획안
 
-> 프로젝트 주제, 목적, 핵심 기능, 예상 사용자, 팀원별 역할 등 정리
-
 - **주제:**
 
 아이템 추천 웹 서비스
@@ -121,8 +119,6 @@
 
 ## IA 및 화면 설계서
 
-> 서비스의 전체 페이지 구조와 페이지 간 이동 흐름; 각 페이지의 주요 UI 구성, 입력 요소, 버튼, 사용자 행동 흐름 등을 간단한 와이어프레임 형태로 정리
-
 ## Information Architecture (IA)
 
 ```mermaid
@@ -173,8 +169,6 @@ Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다
 ---
 
 ## API 문서
-
-> API 주소, 요청 방식, 요청값, 응답값, 에러 상황을 정리
 
 기본 prefix는 `/api/`이며, 인증이 필요한 API는 JWT `Authorization: Bearer <access_token>` 헤더를 사용한다.
 
@@ -260,8 +254,6 @@ Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다
 
 ## 배포 결과물
 
-> 접속 가능한 링크, 실행 방법, 주요 구현 내용
-
 - **서비스 URL:**
 https://ggultem.madcamp-kaist.org/
 
@@ -277,30 +269,15 @@ https://ggultem.madcamp-kaist.org/
 
 - **주요 구현 내용**
 
-### 개발 환경 구조
+### 개발/배포 환경 구조 이원화
+<img width="2816" height="1536" alt="Gemini_Generated_Image_lqqgkhlqqgkhlqqg" src="https://github.com/user-attachments/assets/d4f06b16-d312-4907-8c49-8b198f993d49" />
 
-```text
-브라우저
-  -> Vite dev server
-  -> /api, /media 프록시
-  -> Django runserver
-```
-
+#### 개발 환경 구조
 - 프론트엔드는 Vite 개발 서버에서 실행하고, 브라우저는 우선 Vite에 접속한다.
 - Vite가 `/api`, `/media` 요청만 Django로 프록시하므로, 프론트와 백엔드를 각각 독립적으로 개발하면서도 브라우저 입장에서는 같은 오리진처럼 다룰 수 있다.
 - 이 구조를 쓰면 React HMR, 빠른 번들링, 프론트엔드 에러 확인은 Vite가 담당하고, API 개발과 Django admin, 미디어 처리는 Django가 담당하게 되어 개발 효율이 높다.
 
-### 배포 환경 구조
-
-```text
-브라우저
-  -> Nginx
-  -> 정적 파일(frontend/dist) 서빙
-  -> /api, /media 프록시
-  -> gunicorn
-  -> Django
-```
-
+#### 배포 환경 구조
 - 배포 시에는 Vite dev server를 띄우지 않고 `frontend/dist` 빌드 결과물을 Nginx가 직접 서빙한다.
 - API 요청은 Nginx가 `/api` 경로를 gunicorn 뒤의 Django 애플리케이션으로 전달한다.
 - 이렇게 하면 브라우저는 하나의 도메인만 바라보고, 정적 리소스와 API를 같은 진입점에서 사용할 수 있다.
