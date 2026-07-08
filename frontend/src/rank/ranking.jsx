@@ -34,6 +34,7 @@ function RankingPage() {
   const [actionMessage, setActionMessage] = useState('')
   const [brokenImages, setBrokenImages] = useState({})
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [pendingStar, setPendingStar] = useState(null)
   const [loginPopupMessage, setLoginPopupMessage] = useState('')
   const [recommendConfirmItemId, setRecommendConfirmItemId] = useState(null)
@@ -52,7 +53,7 @@ function RankingPage() {
     }
   }
 
-  async function loadRanking(category, currentLimit, { isLoadMore = false } = {}) {
+  async function loadRanking(category, currentLimit, search, { isLoadMore = false } = {}) {
     if (isLoadMore) {
       setIsLoadingMore(true)
     } else {
@@ -64,6 +65,9 @@ function RankingPage() {
       const params = new URLSearchParams()
       if (category && category !== 'all') {
         params.set('category', category)
+      }
+      if (search) {
+        params.set('name', search)
       }
       params.set('limit', String(currentLimit))
 
@@ -93,8 +97,10 @@ function RankingPage() {
   }, [])
 
   useEffect(() => {
-    loadRanking(activeCategory, limit, { isLoadMore: limit > RANKING_PAGE_SIZE })
-  }, [activeCategory, limit])
+    loadRanking(activeCategory, limit, debouncedSearchTerm, {
+      isLoadMore: limit > RANKING_PAGE_SIZE,
+    })
+  }, [activeCategory, limit, debouncedSearchTerm])
 
   useEffect(() => {
     const categoryFromUrl = new URLSearchParams(location.search).get('category')
@@ -113,6 +119,12 @@ function RankingPage() {
 
   function handleLoadMore() {
     setLimit((prev) => prev + RANKING_PAGE_SIZE)
+  }
+
+  function handleSearchSubmit(event) {
+    event.preventDefault()
+    setLimit(RANKING_PAGE_SIZE)
+    setDebouncedSearchTerm(searchTerm.trim())
   }
 
   function handleStarClick(itemId) {
@@ -179,11 +191,6 @@ function RankingPage() {
     }
   }
 
-  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
-  const visibleItems = normalizedSearchTerm
-    ? items.filter((item) => item.name.toLowerCase().includes(normalizedSearchTerm))
-    : items
-
   const recommendConfirmItem = items.find((item) => item.id === recommendConfirmItemId)
 
   return (
@@ -218,16 +225,16 @@ function RankingPage() {
         ))}
       </div>
 
-      <div className="search-bar" style={{ margin: '16px 0' }}>
+      <form onSubmit={handleSearchSubmit} className="search-bar" style={{ margin: '16px 0' }}>
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="아이템 이름으로 검색"
+          placeholder="아이템 이름으로 검색 (Enter로 검색)"
           aria-label="아이템 이름 검색"
           style={{ width: '100%', padding: '10px 12px' }}
         />
-      </div>
+      </form>
 
       {actionMessage && <p className="notice">{actionMessage}</p>}
 
@@ -241,24 +248,24 @@ function RankingPage() {
           </div>
         )}
 
-        {!isLoading && !errorMessage && items.length === 0 && (
+        {!isLoading && !errorMessage && items.length === 0 && !debouncedSearchTerm && (
           <div className="empty-state">
             <strong>등록된 아이템이 없습니다.</strong>
             <p>아이템 데이터가 추가되면 이곳에 순위가 표시됩니다.</p>
           </div>
         )}
 
-        {!isLoading && !errorMessage && items.length > 0 && visibleItems.length === 0 && (
+        {!isLoading && !errorMessage && items.length === 0 && debouncedSearchTerm && (
           <div className="empty-state">
             <strong>검색 결과가 없습니다.</strong>
-            <p>'{searchTerm}'에 해당하는 아이템을 찾을 수 없습니다.</p>
+            <p>'{debouncedSearchTerm}'에 해당하는 아이템을 찾을 수 없습니다.</p>
           </div>
         )}
 
-        {!isLoading && !errorMessage && visibleItems.length > 0 && (
+        {!isLoading && !errorMessage && items.length > 0 && (
           <>
             <ol className="ranking-list">
-              {visibleItems.map((item, index) => {
+              {items.map((item, index) => {
                 const hasImage = item.imageUrl && !brokenImages[item.id]
                 const hasMeta =
                   item.brandOrShopName ||
@@ -337,7 +344,7 @@ function RankingPage() {
               })}
             </ol>
 
-            {!normalizedSearchTerm && items.length < totalCount && (
+            {items.length < totalCount && (
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
                 <button
                   type="button"

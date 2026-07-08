@@ -69,7 +69,7 @@ def _parse_category(request):
     return category, None
 
 
-def _ranked_items_queryset(category=None):
+def _ranked_items_queryset(category=None, name=None):
     queryset = Item.objects.select_related("created_by").annotate(
         starCount=Count("star"),
         ranking_score_value=Count("star"),
@@ -80,6 +80,8 @@ def _ranked_items_queryset(category=None):
     )
     if category is not None:
         queryset = queryset.filter(category=category)
+    if name:
+        queryset = queryset.filter(name__icontains=name)
 
     return queryset
 
@@ -280,7 +282,9 @@ def item_ranking(request):
     if error_response is not None:
         return error_response
 
-    queryset = _ranked_items_queryset(category=category)
+    name = request.query_params.get("name", "").strip() or None
+
+    queryset = _ranked_items_queryset(category=category, name=name)
     serializer = ItemRankingSerializer(queryset[:limit], many=True, context={"request": request})
     return Response(
         {
