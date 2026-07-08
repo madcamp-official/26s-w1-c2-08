@@ -173,7 +173,7 @@ def recommend(request):
 
         by_category[category_value] = {
             "category_label": category_label,
-            "top_users": scored_users[:5],
+            "top_users": scored_users[:7],
         }
 
     return Response(
