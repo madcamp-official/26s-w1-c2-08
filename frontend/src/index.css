@@ -712,8 +712,8 @@ select:focus-visible {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 60px;
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
@@ -738,12 +738,13 @@ select:focus-visible {
   display: flex;
   flex: 1;
   min-width: 0;
-  justify-content: space-between;
+  flex-wrap: nowrap;
   align-items: flex-start;
   gap: 16px;
   margin: 0;
   padding: 4px 0 4px;
   list-style: none;
+  overflow-x: auto;
 }
 
 .home-user-card {
@@ -751,13 +752,11 @@ select:focus-visible {
 }
 
 .category-user-row {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  justify-content: start;
-}
-
-.category-user-row .home-user-card {
-  justify-self: center;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  padding: 4px 0 12px;
+  overflow-x: auto;
 }
 
 .home-item-row {
@@ -811,11 +810,13 @@ select:focus-visible {
 
 .home-user-card a {
   flex-direction: column;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   gap: 4px;
   width: 122px;
   height: 122px;
+  aspect-ratio: 1 / 1;
   padding: 8px;
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 50%;
@@ -830,11 +831,13 @@ select:focus-visible {
 .home-user-card-empty {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   gap: 4px;
   width: 122px;
   height: 122px;
+  aspect-ratio: 1 / 1;
   padding: 8px;
   border: 1px dashed var(--border);
   border-radius: 50%;
@@ -1087,15 +1090,6 @@ select:focus-visible {
   .home-features {
     grid-template-columns: 1fr;
     gap: 28px;
-  }
-
-  .home-user-row {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .category-user-row {
-    grid-template-columns: repeat(2, 1fr);
   }
 
   .home-item-grid {
