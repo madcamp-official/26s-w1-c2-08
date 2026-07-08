@@ -19,7 +19,7 @@ const FEATURES = [
   },
 ]
 
-const USER_SLOT_COUNT = 10
+const USER_SLOT_COUNT = 14
 const USERS_PER_PAGE = 7
 const USER_PAGE_COUNT = Math.ceil(USER_SLOT_COUNT / USERS_PER_PAGE)
 

@@ -92,7 +92,7 @@ const handleSubmit = async (event) => {
               name="username"
               value={form.username}
               onChange={handleChange}
-              placeholder="example01"
+              placeholder="사용하실 닉네임으로 id를 생성하세요 (한글 가능)"
               autoComplete="username"
               required
             />
