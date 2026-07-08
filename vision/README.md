@@ -1,6 +1,6 @@
-# Vision Prototype
+# Vision Pipeline
 
-온라인 쇼핑몰 스크린샷에서 상품 정보를 추출하는 최소 프로토타입입니다. 기본 provider는 `gemini`이고, 필요하면 `codex`로 전환할 수 있습니다.
+온라인 쇼핑몰 스크린샷에서 상품 정보를 추출하는 파이프라인입니다. 기본 provider는 `gemini`이고, 필요하면 `codex`로 전환할 수 있습니다.
 
 기본 입력 파일은 [example.png](/root/workspace/ggultem/vision/example.png) 입니다.
 
