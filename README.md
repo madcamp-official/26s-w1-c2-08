@@ -254,17 +254,13 @@ Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다
 
 ## 배포 결과물
 
-- **서비스 URL:**
+### 서비스 URL
 https://ggultem.madcamp-kaist.org/
 
-- **실행 방법:**
-
 ### Frontend
-
 상세 실행 방법은 `frontend/README.md`를 참고합니다.
 
 ### Backend
-
 상세 실행 방법은 `backend/README.md`를 참고합니다.
 
 ### 개발/배포 환경 구조 이원화
