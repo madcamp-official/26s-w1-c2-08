@@ -152,10 +152,12 @@ graph LR
 Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다.
 
 ## 화면 설계서
-<img width="666" height="580" alt="image" src="https://github.com/user-attachments/assets/6edfa1a0-8db2-4f94-9d96-2426a483c9a3" />
-<img width="660" height="460" alt="image" src="https://github.com/user-attachments/assets/d63b3525-7aaa-4827-a671-400a5744a4de" />
-<img width="658" height="534" alt="image" src="https://github.com/user-attachments/assets/cb5caac2-0a0f-4ae8-8be0-2138e430f4e4" />
-<img width="658" height="556" alt="image" src="https://github.com/user-attachments/assets/bbbf4303-7f05-44ec-8374-278cd63a8282" />
+<p align="center">
+  <img width="658" height="576" alt="image" src="https://github.com/user-attachments/assets/0a5f1e5b-3c5d-4fac-b5b4-5c8c64f1bfec" />
+  <img width="660" height="460" alt="image" src="https://github.com/user-attachments/assets/d63b3525-7aaa-4827-a671-400a5744a4de" />
+  <img width="658" height="534" alt="image" src="https://github.com/user-attachments/assets/cb5caac2-0a0f-4ae8-8be0-2138e430f4e4" />
+  <img width="658" height="556" alt="image" src="https://github.com/user-attachments/assets/bbbf4303-7f05-44ec-8374-278cd63a8282" />
+</p>
 
 ---
 
