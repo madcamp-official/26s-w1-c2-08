@@ -1,5 +1,3 @@
-# 26s-w1-c2-08
-
 ## 공통과제 I : 웹 기반 프로젝트 (2인 1팀)
 
 **목적:** 공통 과제를 함께 수행하며 웹 개발의 전체 흐름을 빠르게 익히고 협업에 적응하기
@@ -125,36 +123,32 @@
 
 > 서비스의 전체 페이지 구조와 페이지 간 이동 흐름; 각 페이지의 주요 UI 구성, 입력 요소, 버튼, 사용자 행동 흐름 등을 간단한 와이어프레임 형태로 정리
 
-<!-- Figma 링크 또는 이미지 첨부 -->
+## Information Architecture (IA)
 
-### MVP 화면 범위
+```mermaid
+graph LR
+    Home["🏠 HomePage"]
 
-1. 회원가입 / 로그인 화면
-2. 꿀템 랭킹 목록 화면
-   - 아이템 자체의 추천 수 / 비추천 수 기반으로 정렬한다.
-3. 아이템 상세 화면
-   - 상품명
-   - 대표 이미지
-   - 가격
-   - 쇼핑몰 또는 브랜드명
-   - 원본 URL로 이동 버튼
-   - 아이템 추천 수 / 비추천 수
-   - 내 아이템 추천/비추천 상태와 버튼
-   - 리뷰 목록
-   - 리뷰 목록은 리뷰 좋아요 수 / 싫어요 수 기반으로 정렬한다.
-   - 각 리뷰의 좋아요 수 / 싫어요 수
-   - 각 리뷰의 댓글 목록
-   - 각 리뷰의 댓글 작성 폼
-   - 수정 요청 버튼
-   - 삭제 요청 버튼
-4. 아이템 등록 및 리뷰 작성 화면
-5. 마이페이지
-   - 내가 등록한 아이템
-   - 내가 작성한 리뷰
-   - 내가 작성한 댓글
-   - 내가 보낸 수정/삭제 요청 상태
-6. 수정/삭제 요청 작성 화면
+    Home --> Ranking["🏆 Ranking_Page"]
+    Home --> Item["📦 Item_Detail_Page"]
+    Home --> Add["➕ Add_Item_Page"]
+    Home --> Users["👥 Users_Page"]
+    Home --> My["🙍 My_Page"]
 
+    Home --> Login["🔑 Login_Page"]
+    Home --> Signup["📝 Signup_Page"]
+
+    Ranking --> Category["Category_Ranking_Page"]
+
+    Item --> Review["⭐ Review_Detail_Page"]
+    Item --> Write["✍️ Write_Review_Page"]
+
+    Users --> Profile["👤 User_Profile_Page"]
+    Profile --> Followers["Followers_Page"]
+    Profile --> Following["Following_Page"]
+
+    My --> Change["⚙️ Change_Username_Page"]
+```
 Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다.
 
 ---
