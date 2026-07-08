@@ -1,5 +1,3 @@
-# 26s-w1-c2-08
-
 ## 공통과제 I : 웹 기반 프로젝트 (2인 1팀)
 
 **목적:** 공통 과제를 함께 수행하며 웹 개발의 전체 흐름을 빠르게 익히고 협업에 적응하기
@@ -12,9 +10,9 @@
 
 | 이름 | GitHub | 역할 |
 |------|--------|------|
-|박채훈|-|-|
-|이서영|-|-|
-|최재윤|-|-|
+|박채훈|chek737|-|
+|이서영|sksy930|-|
+|최재윤|Jaeyun-18|-|
 
 ---
 
@@ -125,35 +123,44 @@
 
 > 서비스의 전체 페이지 구조와 페이지 간 이동 흐름; 각 페이지의 주요 UI 구성, 입력 요소, 버튼, 사용자 행동 흐름 등을 간단한 와이어프레임 형태로 정리
 
-### MVP 화면 범위
+## Information Architecture (IA)
 
-1. 회원가입 / 로그인 화면
-2. 꿀템 랭킹 목록 화면
-   - 아이템 자체의 추천 수 / 비추천 수 기반으로 정렬한다.
-3. 아이템 상세 화면
-   - 상품명
-   - 대표 이미지
-   - 가격
-   - 쇼핑몰 또는 브랜드명
-   - 원본 URL로 이동 버튼
-   - 아이템 추천 수 / 비추천 수
-   - 내 아이템 추천/비추천 상태와 버튼
-   - 리뷰 목록
-   - 리뷰 목록은 리뷰 좋아요 수 / 싫어요 수 기반으로 정렬한다.
-   - 각 리뷰의 좋아요 수 / 싫어요 수
-   - 각 리뷰의 댓글 목록
-   - 각 리뷰의 댓글 작성 폼
-   - 수정 요청 버튼
-   - 삭제 요청 버튼
-4. 아이템 등록 및 리뷰 작성 화면
-5. 마이페이지
-   - 내가 등록한 아이템
-   - 내가 작성한 리뷰
-   - 내가 작성한 댓글
-   - 내가 보낸 수정/삭제 요청 상태
-6. 수정/삭제 요청 작성 화면
+```mermaid
+graph LR
+    Home["🏠 HomePage"]
 
+    Home --> Ranking["🏆 Ranking_Page"]
+    Home --> Item["📦 Item_Detail_Page"]
+    Home --> Add["➕ Add_Item_Page"]
+    Home --> Users["👥 Users_Page"]
+    Home --> My["🙍 My_Page"]
+
+    Home --> Login["🔑 Login_Page"]
+    Home --> Signup["📝 Signup_Page"]
+
+    Ranking --> Category["Category_Ranking_Page"]
+
+    Item --> Review["⭐ Review_Detail_Page"]
+    Item --> Write["✍️ Write_Review_Page"]
+
+    Users --> Profile["👤 User_Profile_Page"]
+    Profile --> Followers["Followers_Page"]
+    Profile --> Following["Following_Page"]
+
+    My --> Change["⚙️ Change_Username_Page"]
+```
 Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다.
+
+## 화면 설계서
+<p align="center">
+  <img width="45%" src="https://github.com/user-attachments/assets/0a5f1e5b-3c5d-4fac-b5b4-5c8c64f1bfec">
+  <img width="45%" src="https://github.com/user-attachments/assets/d63b3525-7aaa-4827-a671-400a5744a4de">
+</p>
+
+<p align="center">
+  <img width="45%" src="https://github.com/user-attachments/assets/cb5caac2-0a0f-4ae8-8be0-2138e430f4e4">
+  <img width="45%" src="https://github.com/user-attachments/assets/bbbf4303-7f05-44ec-8374-278cd63a8282">
+</p>
 
 ---
 
@@ -161,7 +168,136 @@ Admin 화면은 React로 별도 구현하지 않고 Django admin을 사용한다
 
 ### E-R Diagram
 
-assets/ERD.png
+![assets/ERD.png](assets/ERD.png)
+
+### 관계 요약
+
+```text
+User - Item - Review - ReviewComment
+User - Star - Item
+User - ReviewReaction - Review
+User - ReviewCommentReaction - ReviewComment
+User - Follow - User
+User - ItemChangeRequest - Item
+```
+
+현재 백엔드는 `accounts`, `items`, `reviews`, `user` 앱 기준으로 테이블이 구성되어 있다. 서비스의 핵심 컨텐츠는 아이템과 그 아이템에 달린 유저 리뷰이며, 별점형 추천은 `Star`, 리뷰/댓글 반응은 별도 Reaction 테이블로 관리한다. 아이템 수정 요청과 삭제 요청은 분리 테이블이 아니라 `ItemChangeRequest.request_type`으로 구분한다.
+
+#### User
+
+| 필드 | 설명 |
+|---|---|
+| id | 사용자 ID |
+| username | 로그인 ID |
+| password | 비밀번호 해시 |
+| is_active | 활성 상태 |
+| is_staff | 관리자 여부 |
+
+#### Item
+
+| 필드 | 설명 |
+|---|---|
+| id | 아이템 ID |
+| name | 상품명 |
+| description | 상품 설명 |
+| category | 카테고리 |
+| image_url | 외부 이미지 URL |
+| image_file | 업로드된 대표 이미지 파일 |
+| price | 가격 |
+| shop_or_brand_name | 쇼핑몰 또는 브랜드명 |
+| original_url | 원본 상품 URL |
+| created_by | 최초 등록 사용자 |
+| created_at | 등록 일시 |
+| updated_at | 수정 일시 |
+
+#### Review
+
+| 필드 | 설명 |
+|---|---|
+| id | 리뷰 ID |
+| item_id | 리뷰 대상 아이템 |
+| author_id | 리뷰 작성자 |
+| title | 리뷰 제목 |
+| content | 리뷰 본문 |
+| like_count | 좋아요 수 캐시 |
+| dislike_count | 싫어요 수 캐시 |
+| created_at | 작성 일시 |
+| updated_at | 수정 일시 |
+
+한 사용자는 같은 아이템에 리뷰를 1개만 작성할 수 있고, 본인이 등록한 아이템에는 리뷰를 작성할 수 없다.
+
+#### ReviewComment
+
+| 필드 | 설명 |
+|---|---|
+| id | 댓글 ID |
+| review_id | 댓글 대상 리뷰 |
+| author_id | 댓글 작성자 |
+| content | 댓글 본문 |
+| like_count | 댓글 좋아요 수 캐시 |
+| dislike_count | 댓글 싫어요 수 캐시 |
+| created_at | 작성 일시 |
+| updated_at | 수정 일시 |
+
+#### Star
+
+| 필드 | 설명 |
+|---|---|
+| id | 추천 ID |
+| item_id | 추천 대상 아이템 |
+| user_id | 추천한 사용자 |
+
+한 사용자는 한 아이템에 별(`Star`)을 1개만 남길 수 있으며, 다시 누르면 취소된다.
+
+#### ReviewReaction
+
+| 필드 | 설명 |
+|---|---|
+| id | 리뷰 반응 ID |
+| review_id | 반응 대상 리뷰 |
+| user_id | 반응한 사용자 |
+| reaction | `like` 또는 `dislike` |
+| created_at | 반응 일시 |
+| updated_at | 변경 일시 |
+
+한 사용자는 한 리뷰에 대해 좋아요 또는 싫어요 중 하나만 선택할 수 있다.
+
+#### ReviewCommentReaction
+
+| 필드 | 설명 |
+|---|---|
+| id | 댓글 반응 ID |
+| comment_id | 반응 대상 댓글 |
+| user_id | 반응한 사용자 |
+| reaction | `like` 또는 `dislike` |
+| created_at | 반응 일시 |
+| updated_at | 변경 일시 |
+
+#### ItemChangeRequest
+
+| 필드 | 설명 |
+|---|---|
+| id | 변경 요청 ID |
+| item_id | 요청 대상 아이템 |
+| requested_by_id | 요청한 사용자 |
+| request_type | `edit` 또는 `delete` |
+| requested_fields | 수정 요청 필드 JSON |
+| reason | 요청 사유 |
+| status | `pending`, `approved`, `rejected` |
+| admin_note | Admin 처리 메모 |
+| created_at | 요청 일시 |
+| resolved_at | 처리 일시 |
+
+삭제 요청은 `request_type=delete`이고, 수정 요청은 `request_type=edit`와 `requested_fields`로 표현한다. 삭제 요청은 아이템 등록자만 보낼 수 있다.
+
+#### Follow
+
+| 필드 | 설명 |
+|---|---|
+| id | 팔로우 관계 ID |
+| follower_id | 팔로우하는 사용자 |
+| following_id | 팔로우 대상 사용자 |
+| created_at | 팔로우 일시 |
 
 ---
 
