@@ -276,19 +276,6 @@ https://ggultem.madcamp-kaist.org/
 - API 요청은 Nginx가 `/api` 경로를 gunicorn 뒤의 Django 애플리케이션으로 전달한다.
 - 이렇게 하면 브라우저는 하나의 도메인만 바라보고, 정적 리소스와 API를 같은 진입점에서 사용할 수 있다.
 
-### 운영 도메인 전환 체크리스트
-
-- Cloudflare DNS에서 `ggultem.madcamp-kaist.org` 레코드를 운영 서버로 연결한다.
-- Cloudflare에서 해당 호스트의 TLS와 프록시 설정을 확인한다.
-- Nginx `server_name`을 `ggultem.madcamp-kaist.org`로 맞춘다.
-- 프론트엔드 정적 파일은 기존처럼 `frontend/dist`를 Nginx가 서빙한다.
-- Django 운영 환경 변수에 `DJANGO_ALLOWED_HOSTS=ggultem.madcamp-kaist.org,...`를 포함한다.
-- 필요 시 `DJANGO_CORS_ALLOWED_ORIGINS=https://ggultem.madcamp-kaist.org`를 설정한다.
-- 필요 시 `DJANGO_CSRF_TRUSTED_ORIGINS=https://ggultem.madcamp-kaist.org`를 설정한다.
-- 변경 후 `./deploy.sh --reload-nginx`로 재배포하고 헬스 체크를 확인한다.
-
-운영용 Nginx 예시는 `deploy/ggultem.nginx.conf.example`에 정리되어 있다.
-
 ### 왜 이런 구조를 채택했는가
 
 - 개발과 배포의 책임을 분리하기 좋다. 개발에서는 Vite가 빠른 프론트엔드 피드백을 제공하고, 배포에서는 Nginx가 안정적으로 정적 파일을 전달한다.
